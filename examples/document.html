@@ -1,0 +1,229 @@
+<!-- 中 -->
+<meta name="viewport" content="width=device-width" />
+<script src="../src/HtmlComponent.js"></script>
+
+<template name="Tree">
+  <ul>
+    <li
+      for="node in tree"
+      onclick="click(node); event.stopPropagation()"
+      ref="node.li=this"
+    >
+      <strong if="(node.tagName)">{getTag(node)}</strong>
+      <span if="(!node.tagName)">{node.nodeValue}</span>
+      <Tree
+        is="this.constructor"
+        if="(node.isOpen)"
+        .tree="node.childNodes"
+      ></Tree>
+      <!-- <strong if="(node.tagName)">{getCloseTag(node)}</strong> -->
+    </li>
+  </ul>
+  <script>
+    var tree = [document.documentElement]
+    function getTag(node) {
+      return node
+        .cloneNode()
+        .outerHTML.replace(/<\/.*?>/, node.isOpen ? '' : '$&')
+    }
+    function getCloseTag(node) {
+      if (!node.isOpen) {
+        return ''
+      }
+      return node.cloneNode().outerHTML.replace(/<.*?>/, '')
+    }
+    function click(node) {
+      var e = new Event('console:click(node)')
+      e.data = node
+      e.bubbles = true
+      dispatchEvent(e)
+      node.isOpen = !node.isOpen
+    }
+  </script>
+</template>
+
+<console>
+  <main panel="Elements">
+    <aside>
+      <dl>
+        <div>
+          <dt>N</dt>
+          <dd>{box.N}</dd>
+        </div>
+        <div>
+          <dt>W</dt>
+          <dd>{box.W} * {box.H}</dd>
+        </div>
+        <div>
+          <dt>M</dt>
+          <dd>{box.M}</dd>
+        </div>
+        <div>
+          <dt>P</dt>
+          <dd>{box.P}</dd>
+        </div>
+        <div>
+          <dt>B</dt>
+          <dd>{box.B}</dd>
+        </div>
+        <div>
+          <dt>G</dt>
+          <dd>{box.G}</dd>
+        </div>
+        <div>
+          <dt>C</dt>
+          <dd>{box.C}</dd>
+        </div>
+        <div>
+          <dt>F</dt>
+          <dd>{box.F}</dd>
+        </div>
+      </dl>
+    </aside>
+    <content>
+      <ul is="Tree" .tree="tree"></ul>
+    </content>
+  </main>
+</console>
+
+<script>
+  var Tree = require('[name=Tree]')
+
+  var tree = [document.querySelector('html')]
+  document.documentElement.isOpen = true
+  document.body.isOpen = true
+  document.body.firstElementChild.isOpen = true
+
+  var box = {
+    W: 'auto',
+    H: 'auto',
+    M: 'auto',
+    P: '0px',
+    B: 'none',
+    G: 'none',
+    C: '#000',
+    F: '16px',
+  }
+
+  function showNode(node, scroll) {
+    var el = node.nodeType == 1 ? node : node.parentNode
+    var style = getComputedStyle(el)
+    box.N = el.cloneNode().outerHTML
+    box.W = style.width
+    box.H = style.height
+    box.M = style.margin
+    box.P = style.padding
+    box.G = style.background
+    box.C = style.color
+    box.F = style.font.replace(/(\/ )?normal/g, '')
+
+    scroll && el.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  function toggleNode(node, open, loop) {
+    node.isOpen = open
+    loop && node.parentNode && toggleNode(node.parentNode, open, loop)
+  }
+
+  addEventListener('console:click(node)', (e) => {
+    var node = e.data
+    showNode(node, true)
+    this.$render()
+  })
+
+  addEventListener('click', (e) => {
+    var node = e.target
+
+    this._lastNode && toggleNode(this._lastNode, false, true)
+    toggleNode(node, true, true)
+
+    showNode(node)
+    this._lastNode = node
+
+    this.$render()
+  })
+
+  new MutationObserver(() => {
+    this.$render()
+  }).observe(document.documentElement, {
+    attributes: true,
+    characterData: true,
+    childList: true,
+    subtree: true,
+  })
+</script>
+
+<style>
+  console {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 375px;
+    overflow: auto;
+    background: #fff;
+    color: #333;
+    box-shadow: 1px 1px 10px #bbb;
+    font-size: 12px;
+  }
+  [panel='Elements'] {
+    position: relative;
+    height: 100%;
+    box-sizing: border-box;
+  }
+  [panel='Elements'] * {
+    box-sizing: inherit;
+  }
+  [panel='Elements'] content {
+    display: block;
+    height: 100%;
+    padding: 1em 0;
+    overflow: auto;
+  }
+  [panel='Elements'] ul {
+    border-left: 1px dotted #bbb;
+    padding-left: 1em;
+    padding-bottom: 0.5em;
+    list-style: none;
+    margin: 0;
+  }
+  [panel='Elements'] ul li strong {
+    white-space: nowrap;
+    color: #a71d5d;
+  }
+  [panel='Elements'] ul li span {
+    white-space: nowrap;
+  }
+  [panel='Elements'] aside {
+    position: absolute;
+    top: 0;
+    /* bottom: 0; */
+    right: 0;
+    padding: 0.5em;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 2px 0px 3px #bbb;
+    backdrop-filter: blur(1px);
+  }
+  [panel='Elements'] aside dl {
+    margin: 0;
+    display: table;
+  }
+  [panel='Elements'] aside dl > div {
+    display: table-row;
+  }
+  [panel='Elements'] aside dl > div > dt {
+    display: table-cell;
+    color: #eee;
+    text-transform: lowercase;
+  }
+  [panel='Elements'] aside dl > div > dd {
+    margin: 0;
+    display: table-cell;
+    padding-left: 0.5em;
+    max-width: 10em;
+    white-space: nowrap;
+    text-align: right;
+    overflow: auto;
+  }
+</style>

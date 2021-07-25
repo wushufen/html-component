@@ -354,6 +354,7 @@ function detectTemplateError(code, rootNode, errorNode) {
  */
 function compile(node = document.documentElement) {
   var rootNode = node
+  var rootHtml = node.outerHTML
   var renderCode = '\n'
   var scriptTagsCode = '\n'
   var styleTagsCode = '\n'
@@ -367,6 +368,12 @@ function compile(node = document.documentElement) {
     // <script>
     if (/^script$/i.test(node.tagName)) {
       // scriptTagsCode += node.innerHTML + '\n'
+      return
+    }
+
+    // template#id
+    if (/^template$/i.test(node.tagName)) {
+      // TODO
       return
     }
 
@@ -456,17 +463,17 @@ function compile(node = document.documentElement) {
     })
 
     // is="SubCom"
-    var SubCom = node.getAttribute && node.getAttribute('is')
-    if (SubCom) {
+    var isAttr = node.getAttribute && node.getAttribute('is')
+    if (isAttr) {
       var id = saveNode(node)
-      renderCode += `$_('${id}').$is(${SubCom})\n`
+      renderCode += `$_('${id}').$is(${isAttr})\n`
 
-      detectTemplateError(SubCom, rootNode, node)
+      detectTemplateError(isAttr, rootNode, node)
       node.removeAttribute('isAttr')
     }
     // <SubCom />
     // TODO 如何区分是否自定义标签
-    if (node.tagName && node.tagName.length>=1) {
+    if (!isAttr && node.tagName && node.tagName.length>=5) {
       for (let i = 0; i < varNames.length; i++) {
         const varName = varNames[i]
         // tagName: SUBCOM
@@ -501,7 +508,9 @@ function compile(node = document.documentElement) {
   })(node)
 
   var getRender = new Function(`
-    /* ${node.outerHTML} */
+/*
+${rootHtml.replace(/\*\//g, '*\\/')}
+*/
     // debugger
     var $THIS = this
   
@@ -685,7 +694,7 @@ function http(url, options = {}) {
 // url => html => SubComponent
 // #id => <template id> => SubComponent
 function _require(url) {
-  if (/^(#|\.)/.test(url)){
+  if (/^(#|\.|\[)/.test(url)){
     try {
       var templateEl = document.querySelector(url)
       var html = templateEl.innerHTML
@@ -705,23 +714,23 @@ if (typeof window === 'object' && this === window) {
   window.setInterval = function(cb, time){
     return __setInterval(function(){
       cb()
-      $RENDER && $RENDER()
+      $render()
     }, time)
   }
   var __setTimeout = window.setTimeout
   window.setTimeout = function(cb, time){
     return __setTimeout(function(){
       cb()
-      $RENDER && $RENDER()
+      $render()
     }, time)
   }
-  var $RENDER
+  var $render = function() {}
 
   addEventListener('DOMContentLoaded', function() {
     var component = Component(document.documentElement)
     component.$render({})
 
-    $RENDER = component.$render
+    $render = component.$render
 
     // global async function restore
     window.setTimeout = __setTimeout
@@ -730,6 +739,7 @@ if (typeof window === 'object' && this === window) {
 }
 
 // loader
+Component.import = _require
 // TODO webpack loader
 if (typeof require === 'undefined') {
   window.require = _require
