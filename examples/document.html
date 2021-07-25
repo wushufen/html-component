@@ -2,25 +2,33 @@
 <meta name="viewport" content="width=device-width" />
 <script src="../src/HtmlComponent.js"></script>
 
+<hgroup>
+  <h1>
+    document
+    <small>s</small>
+  </h1>
+</hgroup>
+
 <template name="Tree">
   <ul>
-    <li
-      for="node in tree"
-      onclick="click(node); event.stopPropagation()"
-      ref="node.li=this"
-    >
+    <li for="node in tree" onclick="event.stopPropagation(); click(node);">
       <strong if="(node.tagName)">{getTag(node)}</strong>
       <span if="(!node.tagName)">{node.nodeValue}</span>
       <Tree
         is="this.constructor"
         if="(node.isOpen)"
         .tree="node.childNodes"
+        .click_node="click_node"
       ></Tree>
       <!-- <strong if="(node.tagName)">{getCloseTag(node)}</strong> -->
     </li>
   </ul>
   <script>
     var tree = [document.documentElement]
+    var click_node = function () {
+      console.log('click_node')
+    }
+
     function getTag(node) {
       return node
         .cloneNode()
@@ -33,11 +41,8 @@
       return node.cloneNode().outerHTML.replace(/<.*?>/, '')
     }
     function click(node) {
-      var e = new Event('console:click(node)')
-      e.data = node
-      e.bubbles = true
-      dispatchEvent(e)
       node.isOpen = !node.isOpen
+      click_node(node)
     }
   </script>
 </template>
@@ -81,7 +86,8 @@
       </dl>
     </aside>
     <content>
-      <ul is="Tree" .tree="tree"></ul>
+      <ul is="Tree" .tree="tree" .click_node="click_node"></ul>
+      {console.log('render'),''}
     </content>
   </main>
 </console>
@@ -93,6 +99,10 @@
   document.documentElement.isOpen = true
   document.body.isOpen = true
   document.body.firstElementChild.isOpen = true
+
+  function click_node(node) {
+    showNode(node)
+  }
 
   var box = {
     W: 'auto',
@@ -125,21 +135,12 @@
     loop && node.parentNode && toggleNode(node.parentNode, open, loop)
   }
 
-  addEventListener('console:click(node)', (e) => {
-    var node = e.data
-    showNode(node, true)
-    this.$render()
-  })
-
   addEventListener('click', (e) => {
     var node = e.target
-
     this._lastNode && toggleNode(this._lastNode, false, true)
     toggleNode(node, true, true)
-
     showNode(node)
     this._lastNode = node
-
     this.$render()
   })
 

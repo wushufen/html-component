@@ -486,6 +486,17 @@ function compile(node = document.documentElement) {
       }
     }
 
+    // $="el=this"
+    var $Attr = node.getAttribute && node.getAttribute('$')
+    if ($Attr) {
+      var id = saveNode(node)
+      renderCode += `!(function(){${$Attr}}.call($_('${id}').node))\n`
+
+      detectTemplateError($Attr, rootNode, node)
+      node.removeAttribute('$')
+    }
+
+
     // >>>
     for (var i = 0, length = node.childNodes.length; i < length; i++) {
       loopNodeTree(node.childNodes[i])

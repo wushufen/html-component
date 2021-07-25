@@ -3,7 +3,7 @@
 <template id="SubComponent">
   <script>
     var prop = 'default'
-    var fun = Function
+    var fun = (e) => console.log(e)
   </script>
 
   <div>
@@ -12,11 +12,10 @@
 </template>
 
 <main>
-  <button onclick="name+=' !'" .title="name">name: {name}</button>
+  <button onclick="name+='!'" .title="name">name: {name}</button>
 
   <SubComponent
-    .prop="name"
-    .fun="fun"
+    .$props="{fun:fun,prop:name}"
     onchange="console.log(event)"
   ></SubComponent>
 
@@ -27,7 +26,11 @@
 
     var name = 'world'
     function fun(e) {
-      name += '[fun]'
+      console.log('name', name)
+      name = name.substr(0, name.length - 1)
+      console.log('name', name)
+      // TODO $THIS.$render()
+      window.$render()
     }
   </script>
 </main>
