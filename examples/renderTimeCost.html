@@ -1,0 +1,39 @@
+<script src="../src/HtmlComponent.js"></script>
+
+<main>
+  <h1 if="(name)">hello {name}</h1>
+  <dl>
+    <div>
+      <dt>list.length</dt>
+      <dd>{list.length}*{list.length}={list.length*list.length}</dd>
+    </div>
+    <div>
+      <dt>timeCost</dt>
+      <dd>{timeCost}</dd>
+    </div>
+  </dl>
+
+  <ul>
+    <li for="var key in list" title="{key}">
+      <span for="var item of list"> {item} </span>
+    </li>
+  </ul>
+
+  <script>
+    var name = 'world'
+    var list = [1, 2, 3, 4, 5]
+    var timeCost = 0
+
+    setInterval(() => {
+      list.length = Math.random().toString().slice(-2)
+      list
+        .fill(1)
+        .forEach((e, i) => (list[i] = Math.random().toString().slice(-1)))
+
+      var startDate = new Date()
+      $RENDER()
+      var endDate = new Date()
+      timeCost = endDate - startDate
+    }, 0)
+  </script>
+</main>

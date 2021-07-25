@@ -1,0 +1,19 @@
+<!-- 中国 -->
+<script src="../src/HtmlComponent.js"></script>
+
+<template>
+  <main>
+    <input oninput="list=this.value" :value="list" autofocus />
+    <SubComponent for="item in list" if="item%2!=1" .prop="item"></SubComponent>
+  </main>
+  <script>
+    var list = 'world'
+  </script>
+</template>
+
+<template id="SubComponent">
+  <div>prop: {prop}</div>
+  <script>
+    var prop = 'default'
+  </script>
+</template>

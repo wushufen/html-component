@@ -1,0 +1,23 @@
+<script src="../src/HtmlComponent.js"></script>
+
+<template id="SubComponent">
+  <script>
+    var prop = 'default'
+  </script>
+
+  <div>
+    <b>prop: {prop}</b>
+  </div>
+</template>
+
+<main>
+  <button onclick="name+=' !'" .title="name">name: {name}</button>
+
+  <SubComponent .prop="name" onchange="console.log(event)"></SubComponent>
+
+  <script>
+    var SubComponent = require('#SubComponent')
+
+    var name = 'world'
+  </script>
+</main>

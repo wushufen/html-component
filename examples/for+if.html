@@ -1,0 +1,21 @@
+<script src="../src/HtmlComponent.js"></script>
+
+<script>
+  var list = []
+
+  function random() {
+    list.length = Math.random().toString().slice(-1)
+    list
+      .fill(1)
+      .forEach((e, i) => (list[i] = Math.random().toString().slice(-1)))
+  }
+
+  setInterval(() => {
+    random()
+  }, 1000)
+</script>
+
+<ul>
+  <li>{list}</li>
+  <li for="(item,i) in list" if="item%2==0">{item}</li>
+</ul>
