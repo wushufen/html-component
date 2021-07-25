@@ -11,22 +11,25 @@
 
 <template name="Tree">
   <ul>
-    <li for="node in tree" onclick="event.stopPropagation(); click(node);">
+    <li
+      for="node in tree"
+      onclick="event.stopPropagation(); click(node);"
+      $="node.li=this"
+    >
       <strong if="(node.tagName)">{getTag(node)}</strong>
       <span if="(!node.tagName)">{node.nodeValue}</span>
-      <Tree
+      <ul
         is="this.constructor"
         if="(node.isOpen)"
-        .tree="node.childNodes"
-        .click_node="click_node"
-      ></Tree>
+        .$props="{tree:node.childNodes,clickNode:clickNode}"
+      ></ul>
       <!-- <strong if="(node.tagName)">{getCloseTag(node)}</strong> -->
     </li>
   </ul>
   <script>
     var tree = [document.documentElement]
-    var click_node = function () {
-      console.log('click_node')
+    var clickNode = function () {
+      console.log('clickNode')
     }
 
     function getTag(node) {
@@ -42,51 +45,23 @@
     }
     function click(node) {
       node.isOpen = !node.isOpen
-      click_node(node)
+      clickNode(node)
     }
   </script>
 </template>
 
 <console>
   <main panel="Elements">
-    <aside>
+    <aside if="(box.N)">
       <dl>
-        <div>
-          <dt>N</dt>
-          <dd>{box.N}</dd>
-        </div>
-        <div>
-          <dt>W</dt>
-          <dd>{box.W} * {box.H}</dd>
-        </div>
-        <div>
-          <dt>M</dt>
-          <dd>{box.M}</dd>
-        </div>
-        <div>
-          <dt>P</dt>
-          <dd>{box.P}</dd>
-        </div>
-        <div>
-          <dt>B</dt>
-          <dd>{box.B}</dd>
-        </div>
-        <div>
-          <dt>G</dt>
-          <dd>{box.G}</dd>
-        </div>
-        <div>
-          <dt>C</dt>
-          <dd>{box.C}</dd>
-        </div>
-        <div>
-          <dt>F</dt>
-          <dd>{box.F}</dd>
+        <div for="(value,key) in box">
+          <dt>{key}</dt>
+          <dd>{value}</dd>
         </div>
       </dl>
     </aside>
     <content>
-      <ul is="Tree" .tree="tree" .click_node="click_node"></ul>
+      <ul is="Tree" .$props="{tree:tree,clickNode:clickNode}"></ul>
       {console.log('render'),''}
     </content>
   </main>
@@ -100,11 +75,12 @@
   document.body.isOpen = true
   document.body.firstElementChild.isOpen = true
 
-  function click_node(node) {
-    showNode(node)
+  function clickNode(node) {
+    showNode(node, true)
   }
 
   var box = {
+    N: null,
     W: 'auto',
     H: 'auto',
     M: 'auto',
@@ -115,19 +91,25 @@
     F: '16px',
   }
 
-  function showNode(node, scroll) {
+  function showNode(node, byLi) {
     var el = node.nodeType == 1 ? node : node.parentNode
     var style = getComputedStyle(el)
-    box.N = el.cloneNode().outerHTML
-    box.W = style.width
-    box.H = style.height
-    box.M = style.margin
-    box.P = style.padding
-    box.G = style.background
-    box.C = style.color
-    box.F = style.font.replace(/(\/ )?normal/g, '')
+    box = {
+      N: el.cloneNode().outerHTML,
+      w: `${style.width} * ${style.height}`,
+      d: style.display,
+      P: style.position,
+      m: style.margin,
+      p: style.padding,
+      g: style.background,
+      c: style.color,
+      f: style.font.replace(/(\/ )?normal/g, ''),
+    }
 
-    scroll && el.scrollIntoView({ behavior: 'smooth' })
+    byLi && el.scrollIntoView({ behavior: 'smooth' })
+    if (!byLi && node.li) {
+      node.li.scrollIntoView({ behavior: 'smooth' })
+    }
   }
 
   function toggleNode(node, open, loop) {
@@ -135,14 +117,21 @@
     loop && node.parentNode && toggleNode(node.parentNode, open, loop)
   }
 
-  addEventListener('click', (e) => {
-    var node = e.target
-    this._lastNode && toggleNode(this._lastNode, false, true)
-    toggleNode(node, true, true)
-    showNode(node)
-    this._lastNode = node
-    this.$render()
-  })
+  addEventListener(
+    'click',
+    (e) => {
+      var node = e.target
+      console.log('node:', node)
+      this._lastNode && toggleNode(this._lastNode, false, true)
+      toggleNode(node, true, true)
+      this._lastNode = node
+
+      this.$render()
+
+      showNode(node)
+    }
+    // true // TODO --<console>
+  )
 
   new MutationObserver(() => {
     this.$render()
@@ -215,14 +204,14 @@
   }
   [panel='Elements'] aside dl > div > dt {
     display: table-cell;
-    color: #eee;
-    text-transform: lowercase;
+    color: #bbb;
+    /* text-transform: lowercase; */
   }
   [panel='Elements'] aside dl > div > dd {
     margin: 0;
     display: table-cell;
-    padding-left: 0.5em;
-    max-width: 10em;
+    padding-left: 0.75em;
+    max-width: 8em;
     white-space: nowrap;
     text-align: right;
     overflow: auto;
