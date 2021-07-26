@@ -13,8 +13,8 @@
   <ul>
     <li
       for="node in tree"
+      $="node.li"
       onclick="event.stopPropagation(); click(node);"
-      $="node.li=this"
     >
       <strong if="(node.tagName)">{getTag(node)}</strong>
       <span if="(!node.tagName)">{node.nodeValue}</span>

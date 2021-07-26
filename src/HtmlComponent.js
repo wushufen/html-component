@@ -80,6 +80,11 @@ function attr2prop(node, attr) {
       return prop
     }
   }
+
+  attr = {
+    class: 'className',
+  }[attr] || attr
+
   return attr
 }
 
@@ -306,12 +311,14 @@ function getUpdatePropsCode(vars, propsName = 'props') {
 
 // code => error? throw 🐞🐞
 function detectTemplateError(code, rootNode, errorNode) {
+  code = code.replace(/;"#(.*?)#";/g, '$1')
   try {
     Function(code)
   } catch (error) {
     try {
       Function(`(${code})`) // (function(){})
     } catch (_) {
+      rootNode  = errorNode.parentNode
       errorNode = errorNode.cloneNode()
       var errorTpl = errorNode.outerHTML || errorNode.nodeValue
       errorTpl = errorTpl.replace(/<\/.*?>/, '')
@@ -390,6 +397,8 @@ function compile(node = document.documentElement) {
       return
     }
 
+
+
     // for
     // for="item in list"
     // for="(item, i) in list"
@@ -398,15 +407,15 @@ function compile(node = document.documentElement) {
     // for="var item of list"
     var forAttr = node.getAttribute && node.getAttribute('for')
     var forMatch = /([^(,)\s]+)()()(?:\s+in\s+)([^(,)\s]+)/.exec(forAttr) ||
-      /\(([^(,)\s]+),([^(,)\s]+)()\)(?:\s+in\s+)([^(,)\s]+)/.exec(forAttr) ||
-      /\(([^(,)\s]+),([^(,)\s]+),([^(,)\s]+)\)(?:\s+in\s+)([^(,)\s]+)/.exec(forAttr) ||
+      /\(\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)()\s*\)(?:\s+in\s+)([^(,)\s]+)/.exec(forAttr) ||
+      /\(\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)\s*\)(?:\s+in\s+)([^(,)\s]+)/.exec(forAttr) ||
       /(?:var|let|const)(?:\s+)()([^(,)\s]+)()(?:\s+in\s+)([^(,)\s]+)/.exec(forAttr) ||
       /(?:var|let|const)(?:\s+)([^(,)\s]+)()()(?:\s+of\s+)([^(,)\s]+)/.exec(forAttr)
     if (forMatch) {
       var id = saveNode(node)
       renderCode += `$_('${id}').$for(${forMatch[4]}, function(${forMatch[1]||'$item'},${forMatch[2]||'$index'},${forMatch[3]||'$key'}){\n  `
 
-      detectTemplateError(forAttr.replace(/var|let|const|in|of/g, '\n'), rootNode, node)
+      detectTemplateError(forAttr.replace(/var|let|const/g, ';"#$&#";').replace(/of/, ';"#$&#";'), rootNode, node)
       node.removeAttribute('for')
     }
 
@@ -420,10 +429,25 @@ function compile(node = document.documentElement) {
       node.removeAttribute('if')
     }
 
+
+
     // [attr]
     forEach(toArray(node.attributes), function (attribute) {
       var attrName = attribute.nodeName
       var attrValue = attribute.nodeValue
+
+      // class="a b:bool c:!bool"
+      if (/^class$/i.test(attrName) && /:/.test(attrValue)) {
+        // "b:bool" => "{bool?'b':''}"
+        attrValue = attrValue.replace(/([^'"\s]+):([^'"\s]+)/g, '{$2?"$1":""}')
+      }
+
+      // style="width:_n_px; height:[n]px"
+      if (/^style$/i.test(attrName) && /([_\[])(.+?)([_\]])/.test(attrValue)) {
+        // [] => {}  _n_ => {n}
+        attrValue = attrValue.replace(/([_\[])(.+?)([_\]])/g, '{$2}')
+      }
+
 
       // .attr :attr
       if (/^[\.:]/.test(attrName)) {
@@ -448,18 +472,28 @@ function compile(node = document.documentElement) {
         return
       }
 
-      // on
+      // on @
       // TODO component dispatch bubbles
-      if (/^on/.test(attrName)) {
+      if (/^(on|@)/.test(attrName)) {
         var id = saveNode(node)
         // TODO render
         // TODO 拦截异步函数 + 事件处理函数 + 恢复异步函数
-        renderCode += `$_('${id}').$prop("${attrName}", function(){${attrValue}; $RENDER.call($THIS)})\n`
+        renderCode += `$_('${id}').$prop("${attrName.replace('@', 'on')}", function(){${attrValue}; $RENDER.call($THIS)})\n`
 
         detectTemplateError(attrValue, rootNode, attribute)
         node.removeAttribute(attrName)
         return
       }
+
+      // $="el"
+      if (/^\$$/.test(attrName)) {
+        var id = saveNode(node)
+        renderCode += `;${attrValue}=$_('${id}').node\n`
+
+        detectTemplateError(`(${attrValue})`, rootNode, node)
+        node.removeAttribute('$')
+      }
+
     })
 
     // is="SubCom"
@@ -486,21 +520,14 @@ function compile(node = document.documentElement) {
       }
     }
 
-    // $="el=this"
-    var $Attr = node.getAttribute && node.getAttribute('$')
-    if ($Attr) {
-      var id = saveNode(node)
-      renderCode += `!(function(){${$Attr}}.call($_('${id}').node))\n`
-
-      detectTemplateError($Attr, rootNode, node)
-      node.removeAttribute('$')
-    }
 
 
     // >>>
     for (var i = 0, length = node.childNodes.length; i < length; i++) {
       loopNodeTree(node.childNodes[i])
     }
+
+
 
     // end if
     if (ifAttr) {
@@ -519,9 +546,6 @@ function compile(node = document.documentElement) {
   })(node)
 
   var getRender = new Function(`
-/*
-${rootHtml.replace(/\*\//g, '*\\/')}
-*/
     // debugger
     var $THIS = this
   
@@ -564,6 +588,9 @@ ${rootHtml.replace(/\*\//g, '*\\/')}
       ${renderCode}
     }
     return $RENDER
+    /*
+    \n${rootHtml.replace(/\*\//g, '*\\/')}
+    */
   `)
 
   return getRender
