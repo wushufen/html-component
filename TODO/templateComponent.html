@@ -8,12 +8,11 @@
   </script>
 </template>
 
-<template name="Main">
-  <main>
-    <input oninput="list=this.value" :value="list" autofocus />
-    <SubComponent for="item in list" if="item%2!=1" .prop="item"></SubComponent>
-  </main>
-  <script>
-    var list = 'world'
-  </script>
-</template>
+<main>
+  <input oninput="list=this.value" :value="list" autofocus />
+  <SubComponent for="item in list" if="item%2!=1" .prop="item"></SubComponent>
+</main>
+
+<script>
+  var list = 'world'
+</script>

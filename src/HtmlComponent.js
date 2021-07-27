@@ -311,7 +311,6 @@ function getUpdatePropsCode(vars, propsName = 'props') {
 
 // code => error? throw 🐞🐞
 function detectTemplateError(code, rootNode, errorNode) {
-  code = code.replace(/;"#(.*?)#";/g, '$1')
   try {
     Function(code)
   } catch (error) {
@@ -323,6 +322,8 @@ function detectTemplateError(code, rootNode, errorNode) {
       var errorTpl = errorNode.outerHTML || errorNode.nodeValue
       errorTpl = errorTpl.replace(/<\/.*?>/, '')
       errorTpl = rootNode.outerHTML.replace(errorTpl, '🐞🐞 ' + errorTpl + ' 🐞🐞')
+
+      code = code.replace(/;"#(.*?)#";/g, '$1')
       throw Error(`[TemplateError] ${error}\n${code}\n\n${errorTpl}`)
     // setTimeout(e => { throw Error('[TemplateError]\n  ' + errorTpl) })
     }
@@ -362,6 +363,7 @@ function detectTemplateError(code, rootNode, errorNode) {
 function compile(node = document.documentElement) {
   var rootNode = node
   var rootHtml = node.outerHTML
+  var initCode = '\n'
   var renderCode = '\n'
   var scriptTagsCode = '\n'
   var styleTagsCode = '\n'
@@ -378,9 +380,17 @@ function compile(node = document.documentElement) {
       return
     }
 
-    // template#id
+    // template[name]
     if (/^template$/i.test(node.tagName)) {
-      // TODO
+      var name = node.getAttribute('name')
+      varNames.push(name) // for <SubCom>
+      initCode += `
+        var ${name} = this.constructor.prototype.${name}
+        if(!name){
+          var ${name} = this.createSubComponentClass(${quot(node.innerHTML)})
+          this.constructor.prototype.${name} = ${name}
+        }
+      `
       return
     }
 
@@ -448,6 +458,10 @@ function compile(node = document.documentElement) {
         attrValue = attrValue.replace(/([_\[])(.+?)([_\]])/g, '{$2}')
       }
 
+      // bind 
+      if (/^[\.:]value/.test(attrName)) {
+        // renderCode += `$_('${id}').$on('bind:input', function(e){${attrValue}=this.value})\n` // TODO
+      }
 
       // .attr :attr
       if (/^[\.:]/.test(attrName)) {
@@ -564,10 +578,8 @@ function compile(node = document.documentElement) {
       }, time) 
     }
 
-
-    // 不能放这 new 时 .call 还没有， new 完后才 .ThisComponent = SubComponent
-    // var ThisComponent = this.ThisComponent
-
+    // INIT
+    ${initCode}
 
     // <script>
     ${isGlobal ? '/* global */' : scriptTagsCode}
@@ -575,7 +587,6 @@ function compile(node = document.documentElement) {
     var $RENDER = function $RENDER($props){
       // this
       var $_ = this.$_
-      var ThisComponent = this.ThisComponent
 
       // TODO preProps... = props... return
 
@@ -653,6 +664,7 @@ function Component(node) {
 
 }
 Component.prototype = {
+  constructor: Component,
   $forPath: '',
   $_: null,
   $render: null,
@@ -678,6 +690,7 @@ Component.prototype = {
   dispatchEvent(e) {
     this.$el.dispatchEvent(e)
   },
+  createSubComponentClass,
   $mount(target) {
     this.$target = target // component => target
     target.$component = this // target => component
@@ -689,8 +702,18 @@ Component.prototype = {
   },
 }
 
+class ComponentX{
+  $forPath = ''
+  $render = null
+  $node = null
+  $el = null
+  $_(id) {
+    return $_(id, this)
+  }
+}
+
 // html => SubComponent
-function createSubComponent(html) {
+function createSubComponentClass(html) {
   class SubComponent extends Component{
     constructor() {
       var container = parseHtml(html)
@@ -699,7 +722,6 @@ function createSubComponent(html) {
       super(container)
       var component = this
 
-      component.ThisComponent = SubComponent
       return component
     }
   }
@@ -731,17 +753,17 @@ function http(url, options = {}) {
 
 // url => html => SubComponent
 // #id => <template id> => SubComponent
-function _require(url) {
+function import_(url) {
   if (/^(#|\.|\[)/.test(url)){
     try {
       var templateEl = document.querySelector(url)
       var html = templateEl.innerHTML
-      return createSubComponent(html)
+      return createSubComponentClass(html)
     } catch (_) {}
   }
 
   return http(url).then(html => {
-    return createSubComponent(html)
+    return createSubComponentClass(html)
   })
 }
 
@@ -777,10 +799,10 @@ if (typeof window === 'object' && this === window) {
 }
 
 // loader
-Component.import = _require
+Component.import = import_
 // TODO webpack loader
 if (typeof require === 'undefined') {
-  window.require = _require
+  window.require = import_
 }
 
 // exports
