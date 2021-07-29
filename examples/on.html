@@ -1,0 +1,13 @@
+<script src="../src/HtmlComponent.js"></script>
+
+<script>
+  var name = 'world'
+
+  function haveFun() {
+    name = name.split('').reverse().join('')
+  }
+</script>
+
+<h1 onclick="haveFun()">Hello {name}</h1>
+
+<button onclick="haveFun()">Hello {name}</button>

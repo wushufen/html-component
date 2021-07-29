@@ -1,0 +1,20 @@
+<!-- 中国 -->
+<script src="../src/HtmlComponent.js"></script>
+
+<template id="SubComponent">
+  <script>
+    var prop = 'default'
+  </script>
+
+  <div>prop: {prop}</div>
+</template>
+
+<input oninput="list=this.value" .value="list" autofocus />
+
+<SubComponent for="item in list" if="item%2==0" .prop="item"></SubComponent>
+
+<script>
+  var SubComponent = require('#SubComponent')
+
+  var list = 'world'
+</script>

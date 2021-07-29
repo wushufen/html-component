@@ -1,0 +1,36 @@
+<script src="../src/HtmlComponent.js"></script>
+
+<template id="SubComponent">
+  <script>
+    var prop = 'default'
+    var fun = (e) => console.log(e)
+  </script>
+
+  <div>
+    <b onclick="fun(event)">prop: {prop}</b>
+  </div>
+</template>
+
+<main>
+  <button onclick="name+='!'" .title="name">name: {name}</button>
+
+  <SubComponent
+    .$props="{fun:fun,prop:name}"
+    onchange="console.log(event)"
+  ></SubComponent>
+
+  {console.log('render'),''}
+
+  <script>
+    var SubComponent = require('#SubComponent')
+
+    var name = 'world'
+    function fun(e) {
+      console.log('name', name)
+      name = name.substr(0, name.length - 1)
+      console.log('name', name)
+      // TODO $THIS.$render()
+      window.$render()
+    }
+  </script>
+</main>

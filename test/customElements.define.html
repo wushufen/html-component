@@ -1,0 +1,16 @@
+<c-x></c-x>
+
+<script>
+  class Com extends HTMLElement {
+    constructor() {
+      super()
+      var shadow = this.attachShadow({ mode: 'open' })
+
+      var span = document.createElement('span')
+      span.innerHTML = 'yes'
+
+      shadow.appendChild(span)
+    }
+  }
+  customElements.define('c-x', Com)
+</script>

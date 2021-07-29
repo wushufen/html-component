@@ -1,0 +1,58 @@
+<script src="../src/HtmlComponent.js"></script>
+
+<template id="Tree">
+  <ul>
+    <li for="item in tree" onclick="event.stopPropagation(); click(item)">
+      <strong>{item.name}</strong>
+      <ul is="this.constructor" .tree="item.children"></ul>
+    </li>
+  </ul>
+  <script>
+    var tree = [
+      {
+        name: 'default',
+        children: [],
+      },
+    ]
+    function click(item) {
+      item.children.length = parseInt(Math.random() * 10)
+      item.children.fill(1).forEach((e, i) => {
+        item.children[i] = {
+          name: Math.random().toString().slice(-3),
+          children: [],
+        }
+      })
+    }
+  </script>
+</template>
+
+<ul is="Tree" .tree="tree"></ul>
+
+<script>
+  var Tree = require('#Tree')
+
+  var tree = [
+    {
+      name: '1',
+      children: [],
+    },
+    {
+      name: '2',
+      children: [
+        {
+          name: '2.1',
+          children: [],
+        },
+        {
+          name: '2.2',
+          children: [
+            {
+              name: '2.2.1',
+              children: [],
+            },
+          ],
+        },
+      ],
+    },
+  ]
+</script>
