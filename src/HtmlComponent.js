@@ -386,7 +386,7 @@ function compile(node = document.documentElement) {
       varNames.push(name) // for <SubCom>
       initCode += `
         var ${name} = this.constructor.prototype.${name}
-        if(!name){
+        if(!${name}){
           var ${name} = this.createSubComponentClass(${quot(node.innerHTML)})
           this.constructor.prototype.${name} = ${name}
         }
@@ -458,7 +458,7 @@ function compile(node = document.documentElement) {
         attrValue = attrValue.replace(/([_\[])(.+?)([_\]])/g, '{$2}')
       }
 
-      // bind 
+      // bind
       if (/^[\.:]value/.test(attrName)) {
         // renderCode += `$_('${id}').$on('bind:input', function(e){${attrValue}=this.value})\n` // TODO
       }
@@ -521,12 +521,12 @@ function compile(node = document.documentElement) {
     }
     // <SubCom />
     // TODO 如何区分是否自定义标签
-    if (!isAttr && node.tagName && node.tagName.length>=5) {
+    if (!isAttr && node.tagName && node.tagName.length>=2) {
       for (let i = 0; i < varNames.length; i++) {
         const varName = varNames[i]
         // tagName: SUBCOM
         // var SubCom
-        if (String(node.tagName).toUpperCase() === varName.toUpperCase()) {
+        if (/^[A-Z][a-z]/ && RegExp(varName, 'i').test(node.tagName)) {
           var id = saveNode(node)
           renderCode += `$_('${id}').$is(${varName})\n`
           break
@@ -700,16 +700,6 @@ Component.prototype = {
       target.parentNode.replaceChild(this.$el, target)
     }
   },
-}
-
-class ComponentX{
-  $forPath = ''
-  $render = null
-  $node = null
-  $el = null
-  $_(id) {
-    return $_(id, this)
-  }
 }
 
 // html => SubComponent
