@@ -4,7 +4,7 @@
   var list = []
 
   function random() {
-    list.length = Math.random().toString().slice(-1)
+    list.length = Math.random().toString().slice(-2)
     list
       .fill(1)
       .forEach((e, i) => (list[i] = Math.random().toString().slice(-1)))
@@ -12,7 +12,7 @@
 
   setInterval(() => {
     random()
-  }, 1000)
+  }, 100)
 </script>
 
 <ul>

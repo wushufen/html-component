@@ -1,6 +1,6 @@
 <script src="../src/HtmlComponent.js"></script>
 
-<template id="SubComponent">
+<template name="SubComponent">
   <script>
     var prop = 'default'
   </script>
@@ -14,7 +14,7 @@
   <SubComponent .prop="name"></SubComponent>
 
   <script>
-    var SubComponent = require('#SubComponent')
+    // var SubComponent = require('[name=SubComponent]')
 
     var name = 'world'
   </script>
@@ -22,7 +22,7 @@
 
 <!-- TODO -->
 <skip>
-  <template id="MyInput">
+  <template name="MyInput">
     <input .value="value" />
   </template>
 

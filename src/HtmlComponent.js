@@ -1,37 +1,31 @@
-var nodeStore = {}
-
 // node => 'id++: <node ...>'
-function createNodeId(node) {
-  createNodeId.i = createNodeId.i || 0
+function getNodeId(node) {
+  if (node.$id) {
+    return node.$id
+  }
+
+  getNodeId.i = getNodeId.i || 0
   var nodeString = node.nodeValue || node.cloneNode().outerHTML
   if (node.nodeType === 2) {
-    nodeString = `[${node.nodeName}=${nodeString}]`
+    nodeString = `[${node.nodeName}=${node.nodeValue}]`
   }
-  var id = `${++createNodeId.i}: ${nodeString} `
+  var id = `${++getNodeId.i}: ${nodeString} `
     .replace(/\s+/g, ' ')
     .replace(/'/g, '"')
     .replace(/\\/g, '')
   return id
 }
 
-// node => node.$id || createNodeId(node)
-function getNodeId(node) {
-  if (!node.$id) {
-    node.$id = createNodeId(node)
-  }
-  return node.$id
-}
-
-// node -> nodeStore => node.$id || createNodeId(node)
-function saveNode(node, id) {
+// node => store => id
+function saveNode(node, id, store=saveNode) {
   node.$id = id || getNodeId(node)
-  nodeStore[node.$id] = node
+  store[node.$id] = node
   return node.$id
 }
 
-// id => nodeStore[id] => node
-function getStoreNode(id) {
-  return nodeStore[id]
+// id => store[id] => node
+function getNode(id, store=saveNode) {
+  return store[id]
 }
 
 // {length} => []
@@ -101,7 +95,7 @@ function markNode(node, markType) {
   return mark
 }
 
-// node -> -node
+// node -> -
 function removeNode(node) {
   if (!node.parentNode) return
   node.parentNode.removeChild(node)
@@ -115,7 +109,7 @@ function insertNode(node, mark) {
 
 // bool? insertNode: removeNode
 function $if(node, bool, cb) {
-  node = node.$component ? node.$component.$el : node
+  node = node.$component ? node.$component.$el : node // $is?
 
   if (bool) {
     insertNode(node, node.$ifMark)
@@ -182,7 +176,7 @@ function $for(node, list, cb) {
         var originNodeId = getNodeId(originNode)
 
         // originNodeId + forPath => cloneNode
-        if (getStoreNode(originNodeId)) {
+        if (getNode(originNodeId)) {
           saveNode(cloneNode, originNodeId + $component.$forPath) // ***
         }
 
@@ -234,25 +228,19 @@ function $prop(node, prop, value) {
 // x: $is(node, alert)
 // x: $is(node, new Promise(r=>null))
 function $is(node, SubComponent) {
-  if (typeof SubComponent !== 'function' && !SubComponent.then) {
-    return
-  }
-
-  if (node.$component) {
+  if (node.$component && typeof SubComponent === 'function') {
     node.$component.$render(node.$props)
     return
   }
 
-  if (SubComponent.then) {
-    SubComponent.then(SubComponent => {
-      new_(SubComponent)
-    })
+  if (SubComponent && SubComponent.then) {
+    SubComponent.then(SubComponent => create(SubComponent, node))
     return
   }
 
-  new_(SubComponent)
+  create(SubComponent, node)
 
-  function new_(SubComponent) {
+  function create(SubComponent, node) {
     if (typeof SubComponent === 'function' && SubComponent.prototype.$mount) {
       var component = new SubComponent()
       component.$mount(node)
@@ -310,21 +298,23 @@ function getUpdatePropsCode(vars, propsName = 'props') {
 }
 
 // code => error? throw 🐞🐞
-function detectTemplateError(code, rootNode, errorNode) {
+function detectTemplateError(code, errorNode) {
   try {
     Function(code)
   } catch (error) {
     try {
       Function(`(${code})`) // (function(){})
     } catch (_) {
-      rootNode  = errorNode.parentNode
+      code = code.replace(/;"#(.*?)#";/g, '$1')
+
+      var parentNode  = errorNode.parentNode || errorNode.ownerElement || errorNode
       errorNode = errorNode.cloneNode()
       var errorTpl = errorNode.outerHTML || errorNode.nodeValue
       errorTpl = errorTpl.replace(/<\/.*?>/, '')
-      errorTpl = rootNode.outerHTML.replace(errorTpl, '🐞🐞 ' + errorTpl + ' 🐞🐞')
+      errorTpl = parentNode.outerHTML.replace(errorTpl, '🐞' + errorTpl + '🐞')
 
-      code = code.replace(/;"#(.*?)#";/g, '$1')
-      throw Error(`[TemplateError] ${error}\n${code}\n\n${errorTpl}`)
+      console.error(errorNode)
+      throw Error(`[TemplateError] ${error}\n\n${code}\n^\n${errorTpl}\n`)
     // setTimeout(e => { throw Error('[TemplateError]\n  ' + errorTpl) })
     }
   }
@@ -386,8 +376,8 @@ function compile(node = document.documentElement) {
       varNames.push(name) // for <SubCom>
       initCode += `
         var ${name} = this.constructor.prototype.${name}
-        if(!name){
-          var ${name} = this.createSubComponentClass(${quot(node.innerHTML)})
+        if(!${name}){
+          var ${name} = this.defineSubComponentClass(${quot(node.innerHTML)})
           this.constructor.prototype.${name} = ${name}
         }
       `
@@ -403,7 +393,7 @@ function compile(node = document.documentElement) {
       var exp = parseExp(node.nodeValue)
       renderCode += `$_('${id}').$prop("nodeValue", ${exp})\n`
 
-      detectTemplateError(exp, rootNode, node)
+      detectTemplateError(exp, node)
       return
     }
 
@@ -425,7 +415,7 @@ function compile(node = document.documentElement) {
       var id = saveNode(node)
       renderCode += `$_('${id}').$for(${forMatch[4]}, function(${forMatch[1]||'$item'},${forMatch[2]||'$index'},${forMatch[3]||'$key'}){\n  `
 
-      detectTemplateError(forAttr.replace(/var|let|const/g, ';"#$&#";').replace(/of/, ';"#$&#";'), rootNode, node)
+      detectTemplateError(forAttr.replace(/var|let|const/g, ';"#$&#";').replace(/of/, ';"#$&#";'), node)
       node.removeAttribute('for')
     }
 
@@ -435,7 +425,7 @@ function compile(node = document.documentElement) {
       var id = saveNode(node)
       renderCode += `$_('${id}').$if(${ifAttr}, function(){\n  `
 
-      detectTemplateError(ifAttr, rootNode, node)
+      detectTemplateError(ifAttr, node)
       node.removeAttribute('if')
     }
 
@@ -469,7 +459,7 @@ function compile(node = document.documentElement) {
         var prop = attr2prop(node, attrName.substr(1))
         renderCode += `$_('${id}').$prop("${prop}", ${attrValue})\n`
 
-        detectTemplateError(attrValue, rootNode, attribute)
+        detectTemplateError(attrValue, attribute)
         node.removeAttribute(attrName)
         return
       }
@@ -481,7 +471,7 @@ function compile(node = document.documentElement) {
         var exp = parseExp(attrValue)
         renderCode += `$_('${id}').$prop("${prop}", ${exp})\n`
 
-        detectTemplateError(exp, rootNode, attribute)
+        detectTemplateError(exp, attribute)
         node.removeAttribute(attrName)
         return
       }
@@ -494,7 +484,7 @@ function compile(node = document.documentElement) {
         // TODO 拦截异步函数 + 事件处理函数 + 恢复异步函数
         renderCode += `$_('${id}').$prop("${attrName.replace('@', 'on')}", function(){${attrValue}; $RENDER.call($THIS)})\n`
 
-        detectTemplateError(attrValue, rootNode, attribute)
+        detectTemplateError(attrValue, attribute)
         node.removeAttribute(attrName)
         return
       }
@@ -504,11 +494,12 @@ function compile(node = document.documentElement) {
         var id = saveNode(node)
         renderCode += `;${attrValue}=$_('${id}').node\n`
 
-        detectTemplateError(`(${attrValue})`, rootNode, node)
+        detectTemplateError(`(${attrValue})`, attribute)
         node.removeAttribute('$')
       }
 
     })
+
 
     // is="SubCom"
     var isAttr = node.getAttribute && node.getAttribute('is')
@@ -516,17 +507,15 @@ function compile(node = document.documentElement) {
       var id = saveNode(node)
       renderCode += `$_('${id}').$is(${isAttr})\n`
 
-      detectTemplateError(isAttr, rootNode, node)
+      detectTemplateError(isAttr, node)
       node.removeAttribute('isAttr')
     }
     // <SubCom />
     // TODO 如何区分是否自定义标签
-    if (!isAttr && node.tagName && node.tagName.length>=5) {
-      for (let i = 0; i < varNames.length; i++) {
-        const varName = varNames[i]
-        // tagName: SUBCOM
-        // var SubCom
-        if (String(node.tagName).toUpperCase() === varName.toUpperCase()) {
+    if (!isAttr && node.tagName && node.tagName.length>=2) {
+      for (let varName of varNames) {
+        // var SubCom, tagName SUBCOM
+        if (/^[A-Z][a-z]/ && RegExp(`^${varName}$`, 'i').test(node.tagName)) {
           var id = saveNode(node)
           renderCode += `$_('${id}').$is(${varName})\n`
           break
@@ -614,7 +603,7 @@ function $_(id, component) {
   }
 
   this.$component = component || this.$component
-  this.node = getStoreNode(id + this.$component.$forPath) // ***
+  this.node = getNode(id + this.$component.$forPath) // ***
 }
 $_.prototype = {
   $if(bool, cb) {
@@ -690,7 +679,7 @@ Component.prototype = {
   dispatchEvent(e) {
     this.$el.dispatchEvent(e)
   },
-  createSubComponentClass,
+  defineSubComponentClass,
   $mount(target) {
     this.$target = target // component => target
     target.$component = this // target => component
@@ -713,7 +702,7 @@ class ComponentX{
 }
 
 // html => SubComponent
-function createSubComponentClass(html) {
+function defineSubComponentClass(html) {
   class SubComponent extends Component{
     constructor() {
       var container = parseHtml(html)
@@ -758,12 +747,12 @@ function import_(url) {
     try {
       var templateEl = document.querySelector(url)
       var html = templateEl.innerHTML
-      return createSubComponentClass(html)
+      return defineSubComponentClass(html)
     } catch (_) {}
   }
 
   return http(url).then(html => {
-    return createSubComponentClass(html)
+    return defineSubComponentClass(html)
   })
 }
 

@@ -31,7 +31,7 @@
         .forEach((e, i) => (list[i] = Math.random().toString().slice(-1)))
 
       var startDate = new Date()
-      $RENDER()
+      this.$render()
       var endDate = new Date()
       timeCost = endDate - startDate
     }, 0)

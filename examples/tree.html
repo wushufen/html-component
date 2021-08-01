@@ -1,6 +1,6 @@
 <script src="../src/HtmlComponent.js"></script>
 
-<template id="Tree">
+<template name="Tree">
   <ul>
     <li for="item in tree" onclick="event.stopPropagation(); click(item)">
       <strong>{item.name}</strong>
@@ -29,8 +29,6 @@
 <ul is="Tree" .tree="tree"></ul>
 
 <script>
-  var Tree = require('#Tree')
-
   var tree = [
     {
       name: '1',
