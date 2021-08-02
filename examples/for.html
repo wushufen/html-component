@@ -1,0 +1,18 @@
+<script src="../src/Component.js"></script>
+
+<script>
+  var name = 'world'
+
+  setInterval(() => {
+    name += '+'
+  }, 1000)
+</script>
+
+<input oninput="name=this.value" .value="name" autofocus />
+{name.length} * {name.length} = {name.length * name.length}
+
+<ul>
+  <li for="(item,i) in name" title="{i}">
+    <b for="(item,i) in name">{item}</b>
+  </li>
+</ul>

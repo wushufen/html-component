@@ -1,0 +1,14 @@
+<script src="../src/Component.js"></script>
+
+<script>
+  var value = true
+
+  function toggle() {
+    value = !value
+  }
+</script>
+
+<button onclick="toggle()">
+  toggle
+  <b if="value">{value}</b>
+</button>

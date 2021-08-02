@@ -1,0 +1,12 @@
+<script src="../src/Component.js"></script>
+
+<script>
+  var html = `
+  <button onclick="alert(/xss/)">xss</button>
+  `
+</script>
+
+<div>
+  <pre .onclick="console.log">{html}</pre>
+  <pre .innerHTML="html"></pre>
+</div>

@@ -1,0 +1,279 @@
+<!-- 中 -->
+<meta name="viewport" content="width=device-width" />
+<script src="../src/Component.js"></script>
+
+<hgroup>
+  <h1>
+    document
+    <small>s</small>
+  </h1>
+</hgroup>
+
+<template name="Node">
+  <li $="node.li" onclick="event.stopPropagation(); click(node);">
+    <!-- {log($props)} -->
+    <span if="node.tagName">{getOpenTag(node)}</span>
+    <span if="!node.tagName">{node.nodeValue}</span>
+    <ul if="node.isOpen">
+      <li
+        for="child in node.childNodes"
+        is="this.constructor"
+        .$props="$props"
+        .node="child"
+      ></li>
+    </ul>
+    <!-- <span>{getCloseTag(node)}</span> -->
+  </li>
+  <script>
+    var node = document
+    var clickNode = function (node) {
+      console.log('[clickNode]', node)
+    }
+
+    function getOpenTag(node) {
+      if (!node.outerHTML) {
+        return ''
+      }
+      return node
+        .cloneNode()
+        .outerHTML.replace(/<\/.*?>/, node.isOpen ? '' : '$&')
+    }
+    function getCloseTag(node) {
+      if (!node.outerHTML) {
+        return ''
+      }
+      if (!node.isOpen) {
+        return ''
+      }
+      return node.cloneNode().outerHTML.replace(/<.*?>/, '')
+    }
+    function click(node) {
+      node.isOpen = !node.isOpen
+      clickNode(node)
+    }
+  </script>
+</template>
+
+<template name="Tree">
+  <ul>
+    <li
+      for="node in tree"
+      $="node.li"
+      onclick="event.stopPropagation(); click(node);"
+    >
+      <strong if="(node.tagName)">{getOpenTag(node)}</strong>
+      <span if="(!node.tagName)">{node.nodeValue}</span>
+      <ul
+        is="this.constructor"
+        if="(node.isOpen)"
+        .$props="{tree:node.childNodes,clickNode:clickNode}"
+      ></ul>
+      <!-- <strong if="(node.tagName)">{getCloseTag(node)}</strong> -->
+    </li>
+  </ul>
+  <script>
+    var tree = [document.documentElement]
+    var clickNode = function () {
+      console.log('clickNode')
+    }
+
+    function getOpenTag(node) {
+      return node
+        .cloneNode()
+        .outerHTML.replace(/<\/.*?>/, node.isOpen ? '' : '$&')
+    }
+    function getCloseTag(node) {
+      if (!node.isOpen) {
+        return ''
+      }
+      return node.cloneNode().outerHTML.replace(/<.*?>/, '')
+    }
+    function click(node) {
+      node.isOpen = !node.isOpen
+      clickNode(node)
+    }
+  </script>
+</template>
+
+<console>
+  <main panel="Elements">
+    <aside if="(box.N)">
+      <dl>
+        <div for="(value,key) in box">
+          <dt>{key}</dt>
+          <dd>{value}</dd>
+        </div>
+      </dl>
+    </aside>
+    <content>
+      <ul>
+        <li
+          is="Node"
+          .$props="{clickNode:clickNode}"
+          .node="document.documentElement"
+        ></li>
+      </ul>
+      {console.log('render'),''}
+    </content>
+  </main>
+</console>
+
+<script>
+  var tree = [document.querySelector('html')]
+  document.documentElement.isOpen = true
+  document.body.isOpen = true
+  document.body.firstElementChild.isOpen = true
+
+  function clickNode(node) {
+    showNode(node, true)
+  }
+
+  var box = {
+    N: null,
+    W: 'auto',
+    H: 'auto',
+    M: 'auto',
+    P: '0px',
+    B: 'none',
+    G: 'none',
+    C: '#000',
+    F: '16px',
+  }
+
+  function showNode(node, byLi) {
+    var el = node.nodeType == 1 ? node : node.parentNode
+    var style = getComputedStyle(el)
+    box = {
+      // N: el.cloneNode().outerHTML,
+      N: el.tagName,
+      w: `${style.width} * ${style.height}`.replace(/px/g, ''),
+      d: style.display,
+      P: style.position,
+      // m: style.margin,
+      // p: style.padding,
+      // g: style.background,
+      // c: style.color,
+      // f: style.font.replace(/(\/ )?normal/g, ''),
+      f: style.fontSize,
+    }
+
+    byLi && el.scrollIntoView({ behavior: 'smooth' })
+    if (!byLi && node.li) {
+      node.li.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
+  function toggleNode(node, open, loop) {
+    node.isOpen = open
+    loop && node.parentNode && toggleNode(node.parentNode, open, loop)
+  }
+
+  addEventListener(
+    'click',
+    (e) => {
+      var node = e.target
+      console.log('node:', node)
+      this._lastNode && toggleNode(this._lastNode, false, true)
+      toggleNode(node, true, true)
+      this._lastNode = node
+
+      this.render()
+
+      showNode(node)
+    }
+    // true // TODO --<console>
+  )
+
+  new MutationObserver(() => {
+    clearTimeout(window.t)
+    window.t = setTimeout(() => {
+      this.render()
+    }, 100)
+  }).observe(document.documentElement, {
+    attributes: true,
+    characterData: true,
+    childList: true,
+    subtree: true,
+  })
+</script>
+
+<style>
+  console {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 375px;
+    overflow: auto;
+    background: #fff;
+    color: #333;
+    box-shadow: 1px 1px 10px #bbb;
+    font-size: 12px;
+  }
+  console *::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+  }
+  [panel='Elements'] {
+    position: relative;
+    height: 100%;
+    box-sizing: border-box;
+  }
+  [panel='Elements'] * {
+    box-sizing: inherit;
+  }
+  [panel='Elements'] content {
+    display: block;
+    height: 100%;
+    padding: 1em 0;
+    overflow: auto;
+  }
+  [panel='Elements'] ul {
+    border-left: 1px dotted #bbb;
+    padding-left: 1em;
+    padding-bottom: 0.5em;
+    list-style: none;
+    margin: 0;
+  }
+  [panel='Elements'] ul li strong {
+    white-space: nowrap;
+    color: #a71d5d;
+  }
+  [panel='Elements'] ul li span {
+    white-space: nowrap;
+  }
+  [panel='Elements'] aside {
+    position: absolute;
+    top: 0;
+    /* bottom: 0; */
+    right: 0;
+    padding: 0.25em;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 1px 0px 3px #bbb;
+    backdrop-filter: blur(1px);
+    line-height: 1.25;
+  }
+  [panel='Elements'] aside dl {
+    margin: 0;
+    display: table;
+  }
+  [panel='Elements'] aside dl > div {
+    display: inline-block;
+  }
+  [panel='Elements'] aside dl > div > dt {
+    display: table-cell;
+    color: #bbb;
+    /* text-transform: lowercase; */
+    display: none;
+  }
+  [panel='Elements'] aside dl > div > dd {
+    margin: 0;
+    display: table-cell;
+    padding-left: 0.5em;
+    /* max-width: 8em; */
+    white-space: nowrap;
+    /* text-align: right; */
+    overflow: auto;
+  }
+</style>

@@ -1,0 +1,30 @@
+<script src="../src/Component.js"></script>
+
+<template name="SubComponent">
+  <script>
+    var prop = 'default'
+  </script>
+
+  <b>prop: {prop}</b>
+</template>
+
+<main>
+  <button onclick="name+=' !'" .title="name">name: {name}</button>
+
+  <SubComponent .prop="name"></SubComponent>
+
+  <script>
+    // var SubComponent = require('[name=SubComponent]')
+
+    var name = 'world'
+  </script>
+</main>
+
+<!-- TODO -->
+<skip>
+  <template name="MyInput">
+    <input .value="value" />
+  </template>
+
+  <MyInput .value="value"></MyInput>
+</skip>
