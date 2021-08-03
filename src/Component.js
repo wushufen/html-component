@@ -34,6 +34,10 @@ class Component{
     return id
   }
   getNode(id) {
+    if (id && id.nodeType) { // node
+      return id
+    }
+
     id = `${id}${this.forPath}` // ***
     var node = this.nodeMap[id]
     if (!node) {
@@ -69,6 +73,8 @@ class Component{
 
           forEach(cloneNode.childNodes, (e,i)=> saveCloneNode(e,node.childNodes[i]))
         }
+      } else {
+        this_.if(cloneNode, true)
       }
 
       cb.call(this_, item, key, index)
@@ -76,21 +82,23 @@ class Component{
     this.forPath = forPath // ***
 
     // --
-    each(cloneNodes, function(cloneNode) {
-      if (!Object.hasOwnProperty.call(list, cloneNode.__key)) {
+    each(cloneNodes, function(cloneNode, key) {
+      if (!Object.hasOwnProperty.call(list, key)) {
         // TODO destroy
-        this_.if(cloneNode.__id, false)
+        this_.if(cloneNode, false)
       }
     })
   }
   if(id, bool, cb) {
     var node = this.getNode(id)
-    var ifMark = markNode(node, 'if')
+    node = node.$component ? node.$component.node : node // $is?
+
 
     if (bool) {
-      insertNode(node, ifMark)
-      cb.call(this)
+      insertNode(node, node.__ifMark)
+      cb && cb.call(this)
     } else {
+      markNode(node, 'if')
       removeNode(node)
     }
   }
@@ -347,11 +355,35 @@ class Component{
 
 // index.html
 if (typeof window === 'object' && this === window) {
+  var render = function(){}
+  var __setInterval = window.setInterval
+  window.setInterval = function(cb, time){
+    return __setInterval(function(){
+      var rs = cb.apply(this, arguments)
+      render()
+      return rs
+    }, time)
+  }
+  var __setTimeout = window.setTimeout
+  window.setTimeout = function(cb, time){
+    return __setTimeout(function(){
+      var rs = cb.apply(this, arguments)
+      render()
+      return rs
+    }, time)
+  }
+
   addEventListener('DOMContentLoaded', e => {
     var app = new Component(document.documentElement)
     window.app = app
     window.render = app.render
     app.render()
+
+    render = function () {
+      app.render()
+    }
+    window.setTimeout = __setTimeout
+    window.setInterval = __setInterval
   })
 }
 

@@ -36,7 +36,7 @@
       }
       return node
         .cloneNode()
-        .outerHTML.replace(/<\/.*?>/, node.isOpen ? '' : '$&')
+        .outerHTML.replace(/<\/.*?>/, node.isOpen ? '' : '...$&')
     }
     function getCloseTag(node) {
       if (!node.outerHTML) {
