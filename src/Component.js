@@ -52,6 +52,7 @@ class Component{
     var forMark = markNode(node, 'for')
     removeNode(node)
     var cloneNodes = node.__cloneNodes = node.__cloneNodes || {}
+    // var fragment = document.createDocumentFragment()
 
     var forPath = this.forPath
     each(list, function(item, key, index) {
@@ -64,6 +65,7 @@ class Component{
         cloneNode.__key = key
         cloneNodes[key] = cloneNode
         insertNode(cloneNode, forMark)
+        // fragment.appendChild(cloneNode)
 
         saveCloneNode(cloneNode, node)
         function saveCloneNode(cloneNode, node) {
@@ -75,14 +77,16 @@ class Component{
           forEach(cloneNode.childNodes, (e,i)=> saveCloneNode(e,node.childNodes[i]))
         }
       } else {
+        // length++
         this_.if(cloneNode, true)
       }
 
       cb.call(this_, item, key, index)
     })
     this.forPath = forPath // ***
+    // insertNode(fragment, forMark)
 
-    // --
+    // length--
     each(cloneNodes, function(cloneNode, key) {
       if (!Object.hasOwnProperty.call(list, key)) {
         // TODO destroy
@@ -109,9 +113,7 @@ class Component{
 
     if (node.$props[name] !== value) { // cache
       node.$props[name] = value
-      requestAnimationFrame(e => {
-        node[name] = value
-      })
+      node[name] = value
     }
   }
   on(id, event, cb){}
