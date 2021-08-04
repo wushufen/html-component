@@ -373,12 +373,29 @@ class Component{
   }
   mount(target) {
     this.target = target // component => target
-    target.$component = this // target => component
+    this.render(target && target.$props) // first render
 
-    if (target.parentNode) {
-      this.render(target.$props) // first render
-      target.parentNode.replaceChild(this.el, target)
+    // replace
+    if (target) {
+      target.$component = this // target => component
+      if (target.parentNode) {
+        target.parentNode.replaceChild(this.el, target)
+      }
     }
+    // style
+    // TODO scoped
+    var constructor = this.constructor
+    if (!constructor['#styled']) {
+      this['#node'].querySelectorAll('style').forEach(style => {
+        document.head.appendChild(style)
+      })
+      constructor['#styled'] = true
+    }
+    Component['#ci'] = Component['#ci'] || 1
+    constructor['#c'] = constructor['#c'] || (Component['#ci']++)
+    this.el.setAttribute(`c${constructor['#c']}`, '')
+
+    return this.el
   }
 }
 

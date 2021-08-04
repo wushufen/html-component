@@ -1,0 +1,29 @@
+<script src="../src/Component.js"></script>
+<script src="./scoped.js"></script>
+
+<h1>HELLO WORLD</h1>
+<h1 is="Hello"></h1>
+<h1 is="Hello"></h1>
+
+<template name="Hello">
+  <h1>Hello {'world'}</h1>
+  <!-- scoped -->
+  <style>
+    h1 {
+      color: #0af;
+    }
+  </style>
+</template>
+
+<div>
+  <h1>style scoped</h1>
+  <style scoped>
+    div {
+      x: true;
+      border: solid 1px #bbb;
+    }
+    h1 {
+      color: #f80;
+    }
+  </style>
+</div>
