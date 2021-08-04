@@ -13,9 +13,9 @@ class Component{
       length: 0,
     }
     this.forPath = '' // ***
-    this.tpl = tpl
-    this.node = null
-    this.el = null
+    this.el = null // firstElementChild
+    this.target = null // <target is="Com">
+    this['#tpl'] = tpl
 
     this.compile(tpl)
   }
@@ -52,7 +52,7 @@ class Component{
     var forMark = markNode(node, 'for')
     removeNode(node)
     var cloneNodes = node.__cloneNodes = node.__cloneNodes || {}
-    // var fragment = document.createDocumentFragment()
+    // var fragment = document.createDocumentFragment() // ??
 
     var forPath = this.forPath
     each(list, function(item, key, index) {
@@ -89,7 +89,7 @@ class Component{
     // length--
     each(cloneNodes, function(cloneNode, key) {
       if (!Object.hasOwnProperty.call(list, key)) {
-        // TODO destroy
+        // TODO setTimeout destroy?
         self.if(cloneNode, false)
       }
     })
@@ -166,7 +166,7 @@ class Component{
         initCode += `
           var ${name} = this.constructor.prototype.${name}
           if(!${name}){
-            var ${name} = this.defineSubComponent(${quot(node.innerHTML)})
+            ${name} = this.defineSubComponent(${quot(node.innerHTML)})
             this.constructor.prototype.${name} = ${name}
           }
         `
@@ -175,12 +175,13 @@ class Component{
 
     // varNames
     var varNames = getVarNames(`${initCode};${scriptCode}`)
+    self['#varNames'] = varNames
 
     // loop
     loopTree(node)
     function loopTree(node) {
       var id = self.saveNode(node)
-      // code += `// ${node.nodeValue||node.cloneNode().outerHTML}\n`
+      code += `// ${id}\n`
 
       // skip
       if (/^(skip|script|style|template)$/i.test(node.tagName)) return
@@ -195,7 +196,7 @@ class Component{
 
       // for
       var forAttr = getAttribute(node, 'for')
-      var fm = getForMatch(forAttr)
+      var fm = getForAttrMatch(forAttr)
       if (fm) {
         code += `self['for']('${id}', ${fm.list}, function(${fm.item},${fm.key},${fm.index}){\n`
         detectTemplateError(forAttr.replace(/var|let|const/g, ';"#$&#";').replace(/of/, ';"#$&#";'), node)
@@ -255,8 +256,7 @@ class Component{
 
         // on @
         if (/^(on|@)/.test(attrName)) {
-          // TODO render
-          // TODO 拦截异步函数 + 事件处理函数 + 恢复异步函数
+          // TODO injectAsyncFunctions
           code += `self.prop('${id}', "${attrName.replace('@', 'on')}", function(){${attrValue}; self.render()})\n`
 
           detectTemplateError(attrValue, attribute)
@@ -283,11 +283,10 @@ class Component{
         node.removeAttribute('is')
       }
       // <SubCom />
-      // TODO 如何区分是否自定义标签
-      if (!isAttr && node.tagName && node.tagName.length>=2) {
+      else {
         for (let varName of varNames) {
-        // var SubCom, tagName SUBCOM
-          if (/^[A-Z][a-z]/ && RegExp(`^${varName}$`, 'i').test(node.tagName)) {
+          // var SubCom, html: SubCom, tagName: SUBCOM, localName: subcom
+          if (/^[A-Z]/.test(varName) && RegExp(`^${varName}$`, 'i').test(node.tagName)) {
             code += `self.is('${id}', ${varName})\n`
             break
           }
@@ -316,6 +315,9 @@ class Component{
       // initCode
       ${initCode}
 
+      // async function
+      ${getAsyncFunctionCode()}
+
       // <script>
       ${isGlobal ? '/* global */' : scriptCode}
 
@@ -326,7 +328,7 @@ class Component{
         $props = $props || {}
         ${getUpdatePropsCode(varNames, '$props')}
 
-        // code  bind this
+        // code
         ${code}
       }
 
@@ -348,7 +350,7 @@ class Component{
     var render = getRender.call(this, this)
     this.render = render
 
-    // this.el
+    // this.el = firstElementChild(!style,!script)
     this.el = null
     for (let childNode of node.children) {
       if (!/style|script/i.test(childNode.tagName)) {
@@ -357,6 +359,7 @@ class Component{
       }
     }
     this['#node'] = node
+    this.el['#component'] = this
   }
   defineSubComponent(tpl) {
     return class SubComponent extends Component{
@@ -447,7 +450,7 @@ function each(list, cb) {
   }
 }
 
-// node -> -node
+// node -> --
 function removeNode(node) {
   if (!node.parentNode) return
   node.parentNode.removeChild(node)
@@ -479,7 +482,7 @@ function getAttribute(node, name) {
   return (node && node.getAttribute && node.getAttribute(name)) || ''
 }
 
-// node, name => --
+// attrName => --
 function removeAttribute(node, name) {
   node && node.removeAttribute && node.removeAttribute(name)
 }
@@ -529,6 +532,29 @@ function parseExp(text, expLeft = '{', expRight = '}') {
   )
 }
 
+// `(item,key,index) in list` => {list,item,key,index}
+function getForAttrMatch(code) {
+  // for="item in list"
+  // for="(item, i) in list"
+  // for="(item, key, i) in list"
+  // for="var key in list"
+  // for="var item of list"
+  var forMatch = /([^(,)\s]+)()()(?:\s+in\s+)([^(,)\s]+)/.exec(code) ||
+      /\(\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)()\s*\)(?:\s+in\s+)([^(,)\s]+)/.exec(code) ||
+      /\(\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)\s*\)(?:\s+in\s+)([^(,)\s]+)/.exec(code) ||
+      /(?:var|let|const)(?:\s+)()([^(,)\s]+)()(?:\s+in\s+)([^(,)\s]+)/.exec(code) ||
+      /(?:var|let|const)(?:\s+)([^(,)\s]+)()()(?:\s+of\s+)([^(,)\s]+)/.exec(code)
+
+  if (forMatch) {
+    return {
+      list: forMatch[4],
+      item: forMatch[1] || '$item',
+      key: forMatch[2] || '$key',
+      index: forMatch[3] || '$index',
+    }
+  }
+}
+
 // `var x; let y /* var z */` => ['x', 'y']
 function getVarNames(code, cb) {
   code = code.replace(/\/\/.*|\/\*[^]*?\*\//g, '') // - //  /**/
@@ -552,27 +578,22 @@ function getUpdatePropsCode(vars, propsName = 'props') {
   return string
 }
 
-// `(item,key,index) in list` => {list,item,key,index}
-function getForMatch(code) {
-  // for="item in list"
-  // for="(item, i) in list"
-  // for="(item, key, i) in list"
-  // for="var key in list"
-  // for="var item of list"
-  var forMatch = /([^(,)\s]+)()()(?:\s+in\s+)([^(,)\s]+)/.exec(code) ||
-      /\(\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)()\s*\)(?:\s+in\s+)([^(,)\s]+)/.exec(code) ||
-      /\(\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)\s*\)(?:\s+in\s+)([^(,)\s]+)/.exec(code) ||
-      /(?:var|let|const)(?:\s+)()([^(,)\s]+)()(?:\s+in\s+)([^(,)\s]+)/.exec(code) ||
-      /(?:var|let|const)(?:\s+)([^(,)\s]+)()()(?:\s+of\s+)([^(,)\s]+)/.exec(code)
-
-  if (forMatch) {
-    return {
-      list: forMatch[4],
-      item: forMatch[1] || '$item',
-      key: forMatch[2] || '$key',
-      index: forMatch[3] || '$index',
-    }
+// => asyncFn + render()
+function getAsyncFunctionCode(renderCode='self.render()') {
+  return `
+  var setTimeout = function(cb, delay, a,b,c,d,e){
+    return window.setTimeout(function(){
+      cb(a,b,c,d,e)
+      ${renderCode}
+    }, delay) 
   }
+  var setInterval = function(cb, delay, a,b,c,d,e){
+    return window.setInterval(function(){
+      cb(a,b,c,d,e)
+      ${renderCode}
+    }, delay) 
+  }
+  `
 }
 
 // code => error? throw 🐞
