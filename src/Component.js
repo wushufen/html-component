@@ -194,6 +194,8 @@ class Component{
         return
       }
 
+      // for > if > .prop > is >>> childNodes <<< end if < end for
+
       // for
       var forAttr = getAttribute(node, 'for')
       var fm = getForAttrMatch(forAttr)
@@ -295,6 +297,7 @@ class Component{
 
       // >>>
       forEach(toArray(node.childNodes), childNode => loopTree(childNode))
+      // <<<
 
       // end if
       if (ifAttr) {
