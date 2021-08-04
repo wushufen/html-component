@@ -338,12 +338,14 @@ class Component{
     this.render = render
 
     // this.el
+    this.el = null
     for (let childNode of node.children) {
       if (!/style|script/i.test(childNode.tagName)) {
         this.el = childNode
         break
       }
     }
+    this['#node'] = node
   }
   defineSubComponent(tpl) {
     return class SubComponent extends Component{
