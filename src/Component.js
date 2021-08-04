@@ -330,6 +330,17 @@ class Component{
         ${code}
       }
 
+      function get(name){
+        get[name] = get[name] || eval('(function(){return '+name+'})')
+        return get[name]()
+      }
+      function set(name, value){
+        set[name] = set[name] || eval('(function(){return '+name+'='+value+'})')
+        return set[name](value)
+      }
+      this.get = get
+      this.set = set
+
       return render
     `)
 
@@ -508,7 +519,7 @@ function parseExp(text, expLeft = '{', expRight = '}') {
     text
       // {exp} {`${e}{}\``}
       .replace(RegExp(`(\\${expLeft})(("(\\.|[^])*?"|'(\\.|[^])*?'|\`(\\.|[^])*?\`|\{[^]*?\}|[^])*?)(\\${expRight})`, 'g'), '\f +($2)+ \f')
-    // }text{
+      // }text{
       .replace(
         RegExp('(^|\f)([^]*?)(\f|$)', 'g'),
         function ($a, $1, $2, $3) {
