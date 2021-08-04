@@ -107,8 +107,10 @@ class Component{
     node.$props = node.$props || {}
 
     if (node.$props[name] !== value) { // cache
-      node[name] = value
       node.$props[name] = value
+      requestAnimationFrame(e => {
+        node[name] = value
+      })
     }
   }
   on(id, event, cb){}
