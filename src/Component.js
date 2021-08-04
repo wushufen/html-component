@@ -14,6 +14,7 @@ class Component{
     }
     this.forPath = '' // ***
     this.tpl = tpl
+    this.node = null
     this.el = null
 
     this.compile(tpl)
@@ -91,7 +92,7 @@ class Component{
   }
   if(id, bool, cb) {
     var node = this.getNode(id)
-    node = node.$component ? node.$component.node : node // $is?
+    node = node.$component ? node.$component.el : node // $is?
 
 
     if (bool) {
@@ -328,11 +329,17 @@ class Component{
       return render
     `)
 
+    // render
     var render = getRender.call(this, this)
-    // console.log(render)
     this.render = render
-    this.node = node
-    node.$component = this
+
+    // this.el
+    for (let childNode of node.children) {
+      if (!/style|script/i.test(childNode.tagName)) {
+        this.el = childNode
+        break
+      }
+    }
   }
   defineSubComponent(tpl) {
     return class SubComponent extends Component{
@@ -347,7 +354,7 @@ class Component{
 
     if (target.parentNode) {
       this.render(target.$props) // first render
-      target.parentNode.replaceChild(this.node, target)
+      target.parentNode.replaceChild(this.el, target)
     }
   }
 }
