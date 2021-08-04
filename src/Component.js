@@ -10,6 +10,7 @@
 class Component{
   constructor(tpl) {
     this.nodeMap = {
+      // id: node,
       length: 0,
     }
     this.forPath = '' // ***
@@ -25,13 +26,13 @@ class Component{
       nodeString = `[${node.nodeName}=${node.nodeValue}]`
     }
 
-    var id = node.__id || `${this.nodeMap.length++}: ${nodeString} `
+    var id = node['@id'] || `${this.nodeMap.length++}: ${nodeString} `
       .replace(/\s+/g, ' ')
       .replace(/'/g, '"')
       .replace(/\\/g, '')
 
     this.nodeMap[id] = node
-    node.__id = id
+    node['@id'] = id
     return id
   }
   getNode(id) {
@@ -51,7 +52,7 @@ class Component{
     var node = this.getNode(id)
     var forMark = markNode(node, 'for')
     removeNode(node)
-    var cloneNodes = node.__cloneNodes = node.__cloneNodes || {}
+    var cloneNodes = node['@cloneNodes'] = node['@cloneNodes'] || {}
     // var fragment = document.createDocumentFragment() // ??
 
     var forPath = this.forPath
@@ -62,16 +63,16 @@ class Component{
       // ++
       if (!cloneNode) {
         cloneNode = node.cloneNode(true)
-        cloneNode.__key = key
+        cloneNode['@key'] = key
         cloneNodes[key] = cloneNode
         insertNode(cloneNode, forMark)
         // fragment.appendChild(cloneNode)
 
         saveCloneNode(cloneNode, node)
         function saveCloneNode(cloneNode, node) {
-          cloneNode.__originNode = node.__originNode || node
-          var originNodeId = cloneNode.__originNode.__id
-          cloneNode.__id = `${originNodeId}${self.forPath}` // ***
+          cloneNode['@originNode'] = node['@originNode'] || node
+          var originNodeId = cloneNode['@originNode']['@id']
+          cloneNode['@id'] = `${originNodeId}${self.forPath}` // ***
           self.saveNode(cloneNode)
 
           forEach(cloneNode.childNodes, (e,i)=> saveCloneNode(e,node.childNodes[i]))
@@ -96,11 +97,11 @@ class Component{
   }
   if(id, bool, cb) {
     var node = this.getNode(id)
-    node = node.$component ? node.$component.el : node // $is?
+    node = node['@component'] ? node['@component'].el : node // $is?
 
 
     if (bool) {
-      insertNode(node, node.__ifMark)
+      insertNode(node, node['@ifMark'])
       cb && cb.call(this)
     } else {
       markNode(node, 'if')
@@ -127,8 +128,8 @@ class Component{
       }
     }
 
-    if (node.$component && typeof SubComponent === 'function') {
-      node.$component.render(node.$props)
+    if (node['@component'] && typeof SubComponent === 'function') {
+      node['@component'].render(node.$props)
       return
     }
 
@@ -377,7 +378,7 @@ class Component{
 
     // replace
     if (target) {
-      target.$component = this // target => component
+      target['@component'] = this // target => component
       if (target.parentNode) {
         target.parentNode.replaceChild(this.el, target)
       }
@@ -484,10 +485,10 @@ function insertNode(node, target) {
 
 // node -> <node><!-- mark --> => mark
 function markNode(node, name) {
-  var prop = `__${name}Mark`
+  var prop = `@${name}Mark`
   if (node[prop]) return node[prop]
 
-  var mark = document.createComment(` ${name}: ${node.cloneNode().outerHTML} ${node.__key === undefined ? '' : node.__key}`)
+  var mark = document.createComment(` ${name}: ${node.cloneNode().outerHTML} ${node['@key'] === undefined ? '' : node['@key']}`)
   // var mark = document.createTextNode('')
   node.parentNode.insertBefore(mark, node)
 

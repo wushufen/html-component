@@ -1,9 +1,9 @@
 <script src="../src/Component.js"></script>
 
 <template name="Com">
-  <span> {value} </span>
+  <span .title="title"> {title} </span>
   <script>
-    var value = 'value'
+    var title = 'value2'
   </script>
 </template>
 
@@ -26,13 +26,13 @@
   </dl>
 
   <section>
-    <span for="var item of list" xis="Com" .title="item"> {item} </span>
+    <span for="var item of list" is="Com" .title="item"> {item} </span>
   </section>
 
   <script>
     var time = 0
     var list = [1, 2, 3, 4, 5]
-    list.length = 10000
+    list.length = 100 //00
     var timeCost = 0
     var timeCostTotal = 0
     var timeI = 0
