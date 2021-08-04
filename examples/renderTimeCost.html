@@ -1,28 +1,36 @@
 <script src="../src/Component.js"></script>
 
+<template name="Com">
+  <sb>{value}</sb>
+  <script>
+    var value = 'value'
+  </script>
+</template>
+
 <main>
-  <h1 if="(name)">hello {name}</h1>
+  <h1>Performance Test</h1>
+  <h2>{time}</h2>
   <dl>
     <div>
       <dt>list.length</dt>
       <dd>{list.length}*{list.length}={list.length*list.length}</dd>
     </div>
     <div>
-      <dt>timeCost</dt>
-      <dd>{timeCost}</dd>
+      <dt>renderTimeCost</dt>
+      <dd>{renderTimeCost}ms</dd>
     </div>
   </dl>
 
   <ul>
     <li for="var key in list" title="{key}">
-      <span for="var item of list"> {item} </span>
+      <span for="var item of list" is="Com" .value="item"> {item} </span>
     </li>
   </ul>
 
   <script>
-    var name = 'world'
+    var time = 0
     var list = [1, 2, 3, 4, 5]
-    var timeCost = 0
+    var renderTimeCost = 0
 
     setInterval(() => {
       list.length = Math.random().toString().slice(-2)
@@ -31,9 +39,13 @@
         .forEach((e, i) => (list[i] = Math.random().toString().slice(-1)))
 
       var startDate = new Date()
-      this.$render()
+      this.render()
       var endDate = new Date()
-      timeCost = endDate - startDate
+      renderTimeCost = endDate - startDate
+    }, 1000)
+
+    setInterval(() => {
+      time = Date.now()
     }, 0)
   </script>
 </main>

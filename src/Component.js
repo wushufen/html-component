@@ -14,6 +14,7 @@ class Component{
     }
     this.forPath = '' // ***
     this.tpl = tpl
+    this.node = null
     this.el = null
 
     this.compile(tpl)
@@ -107,8 +108,10 @@ class Component{
     node.$props = node.$props || {}
 
     if (node.$props[name] !== value) { // cache
-      node[name] = value
       node.$props[name] = value
+      requestAnimationFrame(e => {
+        node[name] = value
+      })
     }
   }
   on(id, event, cb){}
