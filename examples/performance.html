@@ -12,12 +12,26 @@
   <h2>{timeI}</h2>
   <h2>{timeCostTotal}</h2>
 
-  <input oninput="list.length=this.value" .value="list.length" autofocus />
-
   <dl>
     <div>
       <dt>list.length</dt>
-      <dd>{list.length}</dd>
+      <dd>
+        <input
+          oninput="list.length=this.value"
+          .value="list.length"
+          autofocus
+        />
+      </dd>
+    </div>
+    <div>
+      <dt>isRandom</dt>
+      <dd>
+        <input
+          type="checkbox"
+          onchange="isRandom=this.checked"
+          .checked="isRandom"
+        />
+      </dd>
     </div>
     <div>
       <dt>timeCost</dt>
@@ -33,15 +47,17 @@
     var time = 0
     var list = [1, 2, 3, 4, 5]
     list.length = 100 //00
+    var isRandom = true
     var timeCost = 0
     var timeCostTotal = 0
     var timeI = 0
 
     setInterval(() => {
       // list.length = Math.random().toString().slice(-4)
-      list
-        .fill(1)
-        .forEach((e, i) => (list[i] = Math.random().toString().slice(-1)))
+      list.fill(1)
+      if (isRandom) {
+        list.forEach((e, i) => (list[i] = Math.random().toString().slice(-1)))
+      }
 
       var startDate = new Date()
       this.render()
@@ -49,7 +65,8 @@
       var _timeCost = endDate - startDate
       timeCostTotal += _timeCost
       timeI += 1
-      timeCost = timeCostTotal / timeI
+      // timeCost = timeCostTotal / timeI
+      timeCost = _timeCost
     }, 1000)
 
     setInterval(() => {
