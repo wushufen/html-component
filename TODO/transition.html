@@ -1,0 +1,51 @@
+<script src="../src/Component.js"></script>
+
+<script>
+  var list = 'hello world'
+</script>
+
+<input oninput="list=this.value" .value="list" autofocus />
+{list.length} * {list.length} = {list.length * list.length}
+
+<ul>
+  <li for="(item,i) in list" title="{i}">
+    <span for="(item,i) in list" xclass="fadeIn@in fadeOut@out">{item}</span>
+  </li>
+</ul>
+
+<style>
+  span {
+    margin: 10px;
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background-color: #0af;
+    color: #fff;
+    /* animation-duration: 1s; */
+  }
+  .fadeIn {
+    animation: fadeIn 1s;
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .fadeOut {
+    animation: fadeOut 1s;
+  }
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+</style>

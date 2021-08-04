@@ -105,7 +105,7 @@ class Component{
       cb && cb.call(this)
     } else {
       markNode(node, 'if')
-      removeNode(node)
+      removeNode(node, true)
     }
   }
   prop(id, name, value) {
@@ -472,8 +472,25 @@ function each(list, cb) {
 }
 
 // node -> --
-function removeNode(node) {
+function removeNode(node, isAnim) {
   if (!node.parentNode) return
+
+  if (isAnim) {
+    addClass(node, 'fadeOut')
+    if (parseFloat(getComputedStyle(node).animationDuration)) {
+      node.removeEventListener('animationend', node['#animationend'])
+      node.addEventListener('animationend', node['#animationend'] = function fn() {
+        node.removeEventListener('animationend', node['#animationend'])
+        node.parentNode && node.parentNode.removeChild(node)
+        removeClass(node, 'fadeOut')
+      })
+    } else {
+      node.parentNode.removeChild(node)
+      removeClass(node, 'fadeOut')
+    }
+    return
+  }
+
   node.parentNode.removeChild(node)
 }
 
@@ -481,6 +498,12 @@ function removeNode(node) {
 function insertNode(node, target) {
   if (node.parentNode) return
   target.parentNode.insertBefore(node, target)
+  addClass(node, 'fadeIn')
+  node.removeEventListener('animationend', node['#animationend'])
+  node.addEventListener('animationend', node['#animationend'] = function fn() {
+    node.removeEventListener('animationend', node['#animationend'])
+    removeClass(node, 'fadeIn')
+  })
 }
 
 // node -> <node><!-- mark --> => mark
@@ -506,6 +529,14 @@ function getAttribute(node, name) {
 // attrName => --
 function removeAttribute(node, name) {
   node && node.removeAttribute && node.removeAttribute(name)
+}
+
+function addClass(node, name) {
+  node.classList.add(name)
+}
+
+function removeClass(node, name) {
+  node.classList.remove(name)
 }
 
 // 'innerhtml' => 'innerHTML'
