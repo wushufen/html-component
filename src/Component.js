@@ -47,7 +47,7 @@ class Component{
     return node
   }
   for(id, list, cb) {
-    var this_ = this
+    var self = this
     var node = this.getNode(id)
     var forMark = markNode(node, 'for')
     removeNode(node)
@@ -56,7 +56,7 @@ class Component{
 
     var forPath = this.forPath
     each(list, function(item, key, index) {
-      this_.forPath = `${forPath}#${key}` // ***
+      self.forPath = `${forPath}#${key}` // ***
       var cloneNode = cloneNodes[key]
 
       // ++
@@ -71,17 +71,17 @@ class Component{
         function saveCloneNode(cloneNode, node) {
           cloneNode.__originNode = node.__originNode || node
           var originNodeId = cloneNode.__originNode.__id
-          cloneNode.__id = `${originNodeId}${this_.forPath}` // ***
-          this_.saveNode(cloneNode)
+          cloneNode.__id = `${originNodeId}${self.forPath}` // ***
+          self.saveNode(cloneNode)
 
           forEach(cloneNode.childNodes, (e,i)=> saveCloneNode(e,node.childNodes[i]))
         }
       } else {
         // length++
-        this_.if(cloneNode, true)
+        self.if(cloneNode, true)
       }
 
-      cb.call(this_, item, key, index)
+      cb.call(self, item, key, index)
     })
     this.forPath = forPath // ***
     // insertNode(fragment, forMark)
@@ -90,7 +90,7 @@ class Component{
     each(cloneNodes, function(cloneNode, key) {
       if (!Object.hasOwnProperty.call(list, key)) {
         // TODO destroy
-        this_.if(cloneNode, false)
+        self.if(cloneNode, false)
       }
     })
   }
@@ -188,7 +188,7 @@ class Component{
       // {exp}
       if (node.nodeType === 3 && /\{[^]*?\}/.test(node.nodeValue)) {
         var exp = parseExp(node.nodeValue)
-        code += `this_.prop('${id}', 'nodeValue', ${exp})\n`
+        code += `self.prop('${id}', 'nodeValue', ${exp})\n`
         detectTemplateError(exp, node)
         return
       }
@@ -197,7 +197,7 @@ class Component{
       var forAttr = getAttribute(node, 'for')
       var fm = getForMatch(forAttr)
       if (fm) {
-        code += `this_['for']('${id}', ${fm.list}, function(${fm.item},${fm.key},${fm.index}){\n`
+        code += `self['for']('${id}', ${fm.list}, function(${fm.item},${fm.key},${fm.index}){\n`
         detectTemplateError(forAttr.replace(/var|let|const/g, ';"#$&#";').replace(/of/, ';"#$&#";'), node)
         removeAttribute(node,  'for')
       }
@@ -205,7 +205,7 @@ class Component{
       // if
       var ifAttr = getAttribute(node, 'if')
       if (ifAttr) {
-        code += `this_['if']('${id}', ${ifAttr}, function(){\n`
+        code += `self['if']('${id}', ${ifAttr}, function(){\n`
         detectTemplateError(ifAttr, node)
         removeAttribute(node, 'if')
       }
@@ -235,7 +235,7 @@ class Component{
         // .attr :attr
         if (/^[\.:]/.test(attrName)) {
           var prop = attr2prop(node, attrName.substr(1))
-          code += `this_.prop('${id}', '${prop}', ${attrValue})\n`
+          code += `self.prop('${id}', '${prop}', ${attrValue})\n`
 
           detectTemplateError(attrValue, attribute)
           node.removeAttribute(attrName)
@@ -246,7 +246,7 @@ class Component{
         if (/\{[^]*?\}/.test(attrValue)) {
           var prop = attr2prop(node, attrName)
           var exp = parseExp(attrValue)
-          code += `this_.prop('${id}', '${prop}', ${exp})\n`
+          code += `self.prop('${id}', '${prop}', ${exp})\n`
 
           detectTemplateError(exp, attribute)
           node.removeAttribute(attrName)
@@ -257,7 +257,7 @@ class Component{
         if (/^(on|@)/.test(attrName)) {
           // TODO render
           // TODO 拦截异步函数 + 事件处理函数 + 恢复异步函数
-          code += `this_.prop('${id}', "${attrName.replace('@', 'on')}", function(){${attrValue}; this_.render()})\n`
+          code += `self.prop('${id}', "${attrName.replace('@', 'on')}", function(){${attrValue}; self.render()})\n`
 
           detectTemplateError(attrValue, attribute)
           node.removeAttribute(attrName)
@@ -266,7 +266,7 @@ class Component{
 
         // $="el"
         if (/^\$$/.test(attrName)) {
-          code += `;${attrValue}=this_.getNode('${id}')\n`
+          code += `;${attrValue}=self.getNode('${id}')\n`
 
           detectTemplateError(attrValue, attribute)
           node.removeAttribute('$')
@@ -277,7 +277,7 @@ class Component{
       // is="SubCom"
       var isAttr = getAttribute(node, 'is')
       if (isAttr) {
-        code += `this_.is('${id}', ${isAttr})\n`
+        code += `self.is('${id}', ${isAttr})\n`
 
         detectTemplateError(isAttr, node)
         node.removeAttribute('is')
@@ -288,7 +288,7 @@ class Component{
         for (let varName of varNames) {
         // var SubCom, tagName SUBCOM
           if (/^[A-Z][a-z]/ && RegExp(`^${varName}$`, 'i').test(node.tagName)) {
-            code += `this_.is('${id}', ${varName})\n`
+            code += `self.is('${id}', ${varName})\n`
             break
           }
         }
@@ -311,7 +311,7 @@ class Component{
 
     var getRender = Function('component_', `
       // debugger
-      var this_ = this
+      var self = this
 
       // initCode
       ${initCode}
