@@ -158,7 +158,7 @@ class Component{
     isGlobal = node == document.documentElement
 
     // <script>
-    node.querySelectorAll('script').forEach(e=>scriptCode+=e.innerHTML)
+    node.querySelectorAll('script').forEach(e=>scriptCode += e.innerHTML)
 
     // <template name>
     node.querySelectorAll('template').forEach(node => {
@@ -489,7 +489,7 @@ function removeNode(node) {
 }
 
 // animate -> cb()
-function animateNode(node, className='fadeIn', cb) {
+function animateNode(node, className = 'fadeIn', cb) {
   node['#animateCallback']?.() // last
 
   addClass(node, className)
@@ -554,7 +554,7 @@ function removeAttribute(node, name) {
 }
 
 // => computedStyle[name]
-function computeStyle(node, name, Type=String) {
+function computeStyle(node, name, Type = String) {
   // TODO prefix: webkit, moz, ms
   return Type(getComputedStyle(node)[name])
 }
@@ -670,7 +670,7 @@ function getUpdatePropsCode(vars, propsName = 'props') {
 }
 
 // => asyncFn + render()
-function getAsyncFunctionCode(renderCode='self.render()') {
+function getAsyncFunctionCode(renderCode = 'self.render()') {
   return `
   var setTimeout = function(cb, delay, a,b,c,d,e){
     return window.setTimeout(function(){
