@@ -20,5 +20,6 @@ module.exports = {
     'no-debugger': 2,
     'no-console': 1,
     'no-undef': 2,
+    'space-infix-ops': 1,
   },
 }

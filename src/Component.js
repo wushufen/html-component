@@ -158,7 +158,7 @@ class Component{
     isGlobal = node == document.documentElement
 
     // <script>
-    node.querySelectorAll('script').forEach(e=>scriptCode+=e.innerHTML)
+    node.querySelectorAll('script').forEach(e=>scriptCode += e.innerHTML)
 
     // <template name>
     node.querySelectorAll('template').forEach(node => {
@@ -548,7 +548,7 @@ function parseExp(text, expLeft = '{', expRight = '}') {
 }
 
 // `(item,key,index) in list` => {list,item,key,index}
-function getForAttrMatch(code, item='item', key='key', index='index') {
+function getForAttrMatch(code, item = 'item', key = 'key', index = 'index') {
   // for="item in list"
   // for="(item, i) in list"
   // for="(item, key, i) in list"
@@ -594,7 +594,7 @@ function getUpdatePropsCode(vars, propsName = 'props') {
 }
 
 // asyncFn => + render()
-function getAsyncFunctionCode(renderCode='self.render()') {
+function getAsyncFunctionCode(renderCode = 'self.render()') {
   return `
   var setTimeout = function(cb, delay, a,b,c,d,e){
     return window.setTimeout(function(){
@@ -612,7 +612,7 @@ function getAsyncFunctionCode(renderCode='self.render()') {
 }
 
 // var name => get('name'), set('name', value)
-function getLocalVarGetterSetterCode(get='get', set='set') {
+function getLocalVarGetterSetterCode(get = 'get', set = 'set') {
   return `
   function get(name){
     get[name] = get[name] || eval('(function(){return '+name+'})')
