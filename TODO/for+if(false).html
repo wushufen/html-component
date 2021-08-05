@@ -1,0 +1,13 @@
+<script src="../src/Component.js"></script>
+
+<script>
+  var list = [1, 1, 1, 1, 1, 1]
+
+  setInterval(() => {}, 1000)
+</script>
+
+<output>{list}</output>
+<ul>
+  <!-- FIXME: for(insert) + if(remove) -->
+  <li for="(item,i) in list" if="(item%2==0)">{item}</li>
+</ul>
