@@ -199,7 +199,7 @@ class Component{
 
       // for
       var forAttr = getAttribute(node, 'for')
-      var fm = getForAttrMatch(forAttr)
+      var fm = getForAttrMatch(forAttr, '$item', '$key', '$index')
       if (fm) {
         code += `self['for']('${id}', ${fm.list}, function(${fm.item},${fm.key},${fm.index}){\n`
         detectTemplateError(forAttr.replace(/var|let|const/g, ';"#$&#";').replace(/of/, ';"#$&#";'), node)
@@ -312,7 +312,7 @@ class Component{
 
     }
 
-    var getRender = Function('component_', `
+    var createRender = Function('self', `
       // debugger
       var self = this
 
@@ -336,14 +336,8 @@ class Component{
         ${code}
       }
 
-      function get(name){
-        get[name] = get[name] || eval('(function(){return '+name+'})')
-        return get[name]()
-      }
-      function set(name, value){
-        set[name] = set[name] || eval('(function(){return '+name+'='+value+'})')
-        return set[name](value)
-      }
+      // get set
+      ${getLocalVarGetterSetterCode('get', 'set')}
       this.get = get
       this.set = set
 
@@ -351,13 +345,13 @@ class Component{
     `)
 
     // render
-    var render = getRender.call(this, this)
+    var render = createRender.call(this, this)
     this.render = render
 
-    // this.el = firstElementChild(!style,!script)
+    // this.el = firstElementChild(!style,!script,!template)
     this.el = null
     for (let childNode of node.children) {
-      if (!/style|script/i.test(childNode.tagName)) {
+      if (!/^(style|script|template)$/i.test(childNode.tagName)) {
         this.el = childNode
         break
       }
@@ -554,7 +548,7 @@ function parseExp(text, expLeft = '{', expRight = '}') {
 }
 
 // `(item,key,index) in list` => {list,item,key,index}
-function getForAttrMatch(code) {
+function getForAttrMatch(code, item='item', key='key', index='index') {
   // for="item in list"
   // for="(item, i) in list"
   // for="(item, key, i) in list"
@@ -569,9 +563,9 @@ function getForAttrMatch(code) {
   if (forMatch) {
     return {
       list: forMatch[4],
-      item: forMatch[1] || '$item',
-      key: forMatch[2] || '$key',
-      index: forMatch[3] || '$index',
+      item: forMatch[1] || item,
+      key: forMatch[2] || key,
+      index: forMatch[3] || index,
     }
   }
 }
@@ -599,7 +593,7 @@ function getUpdatePropsCode(vars, propsName = 'props') {
   return string
 }
 
-// => asyncFn + render()
+// asyncFn => + render()
 function getAsyncFunctionCode(renderCode='self.render()') {
   return `
   var setTimeout = function(cb, delay, a,b,c,d,e){
@@ -617,6 +611,20 @@ function getAsyncFunctionCode(renderCode='self.render()') {
   `
 }
 
+// var name => get('name'), set('name', value)
+function getLocalVarGetterSetterCode(get='get', set='set') {
+  return `
+  function get(name){
+    get[name] = get[name] || eval('(function(){return '+name+'})')
+    return get[name]()
+  }
+  function set(name, value){
+    set[name] = set[name] || eval('(function(){return '+name+'='+value+'})')
+    return set[name](value)
+  }
+  `.replace(/get/g, get).replace(/set/g, set)
+}
+
 // code => error? throw 🐞
 function detectTemplateError(code, node) {
   try {
@@ -625,7 +633,7 @@ function detectTemplateError(code, node) {
     try {
       Function(`(${code})`) // (function(){})
     } catch (_) {
-      var parentNode  = node.parentNode || node
+      var parentNode  = node.parentNode || node.ownerElement || node
       var tpl = node.nodeValue || node.cloneNode().outerHTML
       tpl = tpl.replace(/<\/.*?>/, '') // - </tag>
       tpl = parentNode.outerHTML.replace(tpl, '🐞' + tpl + '🐞')
