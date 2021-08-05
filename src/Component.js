@@ -63,9 +63,11 @@ class Component{
       // ++ clone
       if (!cloneNode) {
         cloneNode = node.cloneNode(true)
+        cloneNode['#for#'] = forMark
         cloneNode['@key'] = key
         cloneNodes[key] = cloneNode
 
+        // originNodeId + forPath => cloneNode
         saveCloneNode(cloneNode, node)
         function saveCloneNode(cloneNode, node) {
           cloneNode['@originNode'] = node['@originNode'] || node
@@ -76,17 +78,17 @@ class Component{
           forEach(cloneNode.childNodes, (e,i)=> saveCloneNode(e,node.childNodes[i]))
         }
 
-        insertNode(cloneNode, forMark)
+        // insertNode(cloneNode, forMark)
         // fragment.appendChild(cloneNode)
-      } else {
-        // ++ insert
-        self.if(cloneNode, true)
       }
+      // ++ insert
+      self.if(cloneNode, true)
 
+      // >>>
       cb.call(self, item, key, index)
     })
-    // insertNode(fragment, forMark)
     this.forPath = forPath // ***
+    // insertNode(fragment, forMark)
 
     // -- remove
     each(cloneNodes, function(cloneNode, key) {
@@ -101,7 +103,7 @@ class Component{
     node = node['@component'] ? node['@component'].el : node // $is?
 
     if (bool) {
-      insertNode(node, node['#if#'])
+      insertNode(node, node['#if#'] || node['#for#'])
       cb && cb.call(this)
     } else {
       markNode(node, '#if#')
