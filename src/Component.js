@@ -60,7 +60,7 @@ class Component{
       self.forPath = `${forPath}#${key}` // ***
       var cloneNode = cloneNodes[key]
 
-      // ++
+      // ++ clone
       if (!cloneNode) {
         cloneNode = node.cloneNode(true)
         cloneNode['@key'] = key
@@ -77,17 +77,18 @@ class Component{
 
           forEach(cloneNode.childNodes, (e,i)=> saveCloneNode(e,node.childNodes[i]))
         }
+
       } else {
-        // length++
+        // ++ insert
         self.if(cloneNode, true)
       }
 
       cb.call(self, item, key, index)
     })
-    this.forPath = forPath // ***
     // insertNode(fragment, forMark)
+    this.forPath = forPath // ***
 
-    // length--
+    // -- remove
     each(cloneNodes, function(cloneNode, key) {
       if (!Object.hasOwnProperty.call(list, key)) {
         // TODO setTimeout destroy?
@@ -99,13 +100,12 @@ class Component{
     var node = this.getNode(id)
     node = node['@component'] ? node['@component'].el : node // $is?
 
-
     if (bool) {
       insertNode(node, node['@ifMark'])
       cb && cb.call(this)
     } else {
       markNode(node, 'if')
-      removeNode(node, true)
+      removeNode(node)
     }
   }
   prop(id, name, value) {
@@ -223,6 +223,12 @@ class Component{
         if (/^class$/i.test(attrName) && /:/.test(attrValue)) {
         // "b:bool" => "{bool?'b':''}"
           attrValue = attrValue.replace(/([^'"\s]+):([^'"\s]+)/g, '{$2?"$1":""}')
+        }
+
+        // @in @out => @originNode
+        if (/^class$/i.test(attrName)) {
+          node['@in'] = /([^'"\s]+)@in/.exec(attrValue)?.[1]
+          node['@out'] = /([^'"\s]+)@out/.exec(attrValue)?.[1]
         }
 
         // style="width:_n_px; height:[n]px"
@@ -471,38 +477,53 @@ function each(list, cb) {
   }
 }
 
-// node -> --
-function removeNode(node, isAnim) {
-  if (!node.parentNode) return
-
-  if (isAnim) {
-    addClass(node, 'fadeOut')
-    if (parseFloat(getComputedStyle(node).animationDuration)) {
-      node.removeEventListener('animationend', node['#animationend'])
-      node.addEventListener('animationend', node['#animationend'] = function fn() {
-        node.removeEventListener('animationend', node['#animationend'])
-        node.parentNode && node.parentNode.removeChild(node)
-        removeClass(node, 'fadeOut')
-      })
-    } else {
-      node.parentNode.removeChild(node)
-      removeClass(node, 'fadeOut')
-    }
-    return
-  }
-
-  node.parentNode.removeChild(node)
-}
-
 // node, target -> <node><!-- target -->
 function insertNode(node, target) {
   if (node.parentNode) return
-  target.parentNode.insertBefore(node, target)
-  addClass(node, 'fadeIn')
-  node.removeEventListener('animationend', node['#animationend'])
-  node.addEventListener('animationend', node['#animationend'] = function fn() {
-    node.removeEventListener('animationend', node['#animationend'])
-    removeClass(node, 'fadeIn')
+  target.parentNode?.insertBefore(node, target)
+}
+
+// node -> --
+function removeNode(node) {
+  node.parentNode?.removeChild(node)
+}
+
+// animate -> cb()
+function animateNode(node, className='fadeIn', cb) {
+  node['#animateCallback']?.() // last
+
+  addClass(node, className)
+  var animationDuration = computeStyle(node, 'animationDuration', parseFloat)
+
+  if (animationDuration) {
+    var cancel = on(node, 'animationend', callback)
+    var timer = setTimeout(callback, animationDuration * 1000) // !parentNode
+  } else {
+    callback()
+  }
+  function callback() {
+    cb?.()
+    removeClass(node, className)
+
+    cancel?.()
+    clearTimeout(timer)
+    delete node['#animateCallback']
+  }
+
+  node['#animateCallback'] = callback
+  // return callback
+}
+
+// animate + node
+function animateInsertNode(node, target, className) {
+  insertNode(node, target)
+  animateNode(node, className)
+}
+
+// animate - node
+function animateRemoveNode(node, className) {
+  animateNode(node, className, function() {
+    removeNode(node)
   })
 }
 
@@ -516,7 +537,8 @@ function markNode(node, name) {
   node.parentNode.insertBefore(mark, node)
 
   node[prop] = mark
-  mark.node = node
+  mark['#node'] = node
+  mark.node = node // TODO remove
 
   return mark
 }
@@ -531,12 +553,29 @@ function removeAttribute(node, name) {
   node && node.removeAttribute && node.removeAttribute(name)
 }
 
+// => computedStyle[name]
+function computeStyle(node, name, Type=String) {
+  // TODO prefix: webkit, moz, ms
+  return Type(getComputedStyle(node)[name])
+}
+
+// + .class
 function addClass(node, name) {
   node.classList.add(name)
 }
 
+// - .class
 function removeClass(node, name) {
   node.classList.remove(name)
+}
+
+// + addEventListener => cancel()
+function on(node, name, cb) {
+  // TODO prefix
+  node.addEventListener(name, cb)
+  return function () {
+    node.removeEventListener(name, cb)
+  }
 }
 
 // 'innerhtml' => 'innerHTML'

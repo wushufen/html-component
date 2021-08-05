@@ -5,11 +5,10 @@
 </script>
 
 <input oninput="list=this.value" .value="list" autofocus />
-{list.length} * {list.length} = {list.length * list.length}
 
 <ul>
-  <li for="(item,i) in list" title="{i}">
-    <span for="(item,i) in list" xclass="fadeIn@in fadeOut@out">{item}</span>
+  <li for="(item,i) in list" class="fadeIn@in fadeOut@out">
+    <span for="(item,i) in list" class="fadeIn@in fadeOut@out">{item}</span>
   </li>
 </ul>
 
@@ -27,7 +26,8 @@
     /* animation-duration: 1s; */
   }
   .fadeIn {
-    animation: fadeIn 1s;
+    animation: fadeIn 10s;
+    animation-fill-mode: forwards;
   }
   @keyframes fadeIn {
     from {
@@ -38,7 +38,8 @@
     }
   }
   .fadeOut {
-    animation: fadeOut 1s;
+    animation: fadeOut 10s;
+    animation-fill-mode: backwards;
   }
   @keyframes fadeOut {
     from {
