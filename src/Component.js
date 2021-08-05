@@ -36,7 +36,7 @@ class Component{
     return id
   }
   getNode(id) {
-    if (id && id.nodeType) { // node
+    if (id?.nodeType) { // node
       return id
     }
 
@@ -50,7 +50,7 @@ class Component{
   for(id, list, cb) {
     var self = this
     var node = this.getNode(id)
-    var forMark = markNode(node, 'for')
+    var forMark = markNode(node, '#for#')
     removeNode(node)
     var cloneNodes = node['@cloneNodes'] = node['@cloneNodes'] || {}
     // var fragment = document.createDocumentFragment() // ??
@@ -65,8 +65,6 @@ class Component{
         cloneNode = node.cloneNode(true)
         cloneNode['@key'] = key
         cloneNodes[key] = cloneNode
-        insertNode(cloneNode, forMark)
-        // fragment.appendChild(cloneNode)
 
         saveCloneNode(cloneNode, node)
         function saveCloneNode(cloneNode, node) {
@@ -78,6 +76,8 @@ class Component{
           forEach(cloneNode.childNodes, (e,i)=> saveCloneNode(e,node.childNodes[i]))
         }
 
+        insertNode(cloneNode, forMark)
+        // fragment.appendChild(cloneNode)
       } else {
         // ++ insert
         self.if(cloneNode, true)
@@ -101,10 +101,10 @@ class Component{
     node = node['@component'] ? node['@component'].el : node // $is?
 
     if (bool) {
-      insertNode(node, node['@ifMark'])
+      insertNode(node, node['#if#'])
       cb && cb.call(this)
     } else {
-      markNode(node, 'if')
+      markNode(node, '#if#')
       removeNode(node)
     }
   }
@@ -133,7 +133,7 @@ class Component{
       return
     }
 
-    if (SubComponent && SubComponent.then) {
+    if (SubComponent?.then) {
       SubComponent.then(SubComponent => create(SubComponent, node))
       return
     }
@@ -380,7 +380,7 @@ class Component{
   }
   mount(target) {
     this.target = target // component => target
-    this.render(target && target.$props) // first render
+    this.render(target?.$props) // first render
 
     // replace
     if (target) {
@@ -516,12 +516,14 @@ function animateNode(node, className = 'fadeIn', cb) {
 
 // animate + node
 function animateInsertNode(node, target, className) {
+  if(node.parentNode) return
   insertNode(node, target)
   animateNode(node, className)
 }
 
 // animate - node
 function animateRemoveNode(node, className) {
+  if(!node.parentNode) return
   animateNode(node, className, function() {
     removeNode(node)
   })
@@ -529,10 +531,10 @@ function animateRemoveNode(node, className) {
 
 // node -> <node><!-- mark --> => mark
 function markNode(node, name) {
-  var prop = `@${name}Mark`
+  var prop = `${name}`
   if (node[prop]) return node[prop]
 
-  var mark = document.createComment(` ${name}: ${node.cloneNode().outerHTML} ${node['@key'] === undefined ? '' : node['@key']}`)
+  var mark = document.createComment(` ${name}: ${node.cloneNode().outerHTML} ${node['@key'] ?? '' }`)
   // var mark = document.createTextNode('')
   node.parentNode.insertBefore(mark, node)
 
@@ -545,12 +547,12 @@ function markNode(node, name) {
 
 // node, name => attrValue
 function getAttribute(node, name) {
-  return (node && node.getAttribute && node.getAttribute(name)) || ''
+  return node?.getAttribute?.(name) || ''
 }
 
 // attrName => --
 function removeAttribute(node, name) {
-  node && node.removeAttribute && node.removeAttribute(name)
+  node?.removeAttribute?.(name)
 }
 
 // => computedStyle[name]
@@ -655,7 +657,7 @@ function getVarNames(code, cb) {
   while (m = reg.exec(code)) {
     var n = m[3]
     vars.push(n)
-    cb && cb(n)
+    cb?.(n)
   }
   return vars
 }
