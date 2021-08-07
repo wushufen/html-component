@@ -428,6 +428,14 @@ if (typeof window === 'object' && this === window) {
       return rs
     }, time)
   }
+  var __requestAnimationFrame = window.requestAnimationFrame
+  window.requestAnimationFrame = function(cb, time){
+    return __requestAnimationFrame(function(){
+      var rs = cb.apply(this, arguments)
+      render()
+      return rs
+    }, time)
+  }
 
   addEventListener('DOMContentLoaded', e => {
     var app = new Component(document.documentElement)
