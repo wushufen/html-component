@@ -539,7 +539,7 @@ function animateRemoveNode(node, className) {
   })
 }
 
-// node -> <node><!-- mark --> => mark
+// node -> <node><!-- mark --> => [get||create](mark)
 function markNode(node, name) {
   var prop = `${name}`
   if (node[prop]) return node[prop]
