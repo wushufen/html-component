@@ -100,14 +100,18 @@ class Component{
   }
   if(id, bool, cb) {
     var node = this.getNode(id)
-    node = node['@component'] ? node['@component'].el : node // $is?
+    node = node['@component']?.el || node // $is?
+
+    var target = node['#if#'] || node['#for#'] // for+if?
 
     if (bool) {
-      insertNode(node, node['#if#'] || node['#for#'])
+      insertNode(node, target)
+      // animateInsertNode(node, target, node['@originNode']?.['@in'])
       cb && cb.call(this)
     } else {
       markNode(node, '#if#')
       removeNode(node)
+      // animateRemoveNode(node, node['@originNode']?.['@out'])
     }
   }
   prop(id, name, value) {
@@ -123,24 +127,25 @@ class Component{
   is(id, SubComponent) {
     var node = this.getNode(id)
 
-    function create(SubComponent, node) {
-      if (typeof SubComponent === 'function' && SubComponent.prototype.mount) {
-        var component = new SubComponent()
-        component.mount(node)
+    function _is(node, SubComponent) {
+      if (SubComponent.prototype instanceof Component) {
+        // render
+        if (node['@component']) {
+          node['@component'].render(node.$props)
+        }
+        // or new
+        else {
+          var component = new SubComponent()
+          component.mount(node)
+        }
       }
     }
 
-    if (node['@component'] && typeof SubComponent === 'function') {
-      node['@component'].render(node.$props)
-      return
-    }
-
     if (SubComponent?.then) {
-      SubComponent.then(SubComponent => create(SubComponent, node))
-      return
+      SubComponent.then(SubComponent => _is(node, SubComponent))
+    } else {
+      _is(node, SubComponent)
     }
-
-    create(SubComponent, node)
 
   }
   compile(tpl) {

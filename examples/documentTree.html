@@ -107,9 +107,10 @@
       </dl>
     </aside>
     <content>
+      <ul is="Tree" .tree="tree" .$props="{clickNode:clickNode}"></ul>
       <ul>
         <li
-          is="Node"
+          xis="Node"
           .$props="{clickNode:clickNode}"
           .node="document.documentElement"
         ></li>
