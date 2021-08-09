@@ -105,13 +105,13 @@ class Component{
     var target = node['#if#'] || node['#for#'] // for+if?
 
     if (bool) {
-      insertNode(node, target)
-      // animateInsertNode(node, target, node['@originNode']?.['@in'])
+      // insertNode(node, target)
+      animateInsertNode(node, target, node['@originNode']?.['@in'])
       cb && cb.call(this)
     } else {
       markNode(node, '#if#')
-      removeNode(node)
-      // animateRemoveNode(node, node['@originNode']?.['@out'])
+      // removeNode(node)
+      animateRemoveNode(node, node['@originNode']?.['@out'])
     }
   }
   prop(id, name, value) {
@@ -426,13 +426,13 @@ if (typeof window === 'object' && this === window) {
     }, time)
   }
   var __setTimeout = window.setTimeout
-  window.setTimeout = function(cb, time){
-    return __setTimeout(function(){
-      var rs = cb.apply(this, arguments)
-      render()
-      return rs
-    }, time)
-  }
+  // window.setTimeout = function(cb, time){
+  //   return __setTimeout(function(){
+  //     var rs = cb.apply(this, arguments)
+  //     render()
+  //     return rs
+  //   }, time)
+  // }
   var __requestAnimationFrame = window.requestAnimationFrame
   window.requestAnimationFrame = function(cb, time){
     return __requestAnimationFrame(function(){
@@ -505,41 +505,46 @@ function removeNode(node) {
 
 // animate -> cb()
 function animateNode(node, className = 'fadeIn', cb) {
-  node['#animateCallback']?.() // last
-
   addClass(node, className)
   var animationDuration = computeStyle(node, 'animationDuration', parseFloat)
 
   if (animationDuration) {
-    var cancel = on(node, 'animationend', callback)
-    var timer = setTimeout(callback, animationDuration * 1000) // !parentNode
+    var off = on(node, 'animationend', finish)
+    var timer = setTimeout(finish, animationDuration * 1000) // !parentNode
   } else {
-    callback()
+    finish()
   }
-  function callback() {
-    cb?.()
+  function cancel() {
     removeClass(node, className)
-
-    cancel?.()
+    off?.()
     clearTimeout(timer)
-    delete node['#animateCallback']
+  }
+  function finish() {
+    cb?.()
+    cancel()
   }
 
-  node['#animateCallback'] = callback
-  // return callback
+  return cancel
 }
 
 // animate + node
 function animateInsertNode(node, target, className) {
-  if(node.parentNode) return
+  if(node.parentNode && !node['#animateRemoveCancel']) return
+  node['#animateRemoveCancel']?.()
+
   insertNode(node, target)
-  animateNode(node, className)
+  node['#animateInsertCancel'] = animateNode(node, className, function() {
+    node['#animateInsertCancel'] = null
+  })
 }
 
 // animate - node
 function animateRemoveNode(node, className) {
-  if(!node.parentNode) return
-  animateNode(node, className, function() {
+  if (!node.parentNode &&  !node['#animateInsertCancel']) return
+  node['#animateInsertCancel']?.()
+
+  node['#animateRemoveCancel'] = animateNode(node, className, function() {
+    node['#animateRemoveCancel'] = null
     removeNode(node)
   })
 }
@@ -549,7 +554,8 @@ function markNode(node, name) {
   var prop = `${name}`
   if (node[prop]) return node[prop]
 
-  var mark = document.createComment(` ${name}: ${node.cloneNode().outerHTML} ${node['@key'] ?? '' }`)
+  var text = ` ${name}: ${node.cloneNode().outerHTML} ${node['@key'] ?? '' }`
+  var mark = document.createComment(text)
   // var mark = document.createTextNode('')
   node.parentNode.insertBefore(mark, node)
 
