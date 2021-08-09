@@ -106,12 +106,14 @@ class Component{
 
     if (bool) {
       // insertNode(node, target)
-      animateInsertNode(node, target, node['@originNode']?.['@in'])
+      var inClassName = node['@originNode']?.['@in'] || node['@in']
+      animateInsertNode(node, target, inClassName)
       cb && cb.call(this)
     } else {
       markNode(node, '#if#')
       // removeNode(node)
-      animateRemoveNode(node, node['@originNode']?.['@out'])
+      var outClassName = node['@originNode']?.['@out'] || node['@out']
+      animateRemoveNode(node, outClassName)
     }
   }
   prop(id, name, value) {
@@ -505,6 +507,8 @@ function removeNode(node) {
 
 // animate -> cb()
 function animateNode(node, className = 'fadeIn', cb) {
+  node['#animateCancel']?.()
+
   addClass(node, className)
   var animationDuration = computeStyle(node, 'animationDuration', parseFloat)
 
@@ -514,39 +518,42 @@ function animateNode(node, className = 'fadeIn', cb) {
   } else {
     finish()
   }
+
   function cancel() {
     removeClass(node, className)
     off?.()
     clearTimeout(timer)
+    delete node['#animateCancel']
   }
   function finish() {
     cb?.()
     cancel()
   }
 
+  node['#animateCancel'] = cancel
   return cancel
 }
 
 // animate + node
 function animateInsertNode(node, target, className) {
-  if(node.parentNode && !node['#animateRemoveCancel']) return
-  node['#animateRemoveCancel']?.()
+  if (node['#animateRemoved'] || !node.parentNode) {
+    node['#animateRemoved'] = false
 
-  insertNode(node, target)
-  node['#animateInsertCancel'] = animateNode(node, className, function() {
-    node['#animateInsertCancel'] = null
-  })
+    insertNode(node, target)
+    animateNode(node, className, function() {
+    })
+  }
 }
 
 // animate - node
 function animateRemoveNode(node, className) {
-  if (!node.parentNode &&  !node['#animateInsertCancel']) return
-  node['#animateInsertCancel']?.()
+  if (!node['#animateRemoved']) {
+    node['#animateRemoved'] = true
 
-  node['#animateRemoveCancel'] = animateNode(node, className, function() {
-    node['#animateRemoveCancel'] = null
-    removeNode(node)
-  })
+    animateNode(node, className, function() {
+      removeNode(node)
+    })
+  }
 }
 
 // node -> <node><!-- mark --> => [get||create](mark)

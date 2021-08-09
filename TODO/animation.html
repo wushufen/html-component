@@ -1,18 +1,37 @@
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+/>
 <script src="../src/Component.js"></script>
 
 <script>
   var list = 'hello world'
+  var bool = true
 </script>
 
 <input oninput="list=this.value" .value="list" autofocus />
+<input type="checkbox" onclick="bool=this.checked" .checked="bool" autofocus />
 
-<ul>
-  <li for="(item,i) in list" class="fadeIn@in fadeOut@out">
-    <span for="(item,i) in list" class="fadeIn@in fadeOut@out">{item}</span>
+<!-- <h1 if="bool" class="fadeIn@in fadeOut@out">{bool}</h1> -->
+
+<ul if="bool" class="animate__bounceIn@in animate__bounceOut@out">
+  <li
+    for="(item,i) in list"
+    class="animate__fadeInDown@in animate__fadeOutDown@out"
+  >
+    <!-- <span>{item}</span> -->
+    <span
+      for="(item,i) in list"
+      class="animate__fadeInLeft@in animate__fadeOutRight@out"
+      >{item}</span
+    >
   </li>
 </ul>
 
 <style>
+  ul {
+    width: fit-content;
+  }
   span {
     margin: 10px;
     vertical-align: middle;
@@ -26,8 +45,7 @@
     /* animation-duration: 1s; */
   }
   .fadeIn {
-    animation: fadeIn 3s;
-    animation-fill-mode: forwards;
+    animation: fadeIn 1s;
   }
   @keyframes fadeIn {
     from {
@@ -38,8 +56,7 @@
     }
   }
   .fadeOut {
-    animation: fadeOut 3s;
-    animation-fill-mode: backwards;
+    animation: fadeOut 1s;
   }
   @keyframes fadeOut {
     from {
@@ -48,5 +65,9 @@
     to {
       opacity: 0;
     }
+  }
+
+  [class*='animate__'] {
+    animation-duration: 0.375s;
   }
 </style>
