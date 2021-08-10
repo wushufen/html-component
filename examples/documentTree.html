@@ -10,51 +10,6 @@
   <h2>tree</h2>
 </hgroup>
 
-<template name="Node">
-  <li $="node.li" onclick="event.stopPropagation(); click(node);">
-    <!-- {log($props)} -->
-    <span if="node.tagName">{getOpenTag(node)}</span>
-    <span if="!node.tagName">{node.nodeValue}</span>
-    <ul if="node.isOpen">
-      <li
-        for="child in node.childNodes"
-        is="this.constructor"
-        .$props="$props"
-        .node="child"
-      ></li>
-    </ul>
-    <!-- <span>{getCloseTag(node)}</span> -->
-  </li>
-  <script>
-    var node = document
-    var clickNode = function (node) {
-      console.log('[clickNode]', node)
-    }
-
-    function getOpenTag(node) {
-      if (!node.outerHTML) {
-        return ''
-      }
-      return node
-        .cloneNode()
-        .outerHTML.replace(/<\/.*?>/, node.isOpen ? '' : '...$&')
-    }
-    function getCloseTag(node) {
-      if (!node.outerHTML) {
-        return ''
-      }
-      if (!node.isOpen) {
-        return ''
-      }
-      return node.cloneNode().outerHTML.replace(/<.*?>/, '')
-    }
-    function click(node) {
-      node.isOpen = !node.isOpen
-      clickNode(node)
-    }
-  </script>
-</template>
-
 <template name="Tree">
   <ul>
     <li
@@ -98,6 +53,9 @@
 
 <console>
   <main panel="Elements">
+    <content>
+      <ul is="Tree" .tree="tree" .$props="{clickNode:clickNode}"></ul>
+    </content>
     <aside if="(box.N)">
       <dl>
         <div for="(value,key) in box">
@@ -106,17 +64,6 @@
         </div>
       </dl>
     </aside>
-    <content>
-      <ul is="Tree" .tree="tree" .$props="{clickNode:clickNode}"></ul>
-      <ul>
-        <li
-          xis="Node"
-          .$props="{clickNode:clickNode}"
-          .node="document.documentElement"
-        ></li>
-      </ul>
-      {console.log('render'),''}
-    </content>
   </main>
 </console>
 
