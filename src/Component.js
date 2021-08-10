@@ -507,7 +507,7 @@ function removeNode(node) {
 
 // animate -> cb()
 function animateNode(node, className = 'fadeIn', cb) {
-  node['#animateCancel']?.()
+  node['#animateCancel']?.() // cancel last
 
   addClass(node, className)
   var animationDuration = computeStyle(node, 'animationDuration', parseFloat)
@@ -520,10 +520,10 @@ function animateNode(node, className = 'fadeIn', cb) {
   }
 
   function cancel() {
+    delete node['#animateCancel']
     removeClass(node, className)
     off?.()
     clearTimeout(timer)
-    delete node['#animateCancel']
   }
   function finish() {
     cb?.()
@@ -568,7 +568,6 @@ function markNode(node, name) {
 
   node[prop] = mark
   mark['#node'] = node
-  mark.node = node // TODO remove
 
   return mark
 }
