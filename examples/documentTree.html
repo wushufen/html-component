@@ -13,18 +13,19 @@
 <template name="Tree">
   <ul>
     <li
-      for="node in tree"
+      for="(node in tree)"
       $="node.li"
       onclick="event.stopPropagation(); click(node);"
     >
-      <strong if="(node.tagName)">{getOpenTag(node)}</strong>
-      <span if="(!node.tagName)">{node.nodeValue}</span>
+      <em if="(node.tagName)">{getOpenTag(node)}</em>
+      <span if="(node.nodeValue)">{node.nodeValue}</span>
+      <!-- <span if="(node.tagName&&!node.isOpen)" style="margin: 0 -0.25em">↔</span> -->
       <ul
         is="this.constructor"
         if="(node.isOpen)"
         .$props="{tree:node.childNodes,clickNode:clickNode}"
       ></ul>
-      <!-- <strong if="(node.tagName)">{getCloseTag(node)}</strong> -->
+      <em if="(node.tagName&&!node.isOpen)">{getCloseTag(node)}</em>
     </li>
   </ul>
   <script>
@@ -34,14 +35,10 @@
     }
 
     function getOpenTag(node) {
-      return node
-        .cloneNode()
-        .outerHTML.replace(/<\/.*?>/, node.isOpen ? '' : '$&')
+      return node.cloneNode().outerHTML.replace(/<\/.*?>/, '')
+      // .outerHTML.replace(/<\/.*?>/, node.isOpen ? '' : '↔$&')
     }
     function getCloseTag(node) {
-      if (!node.isOpen) {
-        return ''
-      }
       return node.cloneNode().outerHTML.replace(/<.*?>/, '')
     }
     function click(node) {
@@ -180,11 +177,11 @@
   [panel='Elements'] ul {
     border-left: 1px dotted #bbb;
     padding-left: 1em;
-    padding-bottom: 0.5em;
+    /* padding-bottom: 0.5em; */
     list-style: none;
     margin: 0;
   }
-  [panel='Elements'] ul li strong {
+  [panel='Elements'] ul li em {
     white-space: nowrap;
     color: #a71d5d;
   }
