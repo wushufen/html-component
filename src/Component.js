@@ -257,7 +257,7 @@ class Component{
           code += `self.prop('${id}', '${prop}', ${attrValue})\n`
 
           detectTemplateError(attrValue, attribute)
-          node.removeAttribute(attrName)
+          removeAttribute(node, attrName)
           return
         }
 
@@ -268,7 +268,7 @@ class Component{
           code += `self.prop('${id}', '${prop}', ${exp})\n`
 
           detectTemplateError(exp, attribute)
-          node.removeAttribute(attrName)
+          removeAttribute(node, attrName)
           return
         }
 
@@ -278,7 +278,7 @@ class Component{
           code += `self.prop('${id}', "${attrName.replace('@', 'on')}", function(){${attrValue}; self.render()})\n`
 
           detectTemplateError(attrValue, attribute)
-          node.removeAttribute(attrName)
+          removeAttribute(node, attrName)
           return
         }
 
@@ -287,7 +287,7 @@ class Component{
           code += `;${attrValue}=self.getNode('${id}')\n`
 
           detectTemplateError(attrValue, attribute)
-          node.removeAttribute('$')
+          removeAttribute(node, '$')
         }
 
       })
@@ -298,7 +298,7 @@ class Component{
         code += `self.is('${id}', ${isAttr})\n`
 
         detectTemplateError(isAttr, node)
-        node.removeAttribute('is')
+        removeAttribute(node, 'is')
       }
       // <SubCom />
       else {
