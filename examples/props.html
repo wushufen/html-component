@@ -3,21 +3,27 @@
 <template name="SubComponent">
   <script>
     var prop = 'default'
+    var propName = 'default'
   </script>
 
-  <b>prop: {prop}</b>
+  <div>
+    <dl>
+      <div>
+        <dt>prop:</dt>
+        <dd>{prop}</dd>
+      </div>
+      <div>
+        <dt>propName:</dt>
+        <dd>{propName}</dd>
+      </div>
+    </dl>
+  </div>
 </template>
 
 <main>
-  <button onclick="name+=' !'" .title="name">name: {name}</button>
+  <button .title="'This is a title'">.title</button>
 
-  <SubComponent .prop="name"></SubComponent>
-
-  <script>
-    // var SubComponent = require('[name=SubComponent]')
-
-    var name = 'world'
-  </script>
+  <SubComponent .prop="'prop'" .propName="'propname'"></SubComponent>
 </main>
 
 <!-- TODO -->

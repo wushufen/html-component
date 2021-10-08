@@ -23,9 +23,10 @@
       <ul
         is="this.constructor"
         if="(node.isOpen)"
-        .$props="{tree:node.childNodes,clickNode:clickNode}"
+        .tree="node.childNodes"
+        .clickNode="clickNode"
       ></ul>
-      <em if="(node.tagName&&!node.isOpen)">{getCloseTag(node)}</em>
+      <em if="(node.tagName && !node.isOpen)">{getCloseTag(node)}</em>
     </li>
   </ul>
   <script>
@@ -51,7 +52,7 @@
 <console>
   <main panel="Elements">
     <content>
-      <ul is="Tree" .tree="tree" .$props="{clickNode:clickNode}"></ul>
+      <ul is="Tree" .tree="tree" .clickNode="clickNode"></ul>
     </content>
     <aside if="(box.N)">
       <dl>
@@ -181,9 +182,12 @@
     list-style: none;
     margin: 0;
   }
+  [panel='Elements'] ul li {
+  }
   [panel='Elements'] ul li em {
     white-space: nowrap;
     color: #a71d5d;
+    font-style: normal;
   }
   [panel='Elements'] ul li span {
     white-space: nowrap;
