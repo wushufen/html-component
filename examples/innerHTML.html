@@ -1,12 +1,17 @@
 <script src="../src/Component.js"></script>
 
 <script>
-  var html = `
-  <button onclick="alert(/xss/)">xss</button>
-  `
+  var text = '<button>button</button>'
 </script>
 
 <div>
-  <pre .onclick="console.log">{html}</pre>
-  <pre .innerHTML="html"></pre>
+  <pre>text: {text}</pre>
+
+  <pre title="text: {text}" .innerHTML="text"></pre>
+
+  <button onclick="alert(text)">alert(text)</button>
+
+  <ul>
+    <li for="c in text" if="c==='o'">{c}</li>
+  </ul>
 </div>

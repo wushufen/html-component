@@ -121,8 +121,8 @@ class Component{
     node.$props = node.$props || {}
 
     if (node.$props[name] !== value) { // cache
-      node.$props[name] = value
-      node[name] = value
+      node.$props[name] = value // component.render(node.$props)
+      node[name] = value // node.prop
     }
   }
   on(id, event, cb){}
@@ -257,7 +257,7 @@ class Component{
           code += `self.prop('${id}', '${prop}', ${attrValue})\n`
 
           detectTemplateError(attrValue, attribute)
-          node.removeAttribute(attrName)
+          removeAttribute(node, attrName)
           return
         }
 
@@ -268,7 +268,7 @@ class Component{
           code += `self.prop('${id}', '${prop}', ${exp})\n`
 
           detectTemplateError(exp, attribute)
-          node.removeAttribute(attrName)
+          removeAttribute(node, attrName)
           return
         }
 
@@ -278,7 +278,7 @@ class Component{
           code += `self.prop('${id}', "${attrName.replace('@', 'on')}", function(){${attrValue}; self.render()})\n`
 
           detectTemplateError(attrValue, attribute)
-          node.removeAttribute(attrName)
+          removeAttribute(node, attrName)
           return
         }
 
@@ -287,7 +287,7 @@ class Component{
           code += `;${attrValue}=self.getNode('${id}')\n`
 
           detectTemplateError(attrValue, attribute)
-          node.removeAttribute('$')
+          removeAttribute(node, '$')
         }
 
       })
@@ -298,7 +298,7 @@ class Component{
         code += `self.is('${id}', ${isAttr})\n`
 
         detectTemplateError(isAttr, node)
-        node.removeAttribute('is')
+        removeAttribute(node, 'is')
       }
       // <SubCom />
       else {
@@ -340,6 +340,7 @@ class Component{
       // <script>
       ${isGlobal ? '/* global */' : scriptCode}
 
+      // self.mount(target); self.render(target.$props)
       function render($props){
         // debugger
 
@@ -689,11 +690,13 @@ function getVarNames(code, cb) {
   return vars
 }
 
-// ["x"] => `!!("x" in props) && (x=props.x)`
+// var propName == props.propname
+// ["propName"] => `"propname" in props && (propName=props.propname)`
 function getUpdatePropsCode(vars, propsName = 'props') {
   var string = '\n'
-  vars.forEach(function (name) {
-    string += `!!("${name}" in ${propsName}) && (${name}=${propsName}.${name})\n`
+  vars.forEach(function (varName) {
+    var propname = varName.toLowerCase()
+    string += `"${propname}" in ${propsName} && (${varName}=${propsName}.${propname})\n`
   })
   return string
 }
