@@ -612,18 +612,18 @@ function attr2prop(node, attr) {
   var prop = attr2prop[`prop:${attr}`] // cache
   if(prop) return prop
 
-  for (var prop in node) {
+  for (prop in node) {
     if (prop.toLowerCase() === attr) {
       attr2prop[`prop:${attr}`] = prop
       return prop
     }
   }
 
-  attr = {
+  prop = {
     class: 'className',
   }[attr] || attr
 
-  return attr
+  return prop
 }
 
 // `  \  "  \n  ` => `"  \\  \"  \\n  "`
