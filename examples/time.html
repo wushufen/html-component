@@ -9,19 +9,6 @@
 </script>
 
 <h1>
-  <!-- {date} -->
   {date.getHours()}:{date.getMinutes()}:{date.getSeconds()}
-  <small>{String(date.getMilliseconds()).padStart(3, 0)}</small>
+  <small>{date.getMilliseconds()}</small>
 </h1>
-
-<style>
-  h1 {
-    line-height: 48vh;
-    text-align: center;
-    font-family: monospace;
-    font-size: 80px;
-  }
-  small {
-    color: #888;
-  }
-</style>

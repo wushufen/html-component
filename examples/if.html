@@ -1,14 +1,12 @@
 <script src="../src/Component.js"></script>
 
 <script>
-  var value = true
+  var bool = true
 
   function toggle() {
-    value = !value
+    bool = !bool
   }
 </script>
 
-<button onclick="toggle()">
-  toggle
-  <b if="value">{value}</b>
-</button>
+<button onclick="toggle()">if</button>
+<span if="(bool)">{bool}</span>

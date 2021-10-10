@@ -6,7 +6,7 @@
     var propName = 'default'
   </script>
 
-  <div>
+  <div class="c" title="ok">
     <dl>
       <div>
         <dt>prop:</dt>
@@ -21,9 +21,15 @@
 </template>
 
 <main>
-  <button .title="'This is a title'">.title</button>
+  <button .title="'This is a title'" onclick="console.log(this.title)">
+    .title
+  </button>
 
-  <SubComponent .prop="'prop'" .propName="'propname'"></SubComponent>
+  <SubComponent
+    .prop="'prop'"
+    .propName="'propname'"
+    .title="'TODO'"
+  ></SubComponent>
 </main>
 
 <!-- TODO -->
@@ -34,3 +40,9 @@
 
   <MyInput .value="value"></MyInput>
 </skip>
+
+<style>
+  .c {
+    border: 1px solid #0af;
+  }
+</style>
