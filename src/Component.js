@@ -335,9 +335,6 @@ class Component{
       // initCode
       ${initCode}
 
-      // async function
-      ${getAsyncFunctionCode()}
-
       // <script>
       ${isGlobal ? '/* global */' : scriptCode}
 
@@ -420,43 +417,12 @@ class Component{
 
 // index.html
 if (typeof window === 'object' && this === window) {
-  var render = function(){}
-  var __setInterval = window.setInterval
-  window.setInterval = function(cb, time){
-    return __setInterval(function(){
-      var rs = cb.apply(this, arguments)
-      render()
-      return rs
-    }, time)
-  }
-  var __setTimeout = window.setTimeout
-  // window.setTimeout = function(cb, time){
-  //   return __setTimeout(function(){
-  //     var rs = cb.apply(this, arguments)
-  //     render()
-  //     return rs
-  //   }, time)
-  // }
-  var __requestAnimationFrame = window.requestAnimationFrame
-  window.requestAnimationFrame = function(cb, time){
-    return __requestAnimationFrame(function(){
-      var rs = cb.apply(this, arguments)
-      render()
-      return rs
-    }, time)
-  }
-
   addEventListener('DOMContentLoaded', e => {
     var app = new Component(document.documentElement)
-    window.app = app
-    window.render = app.render
     app.render()
-
-    render = function () {
-      app.render()
-    }
-    window.setTimeout = __setTimeout
-    window.setInterval = __setInterval
+    
+    // TODO REMOVE
+    window.app = app
   })
 }
 
@@ -706,7 +672,7 @@ function getUpdatePropsCode(vars, propsName = 'props') {
 // TODO  
 /**
  * 根组件
- * Object.defineProperty(window, 'list', { get() { self.render(); return _list } }
+ * Object.defineProperty(window, 'list', { get() { self.render(); return _list } } // 无效 var list => configurable: false
  * 子组件
  * require() => function fn(){...} => function fn(){self.renderAsync(); ...}
  */
@@ -725,6 +691,18 @@ function getAsyncFunctionCode(renderCode = 'self.render()') {
     }, delay) 
   }
   `
+}
+
+function watchGet(obj, prop, cb) {
+  delete obj[prop]
+  var value = obj[prop]
+  Object.defineProperty(obj, prop, {
+    get() {
+      cb || console.log('[get]', obj, prop)
+      return value
+    },
+    set(v) {value = v},
+  })
 }
 
 // code => error? throw 🐞
