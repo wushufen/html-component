@@ -120,10 +120,11 @@ class Component{
     var node = this.getNode(id)
     node.$props = node.$props || {}
 
-    if (node.$props[name] !== value) { // cache
-      node.$props[name] = value // component.render(node.$props)
-      node[name] = value // node.prop
-    }
+    // cache
+    if (node.$props[name] === value) return
+ 
+    node.$props[name] = value // component.render(node.$props)
+    node[name] = value // node.prop
   }
   on(id, event, cb){}
   is(id, SubComponent) {
@@ -702,6 +703,13 @@ function getUpdatePropsCode(vars, propsName = 'props') {
 }
 
 // => asyncFn + render()
+// TODO  
+/**
+ * 根组件
+ * Object.defineProperty(window, 'list', { get() { self.render(); return _list } }
+ * 子组件
+ * require() => function fn(){...} => function fn(){self.renderAsync(); ...}
+ */
 function getAsyncFunctionCode(renderCode = 'self.render()') {
   return `
   var setTimeout = function(cb, delay, a,b,c,d,e){
