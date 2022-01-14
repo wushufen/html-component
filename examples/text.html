@@ -1,0 +1,17 @@
+<script src="../src/Component.js"></script>
+
+<script>
+  const object = {
+    undefined: undefined,
+    null: null,
+    string: 'string',
+    number: 1,
+    object: {
+      key: 'value',
+    },
+  }
+</script>
+
+<ul>
+  <li for="(item, key) in object">{key}: {item}</li>
+</ul>

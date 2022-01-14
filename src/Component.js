@@ -122,9 +122,12 @@ class Component{
 
     // cache
     if (node.$props[name] === value) return
- 
+
     node.$props[name] = value // component.render(node.$props)
     node[name] = value // node.prop
+  }
+  output(value) {
+    return output(value)
   }
   on(id, event, cb){}
   is(id, SubComponent) {
@@ -639,11 +642,18 @@ function quot(string, q = '"') {
 }
 
 // `t {1} {2} t` => `"t " +(1)+ " " +(2)+ " t"`
-function parseExp(text, expLeft = '{', expRight = '}') {
+// TODO <b>{ e=> {{}} }</b>
+function parseExp(text, left = '{', right = '}') {
+  const allChar = '[^]'
+  const stringContent = `(?:\\.|${allChar})*?`
+  const string = `"${stringContent}"|'${stringContent}'|\`${stringContent}\``
+  const brace = `\\{${allChar}*?\\}`
+  const expReg = RegExp(`(\\${left})((?:${string}|${brace}|${allChar})*?)(\\${right})`, 'g')
+
   return (
     text
       // {exp} {`${e}{}\``}
-      .replace(RegExp(`(\\${expLeft})(("(\\.|[^])*?"|'(\\.|[^])*?'|\`(\\.|[^])*?\`|\{[^]*?\}|[^])*?)(\\${expRight})`, 'g'), '\f +($2)+ \f')
+      .replace(expReg, '\f +self.output($2)+ \f')
       // }text{
       .replace(
         RegExp('(^|\f)([^]*?)(\f|$)', 'g'),
@@ -652,6 +662,24 @@ function parseExp(text, expLeft = '{', expRight = '}') {
         },
       )
   )
+}
+
+// undefined => ''
+// object => json
+function output(value) {
+  if (typeof value === 'undefined') {
+    return ''
+  }
+
+  if (typeof value === 'object') {
+    try {
+      return `\n${JSON.stringify(value, null, '  ')}\n`
+    } catch (_) {
+      return value
+    }
+  }
+
+  return value
 }
 
 // `(item,key,index) in list` => {list,item,key,index}
@@ -703,7 +731,7 @@ function getUpdatePropsCode(vars, propsName = 'props') {
 }
 
 // => asyncFn + render()
-// TODO  
+// TODO
 /**
  * 根组件
  * Object.defineProperty(window, 'list', { get() { self.render(); return _list } }
