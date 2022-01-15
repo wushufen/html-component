@@ -424,6 +424,7 @@ class Component{
 // index.html
 if (typeof window === 'object' && this === window) {
   var render = function(){}
+
   var __setInterval = window.setInterval
   window.setInterval = function(cb, time){
     return __setInterval(function(){
@@ -432,14 +433,16 @@ if (typeof window === 'object' && this === window) {
       return rs
     }, time)
   }
+
   var __setTimeout = window.setTimeout
-  // window.setTimeout = function(cb, time){
-  //   return __setTimeout(function(){
-  //     var rs = cb.apply(this, arguments)
-  //     render()
-  //     return rs
-  //   }, time)
-  // }
+  window.setTimeout = function(cb, time){
+    return __setTimeout(function(){
+      var rs = cb.apply(this, arguments)
+      render()
+      return rs
+    }, time)
+  }
+
   var __requestAnimationFrame = window.requestAnimationFrame
   window.requestAnimationFrame = function(cb, time){
     return __requestAnimationFrame(function(){
