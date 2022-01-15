@@ -1,0 +1,29 @@
+<script src="../src/Component.js"></script>
+
+<template name="SubComponent">
+  <script>
+    var prop = 'default'
+
+    addEventListener('click', function () {
+      prop = 'click'
+    })
+
+    setTimeout(() => {
+      prop = 'timeout'
+    }, 3000)
+
+    Promise.resolve().then((e) => {
+      prop = 'then'
+    })
+
+    function keydown() {
+      prop = 'fun'
+    }
+
+    addEventListener('keydown', keydown)
+  </script>
+
+  <div>prop: {prop}</div>
+</template>
+
+<SubComponent></SubComponent>

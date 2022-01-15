@@ -19,6 +19,8 @@ class Component{
     this['#tpl'] = tpl
 
     this.compile(tpl)
+
+    console.log(this.render)
   }
   saveNode(node) {
     var nodeString = node.nodeValue || node.cloneNode().outerHTML
@@ -338,11 +340,8 @@ class Component{
       // initCode
       ${initCode}
 
-      // async function
-      ${getAsyncFunctionCode()}
-
       // <script>
-      ${isGlobal ? '/* global */' : scriptCode}
+      ${isGlobal ? '/* global */' : injectRender(scriptCode, 'Promise.resolve().then(self.render)')}
 
       // self.mount(target); self.render(target.$props)
       function render($props){
@@ -733,29 +732,9 @@ function getUpdatePropsCode(vars, propsName = 'props') {
   return string
 }
 
-// => asyncFn + render()
-// TODO
-/**
- * 根组件
- * Object.defineProperty(window, 'list', { get() { self.render(); return _list } }
- * 子组件
- * require() => function fn(){...} => function fn(){self.renderAsync(); ...}
- */
-function getAsyncFunctionCode(renderCode = 'self.render()') {
-  return `
-  var setTimeout = function(cb, delay, a,b,c,d,e){
-    return window.setTimeout(function(){
-      cb(a,b,c,d,e)
-      ${renderCode}
-    }, delay) 
-  }
-  var setInterval = function(cb, delay, a,b,c,d,e){
-    return window.setInterval(function(){
-      cb(a,b,c,d,e)
-      ${renderCode}
-    }, delay) 
-  }
-  `
+function injectRender(code, render = 'self.render()') {
+  const functionReg = /\)\s*\{|=>\s*\{/g // (){self.render(); }  =>{self.render(); }
+  return code.replace(functionReg, `$& ${render}; `)
 }
 
 // code => error? throw 🐞
