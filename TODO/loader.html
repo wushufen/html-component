@@ -1,0 +1,54 @@
+<main>
+  <ul>
+    <li for="(const item of list)" onclick="click(item)">{item}</li>
+  </ul>
+</main>
+
+<script>
+  const list = [1, 2, 3]
+
+  function click(item) {
+    alert(item)
+  }
+</script>
+
+================>
+
+<script>
+  import htmlx from 'htmlx'
+
+  export default class HelloWorld extends htmlx.Component {
+    static tpl = `
+      <main>
+        <ul>
+          <li for="(const item of list)" onclick="click(item)"></li>
+        </ul>
+      </main>
+    `
+
+    constructor() {
+      super()
+      const self = this
+
+      const list = [1, 2, 3]
+
+      function click(item) {
+        self.__render()
+
+        alert(item)
+      }
+
+      self.render = function (props) {
+        // <li for="(const item of list)" onclick="click(item)"></li>
+        self.for('main/ul/li', function (item, key, index) {
+          self.prop('main/ul/li', 'onclick', function (event) {
+            click(item)
+          })
+
+          // {item}
+          self.prop('main/ul/li/#text', 'nodeValue', item)
+        })
+      }
+    }
+  }
+</script>
