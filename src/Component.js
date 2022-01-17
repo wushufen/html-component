@@ -669,11 +669,11 @@ function parseExp(text, left = '{', right = '}') {
 // undefined => ''
 // object => json
 function output(value) {
-  if (typeof value === 'undefined') {
+  if (value === undefined) {
     return ''
   }
 
-  if (typeof value === 'object') {
+  if (value?.constructor === Object) {
     try {
       return `\n${JSON.stringify(value, null, '  ')}\n`
     } catch (_) {

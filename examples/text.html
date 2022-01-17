@@ -4,11 +4,19 @@
   const object = {
     undefined: undefined,
     null: null,
-    string: 'string',
     number: 1,
+    string: 'string',
+    function: function () {},
+    Set: new Set([1, 2, 3]),
+    Map: new Map([[1, 11]]),
     object: {
       key: 'value',
     },
+    date: new Date(),
+    get 'get random'() {
+      return Math.random()
+    },
+    window,
   }
 </script>
 
