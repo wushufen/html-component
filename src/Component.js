@@ -19,8 +19,6 @@ class Component{
     this['#tpl'] = tpl
 
     this.compile(tpl)
-
-    console.log(this.render)
   }
   saveNode(node) {
     var nodeString = node.nodeValue || node.cloneNode().outerHTML
@@ -334,18 +332,23 @@ class Component{
     }
 
     var getRender = Function('component_', `
-      // debugger
       var self = this
+      // debugger
 
       // initCode
       ${initCode}
 
       // <script>
-      ${isGlobal ? '/* global */' : injectRender(scriptCode, 'Promise.resolve().then(self.render)')}
+      ${isGlobal ? '/* global */' : injectRender(scriptCode, '!render.lock && Promise.resolve().then(self.render)')}
 
       // self.mount(target); self.render(target.$props)
       function render($props){
         // debugger
+        
+        // lock: render=>render
+        // console.warn('render.lock:', render.lock)
+        if(render.lock) return
+        render.lock = true
 
         // props
         $props = $props || {}
@@ -353,6 +356,9 @@ class Component{
 
         // code
         ${code}
+
+        // -lock
+        render.lock = false
       }
 
       function get(name){
@@ -732,8 +738,9 @@ function getUpdatePropsCode(vars, propsName = 'props') {
   return string
 }
 
+// fn(){code} => fn(){render(); code}
 function injectRender(code, render = 'self.render()') {
-  const functionReg = /\)\s*\{|=>\s*\{/g // (){self.render(); }  =>{self.render(); }
+  const functionReg = /\)\s*\{|=>\s*\{/g // (){  =>{
   return code.replace(functionReg, `$& ${render}; `)
 }
 
