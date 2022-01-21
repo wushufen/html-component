@@ -171,7 +171,7 @@ class Component{
     isGlobal = node == document.documentElement
 
     // <script>
-    node.querySelectorAll('script').forEach(e=>scriptCode += e.innerHTML)
+    node.querySelectorAll('script').forEach(e=>scriptCode += '// <script>' + e.innerHTML + '// </script>\n')
 
     // <template name>
     node.querySelectorAll('template').forEach(node => {
@@ -331,20 +331,37 @@ class Component{
 
     }
 
-    var getRender = Function('component_', `
+    // Scope(){var data; return render(){ dom }}
+    var Scope = Function(`
       var self = this
       // debugger
+      // console.warn(this, render)
 
       // initCode
       ${initCode}
 
-      // <script>
+      // <script />
       ${isGlobal ? '/* global */' : injectRender(scriptCode, '!render.lock && Promise.resolve().then(self.render)')}
+
+      // getter setter
+      this.get = function(){
+        this.get['_' + arguments[0]] = this.get['_' + arguments[0]]
+          || eval('(function(){return '+arguments[0]+'})')
+
+        return this.get['_' + arguments[0]]()
+      }
+      this.set = function(){
+        this.set['_' + arguments[0]] = this.set['_' + arguments[0]]
+          || eval('(function(){return '+arguments[0]+'='+arguments[1]+'})')
+
+        return this.set['_' + arguments[0]](arguments[1])
+      }
 
       // self.mount(target); self.render(target.$props)
       function render($props){
         // debugger
-        
+        // console.warn(this, render)
+
         // lock: render=>render
         // console.warn('render.lock:', render.lock)
         if(render.lock) return
@@ -361,22 +378,11 @@ class Component{
         render.lock = false
       }
 
-      function get(name){
-        get[name] = get[name] || eval('(function(){return '+name+'})')
-        return get[name]()
-      }
-      function set(name, value){
-        set[name] = set[name] || eval('(function(){return '+name+'='+value+'})')
-        return set[name](value)
-      }
-      this.get = get
-      this.set = set
-
       return render
     `)
 
     // render
-    var render = getRender.call(this, this)
+    var render = Scope.call(this, this)
     this.render = render
 
     // this.el = firstElementChild(!style,!script)
