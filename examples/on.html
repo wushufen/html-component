@@ -4,10 +4,11 @@
   var name = 'world'
 
   function haveFun() {
+    console.log(arguments)
     name = name.split('').reverse().join('')
   }
 </script>
 
 <h1 onclick="haveFun()">Hello {name}</h1>
 
-<button onclick="haveFun()">Hello {name}</button>
+<button .onclick="haveFun">Hello {name}</button>

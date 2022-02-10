@@ -255,6 +255,11 @@ class Component{
         // this.value=${attrValue}  <=>  oninput: ${attrValue}=this.value // TODO
         }
 
+        // .on
+        if (/^[\.:]on/.test(attrName)) {
+          attrValue = `function(){(${attrValue}).apply(this, arguments); self.render()}`
+        }
+
         // .attr :attr
         if (/^[\.:]/.test(attrName)) {
           var prop = attr2prop(node, attrName.substr(1))
