@@ -763,14 +763,18 @@ function detectTemplateError(code, node) {
     try {
       Function(`(${code})`) // (function(){})
     } catch (_) {
-      var parentNode  = node.parentNode || node
+      var parentNode  = node.parentNode || node.ownerElement?.parentNode || node
       var tpl = node.nodeValue || node.cloneNode().outerHTML
       tpl = tpl.replace(/<\/.*?>/, '') // - </tag>
-      tpl = parentNode.outerHTML.replace(tpl, '🐞' + tpl + '🐞')
+      tpl = parentNode.outerHTML.replace(tpl, `🐞${tpl}🐞`)
 
       code = code.replace(/;"#(.*?)#";/g, '$1')
-      throw Error(`[TemplateError] ${error}\n${code}\n^\n${tpl}\n`)
-      // setTimeout(e => { throw Error('[TemplateError]\n  ' + errorTpl) })
+      var tplError = Error(`[TemplateError] ${error}\n${code}\n^\n${tpl}\n`)
+
+      // throw tplError
+      console.error(tplError)
+
+      return true
     }
   }
 }
