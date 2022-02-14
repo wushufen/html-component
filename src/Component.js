@@ -291,9 +291,12 @@ class Component{
           return
         }
 
-        // $="el"
+        // $=""
         if (/^\$$/.test(attrName)) {
-          code += `;${attrValue}=self.getNode('${id}')\n`
+          // $="el"
+          // code += `;${attrValue}=self.getNode('${id}')\n`
+          // $="el = this"
+          code += `;(function(){${attrValue}}).call(self.getNode('${id}'))\n`
 
           detectTemplateError(attrValue, attribute)
           removeAttribute(node, '$')
