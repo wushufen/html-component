@@ -405,11 +405,7 @@ class Component{
     this.el['#component'] = this
   }
   defineSubComponent(tpl) {
-    return class SubComponent extends Component{
-      constructor() {
-        super(tpl)
-      }
-    }
+    return Component.define(tpl)
   }
   mount(target) {
     this.target = target // component => target
@@ -436,6 +432,13 @@ class Component{
     this.el.setAttribute(`c${constructor['#c']}`, '')
 
     return this.el
+  }
+  static define(tpl) {
+    return class SubComponent extends Component{
+      constructor() {
+        super(tpl)
+      }
+    }
   }
 }
 
