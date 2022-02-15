@@ -1,5 +1,6 @@
 <script src="../src/Component.js"></script>
 
+<h1>root</h1>
 <c-component></c-component>
 
 <script>
@@ -13,9 +14,22 @@
         <script>
           var name = 'World!'
         <\/script>
+        <style>
+          h1 {
+            color: #f00;
+          }
+        </style>
       `)
 
+      var style = document.createElement('style')
+      style.innerText = `
+        h1 {
+          color: #0f0;
+        }
+      `
+
       shadow.appendChild(component.mount())
+      shadow.appendChild(style)
     }
   }
   customElements.define('c-component', C)

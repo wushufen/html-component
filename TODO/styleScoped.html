@@ -1,32 +1,43 @@
 <script src="../src/Component.js"></script>
 <script src="./scoped.js"></script>
 
-<h1>HELLO WORLD</h1>
+<ul>
+  <li>li</li>
+</ul>
+
+<hr />
+
 <h1 is="Hello"></h1>
 <h1 is="Hello"></h1>
 
 <template name="Hello">
-  <h1>Hello {'world'}</h1>
+  <ol>
+    <li>com</li>
+  </ol>
   <!-- scoped -->
   <style>
-    h1 {
+    li {
       color: #0af;
     }
   </style>
 </template>
 
-<div class="s">
-  <h1>style scoped</h1>
-  <style scoped>
-    div {
-      x: true;
-      border: solid 1px #bbb;
-    }
-    h1 {
-      color: #f80;
-    }
-    .s {
-      outline: solid 1px red;
-    }
-  </style>
-</div>
+<hr />
+
+<ul>
+  <li><span>1</span></li>
+  <li>
+    <span>2</span>
+    <ul>
+      <li><span>2.1</span></li>
+    </ul>
+    <style scoped>
+      :root {
+        color: red;
+      }
+      li {
+        color: #f80;
+      }
+    </style>
+  </li>
+</ul>
