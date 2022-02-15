@@ -422,7 +422,7 @@ class Component{
         target.parentNode.replaceChild(this.el, target)
       }
     }
-    // style
+    // style -> head
     // TODO scoped
     var constructor = this.constructor
     if (!constructor['#styled']) {
@@ -438,53 +438,6 @@ class Component{
     return this.el
   }
 }
-
-
-// index.html
-if (typeof window === 'object' && this === window) {
-  var render = function(){}
-
-  var __setInterval = window.setInterval
-  window.setInterval = function(cb, time){
-    return __setInterval(function(){
-      var rs = cb.apply(this, arguments)
-      render()
-      return rs
-    }, time)
-  }
-
-  var __setTimeout = window.setTimeout
-  window.setTimeout = function(cb, time){
-    return __setTimeout(function(){
-      var rs = cb.apply(this, arguments)
-      render()
-      return rs
-    }, time)
-  }
-
-  var __requestAnimationFrame = window.requestAnimationFrame
-  window.requestAnimationFrame = function(cb, time){
-    return __requestAnimationFrame(function(){
-      var rs = cb.apply(this, arguments)
-      render()
-      return rs
-    }, time)
-  }
-
-  addEventListener('DOMContentLoaded', e => {
-    var app = new Component(document.documentElement)
-    window.app = app
-    window.render = app.render
-    app.render()
-
-    render = function () {
-      app.render()
-    }
-    window.setTimeout = __setTimeout
-    window.setInterval = __setInterval
-  })
-}
-
 
 // {length} => []
 function toArray(arrayLike, start) {
@@ -785,4 +738,53 @@ function detectTemplateError(code, node) {
       return true
     }
   }
+}
+
+// index.html
+if (typeof window === 'object' && this === window) {
+  var render = function(){}
+
+  var __setInterval = window.setInterval
+  window.setInterval = function(cb, time){
+    return __setInterval(function(){
+      var rs = cb.apply(this, arguments)
+      render()
+      return rs
+    }, time)
+  }
+
+  var __setTimeout = window.setTimeout
+  window.setTimeout = function(cb, time){
+    return __setTimeout(function(){
+      var rs = cb.apply(this, arguments)
+      render()
+      return rs
+    }, time)
+  }
+
+  var __requestAnimationFrame = window.requestAnimationFrame
+  window.requestAnimationFrame = function(cb, time){
+    return __requestAnimationFrame(function(){
+      var rs = cb.apply(this, arguments)
+      render()
+      return rs
+    }, time)
+  }
+
+  addEventListener('DOMContentLoaded', e => {
+    var app = new Component(document.documentElement)
+    window.app = app
+    app.render()
+
+    render = function () {
+      app.render()
+    }
+    window.setTimeout = __setTimeout
+    window.setInterval = __setInterval
+  })
+}
+
+// export
+if (typeof module === 'object') {
+  module.exports = Component
 }
