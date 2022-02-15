@@ -404,9 +404,6 @@ class Component{
     this['#node'] = node
     this.el['#component'] = this
   }
-  defineSubComponent(tpl) {
-    return Component.define(tpl)
-  }
   mount(target) {
     this.target = target // component => target
     this.render(target?.$props) // first render
@@ -433,12 +430,28 @@ class Component{
 
     return this.el
   }
+  defineSubComponent(tpl) {
+    return Component.define(tpl)
+  }
   static define(tpl) {
     return class SubComponent extends Component{
       constructor() {
         super(tpl)
       }
     }
+  }
+  static async load(url) {
+    var tpl = await (await fetch(url)).text()
+    tpl = tpl.replace(/require\(\s*['"](.*?)['"]\s*\)/g, function($, $1) {
+      if (/\.html$/.test($1)) {
+        var base = new URL(url, location).toString()
+        var url2 = new URL($1, base).toString()
+        return `this.constructor.load(${quot(url2)})`
+      }
+      return $
+    })
+
+    return Component.define(tpl)
   }
 }
 
