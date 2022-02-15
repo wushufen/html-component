@@ -92,7 +92,7 @@ class Component{
 
     // -- remove
     each(cloneNodes, function(cloneNode, key) {
-      if (!Object.hasOwnProperty.call(list, key)) {
+      if (!hasOwnProperty(list, key)) {
         // TODO setTimeout destroy?
         self.if(cloneNode, false)
       }
@@ -513,12 +513,17 @@ function each(list, cb) {
   } else {
     var index = 0
     for (var key in list) {
-      if (Object.hasOwnProperty.call(list, key)) {
+      if (hasOwnProperty(list, key)) {
         var item = list[key]
         cb(item, key, index++)
       }
     }
   }
+}
+
+// object, key => bool
+function hasOwnProperty(object, key) {
+  return Object.hasOwnProperty.call(object, key)
 }
 
 // node, target -> <node><!-- target -->
