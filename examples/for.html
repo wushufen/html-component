@@ -1,18 +1,29 @@
 <script src="../src/Component.js"></script>
 
 <script>
-  var name = 'world'
-
-  setInterval(() => {
-    name += '+'
-  }, 1000)
+  var string = 'string'
+  var array = [1, 2, 3]
+  var object = {
+    a: 1,
+    b: 2,
+    toString() {
+      return 'oo'
+    },
+  }
 </script>
 
-<input oninput="name=this.value" .value="name" autofocus />
-{name.length} * {name.length} = {name.length * name.length}
+<ul>
+  <li for="(item,i) in string" title="{i}">{item}</li>
+</ul>
+
+<hr />
 
 <ul>
-  <li for="(item,i) in name" title="{i}">
-    <b for="(item,i) in name">{item}</b>
-  </li>
+  <li for="(item,i) in array" title="{i}">{item}</li>
+</ul>
+
+<hr />
+
+<ul>
+  <li for="(item,i) in object" title="{i}">{item}</li>
 </ul>

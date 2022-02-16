@@ -60,6 +60,12 @@ class Component{
       self.forPath = `${forPath}#${key}` // ***
       var cloneNode = cloneNodes[key]
 
+      // fix:
+      // list={toString(){}} => cloneNodes['toString'] => != node
+      if (cloneNode && !cloneNode.nodeType) {
+        cloneNode = undefined
+      }
+
       // ++ clone
       if (!cloneNode) {
         cloneNode = node.cloneNode(true)
