@@ -14,7 +14,7 @@ class Component{
       length: 0,
     }
     this.forPath = '' // ***
-    this.el = null // firstElementChild
+    this.node = null // firstElementChild
     this.target = null // <target is="Com">
     this['#tpl'] = tpl
 
@@ -106,7 +106,7 @@ class Component{
   }
   if(id, bool, cb) {
     var node = this.getNode(id)
-    node = node['@component']?.el || node // $is?
+    node = node['@component']?.node || node // $is?
 
     var target = node['#if#'] || node['#for#'] // for+if?
 
@@ -169,18 +169,31 @@ class Component{
     var varNames = []
 
     // parse
+    var container = tpl
     var node = tpl
     if ('string' === typeof tpl) {
-      node = document.createElement('div')
-      node.innerHTML = tpl
+      container = document.createElement('div')
+      container.innerHTML = tpl
+
+      // node = firstElementChild
+      for (let childNode of container.children) {
+        if (!/style|script|template/i.test(childNode.tagName)) {
+          node = childNode
+          break
+        }
+      }
     }
-    isGlobal = node == document.documentElement
+    isGlobal = container == document.documentElement
+
+    this.container = container
+    this.node = node
+    this.node['#component'] = this
 
     // <script>
-    node.querySelectorAll('script').forEach(e=>scriptCode += '// <script>' + e.innerHTML + '// </script>\n')
+    container.querySelectorAll('script').forEach(e=>scriptCode += '// <script>' + e.innerHTML + '// </script>\n')
 
     // <template name>
-    node.querySelectorAll('template').forEach(node => {
+    container.querySelectorAll('template').forEach(node => {
       var name = getAttribute(node, 'name')
       if (name) {
         initCode += `
@@ -410,17 +423,6 @@ class Component{
     // render
     var render = Scope.call(this, this)
     this.render = render
-
-    // this.el = firstElementChild(!style,!script)
-    this.el = null
-    for (let childNode of node.children) {
-      if (!/style|script/i.test(childNode.tagName)) {
-        this.el = childNode
-        break
-      }
-    }
-    this['#node'] = node
-    this.el['#component'] = this
   }
   mount(target) {
     this.target = target // component => target
@@ -430,23 +432,23 @@ class Component{
     if (target) {
       target['@component'] = this // target => component
       if (target.parentNode) {
-        target.parentNode.replaceChild(this.el, target)
+        target.parentNode.replaceChild(this.node, target)
       }
     }
     // style -> head
     // TODO scoped
     var constructor = this.constructor
     if (!constructor['#styled']) {
-      this['#node'].querySelectorAll('style').forEach(style => {
+      this.container.querySelectorAll('style').forEach(style => {
         document.head.appendChild(style)
       })
       constructor['#styled'] = true
     }
     Component['#ci'] = Component['#ci'] || 1
     constructor['#c'] = constructor['#c'] || (Component['#ci']++)
-    this.el.setAttribute(`c${constructor['#c']}`, '')
+    this.node.setAttribute(`c${constructor['#c']}`, '')
 
-    return this.el
+    return this.node
   }
   defineSubComponent(tpl) {
     return Component.define(tpl)
