@@ -124,12 +124,12 @@ class Component{
   }
   prop(id, name, value) {
     var node = this.getNode(id)
-    node.$props = node.$props || {}
+    var $props = node.$props = node.$props || {}
 
     // cache
-    if (node.$props[name] === value) return
+    if (name in $props && $props[name] === value) return
 
-    node.$props[name] = value // component.render(node.$props)
+    $props[name] = value // component.render(node.$props)
     node[name] = value // node.prop
   }
   output(value) {
