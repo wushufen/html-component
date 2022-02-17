@@ -687,7 +687,7 @@ function output(value) {
     return ''
   }
 
-  if (value?.constructor === Object) {
+  if (value?.constructor === Object || value instanceof Array) {
     try {
       return `\n${JSON.stringify(value, null, '  ')}\n`
     } catch (_) {
