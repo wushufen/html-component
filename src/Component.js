@@ -250,6 +250,12 @@ class Component{
           attrValue = attrValue.replace(/(\S+)\{(.*?)\}/g, '{$2?"$1":""}')
         }
 
+        // class="c(bool)"
+        if (/^class$/i.test(attrName)) {
+          // "c(Math.random()>.5)" => "{Math.random()>.5?'c':''}"
+          attrValue = attrValue.replace(/([^()\s]+)(\(([^()]|\([^()]*\))*\))/g, '{$2?"$1":""}')
+        }
+
         // @in @out => @originNode
         if (/^class$/i.test(attrName)) {
           node['@in'] = /([^'"\s]+)@in/.exec(attrValue)?.[1]
