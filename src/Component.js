@@ -244,6 +244,12 @@ class Component{
           attrValue = attrValue.replace(/([^'"\s]+):([^'"\s]+)/g, '{$2?"$1":""}')
         }
 
+        // class="c{bool}"
+        if (/^class$/i.test(attrName)) {
+          // "c{bool}" => "{bool?'c':''}"
+          attrValue = attrValue.replace(/(\S+)\{(.*?)\}/g, '{$2?"$1":""}')
+        }
+
         // @in @out => @originNode
         if (/^class$/i.test(attrName)) {
           node['@in'] = /([^'"\s]+)@in/.exec(attrValue)?.[1]

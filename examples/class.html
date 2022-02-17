@@ -5,13 +5,8 @@
   var number = 100
 </script>
 
-<button
-  class="a b:bool c:!bool {bool?'d':''}"
-  style="width: _number_px; height: _number_px"
-  @click="bool=!bool;number+=10"
->
-  {bool}
-</button>
+<!-- TODO  {{d: bool, e: !bool}} {['e', 'f']} -->
+<button class="a {bool?'b':''} c{bool}" @click="bool=!bool">{bool}</button>
 
 <style>
   .a {
