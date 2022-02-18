@@ -1,98 +1,56 @@
 <script src="../src/Component.js"></script>
 
+<pre>
+form: 
+{form}
+</pre>
+
 <script>
-  var list = [1, 1, 1, 1, 1, 1]
-  var value = 'value'
+  var form = {
+    value: null,
+    string: 'string',
+    number: 100,
+  }
 </script>
 
-<!--         <h2>表单</h2> -->
 <section>
-  <h2>表单</h2>
-
   <form>
     <fieldset>
-      <input type="text" required placeholder="text" />
+      <input type="text" .value="form.value" oninput="form.value=this.value" />
     </fieldset>
 
     <fieldset>
-      <input type="email" placeholder="email" />
+      <input
+        type="number"
+        .value="form.value"
+        oninput="form.value=Number(this.value)"
+      />
     </fieldset>
 
     <fieldset>
-      <input type="password" placeholder="password" />
+      <textarea
+        placeholder="textarea"
+        .value="form.value"
+        oninput="form.value=this.value"
+      ></textarea>
     </fieldset>
 
     <fieldset>
-      <input type="search" placeholder="search" />
+      <div
+        contenteditable="true"
+        .innerText="form.value"
+        oninput="form.value=this.innerText"
+      ></div>
     </fieldset>
 
     <fieldset>
-      <input type="tel" placeholder="tel" />
-    </fieldset>
-
-    <fieldset>
-      <input type="url" placeholder="url" />
-    </fieldset>
-
-    <fieldset>
-      <input type="number" placeholder="number" />
-    </fieldset>
-
-    <fieldset>
-      <input type="date" placeholder="date" pattern="yyyy/MM/dd" />
-    </fieldset>
-
-    <fieldset hidden>
-      <input type="month" placeholder="month" />
-    </fieldset>
-
-    <fieldset hidden>
-      <input type="week" placeholder="week" />
-    </fieldset>
-
-    <fieldset>
-      <input type="time" placeholder="time" />
-    </fieldset>
-
-    <fieldset>
-      <input type="file" placeholder="file" />
-    </fieldset>
-
-    <fieldset>
-      <label>
-        <input
-          type="color"
-          value="#00aaff"
-          onchange="document.documentElement.style.setProperty('--primary-color', this.value)"
-        />
-        color
-      </label>
-    </fieldset>
-
-    <fieldset hidden>
-      <input type="image" src="" />
-    </fieldset>
-
-    <fieldset>
-      <textarea pattern="xxx" placeholder="textarea"></textarea>
-    </fieldset>
-
-    <fieldset>
-      <textarea rows="2" pattern="xxx" placeholder="textarea"></textarea>
-    </fieldset>
-
-    <fieldset>
-      <div contenteditable="true" placeholder="contenteditable"></div>
-    </fieldset>
-
-    <fieldset>
-      <select>
+      <select .value="form.value" oninput="form.value=this.value">
         <option value="">select</option>
         <option value="1">option 1</option>
         <option value="2">option 2</option>
         <option value="3">option 3</option>
-        <option value="4">option 4</option>
-        <option value="5">option 5</option>
+        <option value="string">string</option>
+        <option value="string2">string2</option>
       </select>
     </fieldset>
 
@@ -102,22 +60,11 @@
         <option value="1">option 1</option>
         <option value="2">option 2</option>
         <option value="3">option 3</option>
-        <option value="4">option 4</option>
-        <option value="5">option 5</option>
       </select>
     </fieldset>
 
     <fieldset>
-      <input type="range" />
-      <!-- <input type="range" orient="vertical" /> -->
-    </fieldset>
-
-    <fieldset>
-      <progress value="50" max="100">50%</progress>
-    </fieldset>
-
-    <fieldset>
-      <meter value="50" max="100">50%</meter>
+      <input type="range" .value="form.value" oninput="form.value=this.value" />
     </fieldset>
 
     <fieldset>
@@ -131,10 +78,16 @@
         <input type="checkbox" name="checkbox" checked required /> 复选
       </label>
     </fieldset>
-
-    <fieldset>
-      <button type="button">button</button>
-      <button type="submit" xonclick="return false">submit</button>
-    </fieldset>
   </form>
 </section>
+
+<style>
+  fieldset {
+    border: 0;
+  }
+
+  section {
+    max-width: 750px;
+    margin: auto;
+  }
+</style>
