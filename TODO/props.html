@@ -1,0 +1,38 @@
+<script src="../src/Component.js"></script>
+
+<main>
+  <button .title="'This is a title'" onclick="console.log(this.title)">
+    .title
+  </button>
+
+  <!-- TODO -->
+  <SubComponent
+    .prop="'prop'"
+    .propName="'propname'"
+    title="{'outer'}"
+    class="outer"
+    outer="outer"
+  ></SubComponent>
+  <!-- result -->
+  <div class="inner outer" title="outer" inner="inner" outer="outer"></div>
+</main>
+
+<template name="SubComponent">
+  <div class="inner" title="inner" inner="inner">
+    <dl>
+      <div>
+        <dt>prop:</dt>
+        <dd>{prop}</dd>
+      </div>
+      <div>
+        <dt>propName:</dt>
+        <dd>{propName}</dd>
+      </div>
+    </dl>
+  </div>
+
+  <script>
+    var prop = 'default'
+    var propName = 'default'
+  </script>
+</template>
