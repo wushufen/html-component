@@ -695,11 +695,11 @@ function getForAttrMatch(code) {
   // for="(item, key, i) in list"
   // for="var key in list"
   // for="var item of list"
-  var forMatch = /([^(,)\s]+)()()(?:\s+in\s+)([^(,)\s]+)/.exec(code) ||
-      /\(\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)()\s*\)(?:\s+in\s+)([^(,)\s]+)/.exec(code) ||
-      /\(\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)\s*\)(?:\s+in\s+)([^(,)\s]+)/.exec(code) ||
-      /(?:var|let|const)(?:\s+)()([^(,)\s]+)()(?:\s+in\s+)([^(,)\s]+)/.exec(code) ||
-      /(?:var|let|const)(?:\s+)([^(,)\s]+)()()(?:\s+of\s+)([^(,)\s]+)/.exec(code)
+  var forMatch = /^([^(,)\s]+)()()(?:\s+in\s+)(.+)/.exec(code) ||
+      /^\(\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)()\s*\)(?:\s+in\s+)(.+)/.exec(code) ||
+      /^\(\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)\s*\)(?:\s+in\s+)(.+)/.exec(code) ||
+      /(?:var|let|const)(?:\s+)()(\S+)()(?:\s+in\s+)(.+)/.exec(code) ||
+      /(?:var|let|const)(?:\s+)(\S+)()()(?:\s+of\s+)(.+)/.exec(code)
 
   if (forMatch) {
     return {
