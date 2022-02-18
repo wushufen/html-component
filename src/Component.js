@@ -251,65 +251,9 @@ class Component{
         var attrName = attribute.nodeName
         var attrValue = attribute.nodeValue
 
-        // class="a b:bool c:!bool"
-        if (/^class$/i.test(attrName) && /:/.test(attrValue)) {
-        // "b:bool" => "{bool?'b':''}"
-          attrValue = attrValue.replace(/([^'"\s]+):([^'"\s]+)/g, '{$2?"$1":""}')
-        }
-
-        // class="c{bool}"
-        if (/^class$/i.test(attrName)) {
-          // "c{bool}" => "{bool?'c':''}"
-          attrValue = attrValue.replace(/(\S+)\{(.*?)\}/g, '{$2?"$1":""}')
-        }
-
-        // class="c(bool)"
-        if (/^class$/i.test(attrName)) {
-          // "c(Math.random()>.5)" => "{Math.random()>.5?'c':''}"
-          attrValue = attrValue.replace(/([^()\s]+)(\(([^()]|\([^()]*\))*\))/g, '{$2?"$1":""}')
-        }
-
-        // @in @out => @originNode
-        if (/^class$/i.test(attrName)) {
-          node['@in'] = /([^'"\s]+)@in/.exec(attrValue)?.[1]
-          node['@out'] = /([^'"\s]+)@out/.exec(attrValue)?.[1]
-        }
-
-        // style="width:_n_px; height:[n]px"
-        if (/^style$/i.test(attrName) && /([_\[])(.+?)([_\]])/.test(attrValue)) {
-        // [] => {}  _n_ => {n}
-          attrValue = attrValue.replace(/([_\[])(.+?)([_\]])/g, '{$2}')
-        }
-
-        // bind
-        if (/^[\.:]value/.test(attrName)) {
-        // this.value=${attrValue}  <=>  oninput: ${attrValue}=this.value // TODO
-        }
-
         // .on
         if (/^[\.:]on/.test(attrName)) {
           attrValue = `function(){(${attrValue}).apply(this, arguments); self.render()}`
-        }
-
-        // .attr :attr
-        if (/^[\.:]/.test(attrName)) {
-          var prop = attr2prop(node, attrName.substr(1))
-          code += `self.prop('${id}', '${prop}', ${attrValue})\n`
-
-          detectTemplateError(attrValue, attribute)
-          removeAttribute(node, attrName)
-          return
-        }
-
-        // attr="{}"
-        if (/\{[^]*?\}/.test(attrValue)) {
-          var prop = attr2prop(node, attrName)
-          var exp = parseExp(attrValue)
-          code += `self.prop('${id}', '${prop}', ${exp})\n`
-
-          detectTemplateError(exp, attribute)
-          removeAttribute(node, attrName)
-          return
         }
 
         // on @
@@ -331,6 +275,51 @@ class Component{
 
           detectTemplateError(attrValue, attribute)
           removeAttribute(node, '$')
+          return
+        }
+
+        // .attr :attr
+        if (/^[\.:]/.test(attrName)) {
+          var prop = attr2prop(node, attrName.substr(1))
+          code += `self.prop('${id}', '${prop}', ${attrValue})\n`
+
+          detectTemplateError(attrValue, attribute)
+          removeAttribute(node, attrName)
+          return
+        }
+
+        // class="c{bool}"
+        if (/^class$/i.test(attrName)) {
+          // "c{bool}" => "{bool?'c':''}"
+          attrValue = attrValue.replace(/(\S+)\{(.*?)\}/g, '{$2?"$1":""}')
+        }
+
+        // @in @out => @originNode
+        if (/^class$/i.test(attrName)) {
+          node['@in'] = /([^'"\s]+)@in/.exec(attrValue)?.[1]
+          node['@out'] = /([^'"\s]+)@out/.exec(attrValue)?.[1]
+        }
+
+        // style="width:_n_px; height:[n]px"
+        if (/^style$/i.test(attrName) && /([_\[])(.+?)([_\]])/.test(attrValue)) {
+        // [] => {}  _n_ => {n}
+          attrValue = attrValue.replace(/([_\[])(.+?)([_\]])/g, '{$2}')
+        }
+
+        // bind
+        if (/^[\.:]value/.test(attrName)) {
+        // this.value=${attrValue}  <=>  oninput: ${attrValue}=this.value // TODO
+        }
+
+        // attr="{}"
+        if (/\{[^]*?\}/.test(attrValue)) {
+          var prop = attr2prop(node, attrName)
+          var exp = parseExp(attrValue)
+          code += `self.prop('${id}', '${prop}', ${exp})\n`
+
+          detectTemplateError(exp, attribute)
+          removeAttribute(node, attrName)
+          return
         }
 
       })
@@ -682,6 +671,7 @@ function parseExp(text, left = '{', right = '}') {
 
 // undefined => ''
 // object => json
+// array => json
 function output(value) {
   if (value === undefined) {
     return ''
@@ -747,6 +737,11 @@ function getUpdatePropsCode(vars, propsName = 'props') {
 }
 
 // fn(){code} => fn(){render(); code}
+// TODO
+// fixme if(){}
+// fixme for(){}
+// fixme width(){}
+// fixme `width(){}`
 function injectRender(code, render = 'self.render()') {
   const functionReg = /\)\s*\{|=>\s*\{/g // (){  =>{
   return code.replace(functionReg, `$& ${render}; `)
