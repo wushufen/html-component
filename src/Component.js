@@ -123,28 +123,26 @@ class Component{
       animateRemoveNode(node, outClassName)
     }
 
-    this.if.bool = bool
-    return this
-  }
-  elseif(id, bool, cb) {
-    if (this.if.bool) {
-      this.if(id, false)
-    } else if (bool) {
-      this.if(id, true)
-      cb?.call(this)
-    } else {
-      this.if(id, false)
-    }
-
-    this.elseif.bool = bool
-    return this
-  }
-  else(id, cb) {
-    if (this.if.bool) {
-      this.if(id, false)
-    } else {
-      this.if(id, true)
-      cb?.call(this)
+    var self = this
+    return {
+      elseif: function (id, bool2, cb) {
+        if (!bool && bool2) {
+          self.if(id, true)
+          cb?.call(self)
+          bool = true
+        } else {
+          self.if(id, false)
+        }
+        return this
+      },
+      else: function (id, cb) {
+        if (bool) {
+          self.if(id, false)
+        } else {
+          self.if(id, true)
+          cb?.call(self)
+        }
+      },
     }
   }
   prop(id, name, value, isCallValue) {
@@ -268,26 +266,25 @@ class Component{
       var forAttr = getAttribute(node, 'for')
       var fm = getForAttrMatch(forAttr)
       if (fm) {
-        code += `self['for']('${id}', ${fm.list}, function(${fm.item},${fm.key},${fm.index}){\n`
+        code += `self.for('${id}', ${fm.list}, function(${fm.item},${fm.key},${fm.index}){\n`
         detectTemplateError(forAttr.replace(/var|let|const/g, ';"#$&#";').replace(/of/, ';"#$&#";'), node)
         removeAttribute(node,  'for')
       }
 
       // if
       var ifAttr = getAttribute(node, 'if')
-      if (ifAttr) {
-        code += `self['if']('${id}', ${ifAttr}, function(){\n`
-        detectTemplateError(ifAttr, node)
-        removeAttribute(node, 'if')
-      }
-
-      // else if
-      // TODO
-
-      // else
       var elseAttr = hasAttribute(node, 'else')
-      if (elseAttr) {
-        code += `['else']('${id}', function(){\n`
+      if (ifAttr) {
+        detectTemplateError(ifAttr, node)
+        if (!elseAttr) {
+          code += `self.if('${id}', ${ifAttr}, function(){\n`
+        } else {
+          code += `.elseif('${id}', ${ifAttr}, function(){\n`
+          removeAttribute(node, 'else')
+        }
+        removeAttribute(node, 'if')
+      } else if (elseAttr) {
+        code += `.else('${id}', function(){\n`
         removeAttribute(node, 'else')
       }
 
@@ -369,10 +366,7 @@ class Component{
       // <<<
 
       // end if
-      if (ifAttr) {
-        code += '})\n'
-      }
-      if (elseAttr) {
+      if (ifAttr || elseAttr) {
         code += '})\n'
       }
 
