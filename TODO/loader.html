@@ -15,13 +15,13 @@
 ================>
 
 <script>
-  import htmlx from 'htmlx'
+  import HtmlComponent from 'HtmlComponent'
 
-  export default class HelloWorld extends htmlx.Component {
+  export default class HelloWorld extends HtmlComponent {
     static tpl = `
       <main>
         <ul>
-          <li for="(const item of list)" onclick="click(item)"></li>
+          <li for="(const item of list)" onclick="click(item)">{item}</li>
         </ul>
       </main>
     `
@@ -33,20 +33,20 @@
       const list = [1, 2, 3]
 
       function click(item) {
-        self.__render()
+        self.render()
 
         alert(item)
       }
 
       self.render = function (props) {
         // <li for="(const item of list)" onclick="click(item)"></li>
-        self.for('main/ul/li', function (item, key, index) {
-          self.prop('main/ul/li', 'onclick', function (event) {
+        self.for('1: <main></main>', function (item, key, index) {
+          self.prop('2: <li ..></li>', 'onclick', function (event) {
             click(item)
           })
 
           // {item}
-          self.prop('main/ul/li/#text', 'nodeValue', item)
+          self.prop('3: {item}', 'nodeValue', item)
         })
       }
     }

@@ -6,12 +6,9 @@
 </script>
 
 <!-- TODO  {{d: bool, e: !bool}} {['e', 'f']} -->
-<button
-  class="a {bool?'b':''} c{bool} d(Math.random()>0.5)"
-  @click="bool=!bool"
->
-  {bool}
-</button>
+<button onclick="bool=!bool">{bool}</button>
+
+<span if="(bool)">text</span>
 
 <style>
   .a {

@@ -4,7 +4,7 @@
   var name = 'world'
 
   function haveFun() {
-    console.log(arguments)
+    console.log(this, arguments)
     name = name.split('').reverse().join('')
   }
 </script>
@@ -12,3 +12,7 @@
 <h1 onclick="haveFun()">Hello {name}</h1>
 
 <button .onclick="haveFun">Hello {name}</button>
+
+<input .value="name" oninput="name=this.value" />
+
+<a href="xx" onclick="event.preventDefault(); console.log(this, event)">...</a>

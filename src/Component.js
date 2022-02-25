@@ -60,9 +60,8 @@ class Component{
       self.forPath = `${forPath}#${key}` // ***
       var cloneNode = cloneNodes[key]
 
-      // fix:
-      // list={toString(){}} => cloneNodes['toString'] => != node
-      if (cloneNode && !cloneNode.nodeType) {
+      // key: toString
+      if (!hasOwnProperty(cloneNodes, key)) {
         cloneNode = undefined
       }
 
@@ -88,7 +87,9 @@ class Component{
         // fragment.appendChild(cloneNode)
       }
       // ++ insert
-      self.if(cloneNode, true)
+      if (!cloneNode['#if#']) { // for+if(false)
+        self.if(cloneNode, true)
+      }
 
       // >>>
       cb.call(self, item, key, index)
@@ -121,15 +122,49 @@ class Component{
       var outClassName = node['@originNode']?.['@out'] || node['@out']
       animateRemoveNode(node, outClassName)
     }
+
+    this.if.bool = bool
+    return this
   }
-  prop(id, name, value) {
+  elseif(id, bool, cb) {
+    if (this.if.bool) {
+      this.if(id, false)
+    } else if (bool) {
+      this.if(id, true)
+      cb?.call(this)
+    } else {
+      this.if(id, false)
+    }
+
+    this.elseif.bool = bool
+    return this
+  }
+  else(id, cb) {
+    if (this.if.bool) {
+      this.if(id, false)
+    } else {
+      this.if(id, true)
+      cb?.call(this)
+    }
+  }
+  prop(id, name, value, isCallValue) {
     var node = this.getNode(id)
     var $props = node.$props = node.$props || {}
 
-    // cache
-    if (name in $props && $props[name] === value) return
+    // el.ref="el=this"
+    if (isCallValue) {
+      value = value.call(node)
+    }
 
+    // cache
+    if ($props[name] === value && hasOwnProperty($props, name)) return // && {key: undefined}
     $props[name] = value // component.render(node.$props)
+
+    // activeElement
+    // if(value === node[name]) return
+    if(value === node[name]) return
+
+    // update dom
     node[name] = value // node.prop
   }
   output(value) {
@@ -246,42 +281,39 @@ class Component{
         removeAttribute(node, 'if')
       }
 
+      // else if
+      // TODO
+
+      // else
+      var elseAttr = hasAttribute(node, 'else')
+      if (elseAttr) {
+        code += `['else']('${id}', function(){\n`
+        removeAttribute(node, 'else')
+      }
+
       // [attr]
       forEach(toArray(node.attributes), function (attribute) {
         var attrName = attribute.nodeName
         var attrValue = attribute.nodeValue
 
-        // .on
-        if (/^[\.:]on/.test(attrName)) {
-          attrValue = `function(){(${attrValue}).apply(this, arguments); self.render()}`
-        }
-
-        // on @
-        if (/^(on|@)/.test(attrName)) {
-          // TODO injectAsyncFunctions
-          code += `self.prop('${id}', "${attrName.replace('@', 'on')}", function(){${attrValue}; self.render()})\n`
+        // on
+        if (/^on/.test(attrName)) {
+          code += `self.prop('${id}', "${attrName}", function(event){${attrValue}; self.render()})\n`
 
           detectTemplateError(attrValue, attribute)
           removeAttribute(node, attrName)
           return
         }
 
-        // $=""
-        if (/^\$$/.test(attrName)) {
-          // $="el"
-          // code += `;${attrValue}=self.getNode('${id}')\n`
-          // $="el = this"
-          code += `;(function(){${attrValue}}).call(self.getNode('${id}'))\n`
-
-          detectTemplateError(attrValue, attribute)
-          removeAttribute(node, '$')
-          return
+        // .on
+        if (/^\.on/.test(attrName)) {
+          attrValue = `function(){(${attrValue}).apply(this, arguments); self.render()}`
         }
 
-        // .attr :attr
-        if (/^[\.:]/.test(attrName)) {
-          var prop = attr2prop(node, attrName.substr(1))
-          code += `self.prop('${id}', '${prop}', ${attrValue})\n`
+        // .property
+        if (/^\./.test(attrName)) {
+          var propName = attr2prop(node, attrName.slice(1))
+          code += `self.prop('${id}', '${propName}', function(){return ${attrValue}}, true)\n`
 
           detectTemplateError(attrValue, attribute)
           removeAttribute(node, attrName)
@@ -300,22 +332,11 @@ class Component{
           node['@out'] = /([^'"\s]+)@out/.exec(attrValue)?.[1]
         }
 
-        // style="width:_n_px; height:[n]px"
-        if (/^style$/i.test(attrName) && /([_\[])(.+?)([_\]])/.test(attrValue)) {
-        // [] => {}  _n_ => {n}
-          attrValue = attrValue.replace(/([_\[])(.+?)([_\]])/g, '{$2}')
-        }
-
-        // bind
-        if (/^[\.:]value/.test(attrName)) {
-        // this.value=${attrValue}  <=>  oninput: ${attrValue}=this.value // TODO
-        }
-
         // attr="{}"
         if (/\{[^]*?\}/.test(attrValue)) {
-          var prop = attr2prop(node, attrName)
+          var propName = attr2prop(node, attrName)
           var exp = parseExp(attrValue)
-          code += `self.prop('${id}', '${prop}', ${exp})\n`
+          code += `self.prop('${id}', '${propName}', ${exp})\n`
 
           detectTemplateError(exp, attribute)
           removeAttribute(node, attrName)
@@ -349,6 +370,9 @@ class Component{
 
       // end if
       if (ifAttr) {
+        code += '})\n'
+      }
+      if (elseAttr) {
         code += '})\n'
       }
 
@@ -585,6 +609,11 @@ function markNode(node, name) {
 // node, name => attrValue
 function getAttribute(node, name) {
   return node?.getAttribute?.(name) || ''
+}
+
+// node, name => bool
+function hasAttribute(node, name) {
+  return node?.hasAttribute?.(name) || false
 }
 
 // attrName => --

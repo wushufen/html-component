@@ -1,7 +1,15 @@
-<script src="../src/Component.js"></script>
+<html>
+  <head>
+    <script src="../src/HtmlComponent.js"></script>
+  </head>
+  <body>
+    <button onclick="click()">Hello { value } !</button>
+    <script>
+      var value = 'world'
 
-<script>
-  var name = 'World'
-</script>
-
-<button onclick="name+='!'">Hello {name}</button>
+      function click() {
+        value = value.split('').reverse().join('')
+      }
+    </script>
+  </body>
+</html>
