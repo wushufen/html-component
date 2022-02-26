@@ -87,7 +87,7 @@ class Component{
         // fragment.appendChild(cloneNode)
       }
       // ++ insert
-      if (!cloneNode['#if#']) { // for+if(false)
+      if (!cloneNode['#isIfRemove#']) { // for(true)+if(false)
         self.if(cloneNode, true)
       }
 
@@ -121,6 +121,7 @@ class Component{
       // removeNode(node)
       var outClassName = node['@originNode']?.['@out'] || node['@out']
       animateRemoveNode(node, outClassName)
+      node['#isIfRemove#'] = !!cb
     }
 
     var self = this

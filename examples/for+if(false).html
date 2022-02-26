@@ -1,13 +1,22 @@
 <script src="../src/Component.js"></script>
 
 <script>
-  var list = [1, 1, 1, 1, 1, 1]
+  var list = [1, 2, 3, 4]
 
   setInterval(() => {}, 1000)
 </script>
 
+<input type="text" oninput="list = this.value.split('')" />
 <output>{list}</output>
+
+<hr />
+
 <ul>
-  <!-- FIXME: for(insert) + if(remove) -->
   <li for="(item,i) in list" if="(item%2==0)">{item}</li>
 </ul>
+
+<hr />
+
+<ol>
+  <li for="(item,i) in list">{item}</li>
+</ol>
