@@ -148,10 +148,19 @@ class Component{
   prop(id, name, value, isCallValue) {
     var node = this.getNode(id)
     var $props = node.$props = node.$props || {}
+    var self = this
 
     // el.ref="el=this"
     if (isCallValue) {
       value = value.call(node)
+    }
+
+    // ...
+    if (name == '..') {
+      each(value, function (item, key) {
+        self.prop(id, key, item)
+      })
+      return
     }
 
     // cache
@@ -267,7 +276,7 @@ class Component{
       var fm = getForAttrMatch(forAttr)
       if (fm) {
         code += `self.for('${id}', ${fm.list}, function(${fm.item},${fm.key},${fm.index}){\n`
-        detectTemplateError(forAttr.replace(/var|let|const/g, ';"#$&#";').replace(/of/, ';"#$&#";'), node)
+        detectTemplateError(forAttr.replace(/^\((.+)\)$/, '$1').replace(/var|let|const/g, ';"$&";').replace(/of/, ';"$&";'), node)
         removeAttribute(node,  'for')
       }
 
@@ -275,13 +284,13 @@ class Component{
       var ifAttr = getAttribute(node, 'if')
       var elseAttr = hasAttribute(node, 'else')
       if (ifAttr) {
-        detectTemplateError(ifAttr, node)
         if (!elseAttr) {
           code += `self.if('${id}', ${ifAttr}, function(){\n`
         } else {
           code += `.elseif('${id}', ${ifAttr}, function(){\n`
           removeAttribute(node, 'else')
         }
+        detectTemplateError(ifAttr, node)
         removeAttribute(node, 'if')
       } else if (elseAttr) {
         code += `.else('${id}', function(){\n`
@@ -311,6 +320,15 @@ class Component{
         if (/^\./.test(attrName)) {
           var propName = attr2prop(node, attrName.slice(1))
           code += `self.prop('${id}', '${propName}', function(){return ${attrValue}}, true)\n`
+
+          detectTemplateError(attrValue, attribute)
+          removeAttribute(node, attrName)
+          return
+        }
+        // [property]
+        if (/^\[.*\]$/.test(attrName)) {
+          var propName = attr2prop(node, attrName.slice(1, -1))
+          code += `self.prop('${id}', ${propName}, function(){return ${attrValue}}, true)\n`
 
           detectTemplateError(attrValue, attribute)
           removeAttribute(node, attrName)
@@ -371,7 +389,7 @@ class Component{
       }
 
       // end for
-      if (forAttr) {
+      if (fm) {
         code += '})\n'
       }
 
@@ -663,33 +681,22 @@ function attr2prop(node, attr) {
 function quot(string, q = '"') {
   return `${q}${
     string
-      .replace(/\\/g, '\\\\') // \=>\\
-      .replace(/['"]/g, '\\$&') // '=>\'  "=>\"
-      .replace(/\r?\n/g, '\\n') // \n=>`\\n`
+      .replace(/\\/g, '\\\\') // \ => `\\`
+      .replace(/['"]/g, '\\$&') // ' => `\'`  " => `\"`
+      .replace(/\r/g, '\\r') // \r => `\\r`
+      .replace(/\n/g, '\\n') // \n => `\\n`
   }${q}`
 }
 
 // `t {1} {2} t` => `"t " +(1)+ " " +(2)+ " t"`
-// TODO <b>{ e=> {{}} }</b>
-function parseExp(text, left = '{', right = '}') {
-  const allChar = '[^]'
-  const stringContent = `(?:\\.|${allChar})*?`
-  const string = `"${stringContent}"|'${stringContent}'|\`${stringContent}\``
-  const brace = `\\{${allChar}*?\\}`
-  const expReg = RegExp(`(\\${left})((?:${string}|${brace}|${allChar})*?)(\\${right})`, 'g')
-
-  return (
-    text
-      // {exp} {`${e}{}\``}
-      .replace(expReg, '\f +self.output($2)+ \f')
-      // }text{
-      .replace(
-        RegExp('(^|\f)([^]*?)(\f|$)', 'g'),
-        function ($a, $1, $2, $3) {
-          return quot($2)
-        },
-      )
-  )
+function parseExp(text) {
+  return text
+    .replace(/(^|\})(((?!\$?\{|\})[^])*)(\$?\{|$)/g, '\v+ "\f$2\f" +\v')
+    .slice(2, -2)
+    .replace(/"\f([^]*?)\f"/g, function ($a, $1) {
+      return quot($1)
+    })
+    .replace(/\v([^]*?)\v/g, 'self.output($1)')
 }
 
 // undefined => ''
@@ -711,25 +718,26 @@ function output(value) {
   return value
 }
 
-// `(item,key,index) in list` => {list,item,key,index}
+// for="(var key in list)"
+// for="(var item of list)"
+// for="(item, key, index) of list"
+// => {list,item,key,index}
 function getForAttrMatch(code) {
-  // for="item in list"
-  // for="(item, i) in list"
-  // for="(item, key, i) in list"
-  // for="var key in list"
-  // for="var item of list"
-  var forMatch = /^([^(,)\s]+)()()(?:\s+in\s+)(.+)/.exec(code) ||
-      /^\(\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)()\s*\)(?:\s+in\s+)(.+)/.exec(code) ||
-      /^\(\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)\s*,\s*([^(,)\s]+)\s*\)(?:\s+in\s+)(.+)/.exec(code) ||
-      /(?:var|let|const)(?:\s+)()(\S+)()(?:\s+in\s+)(.+)/.exec(code) ||
-      /(?:var|let|const)(?:\s+)(\S+)()()(?:\s+of\s+)(.+)/.exec(code)
+  // - ^( )$
+  code = code.replace(/^\((.*)\)$/, '$1')
+
+  var forMatch =
+      /(var|let|const)(\s+)()(\S+)()(\s+in\s+)(.+)/.exec(code) ||
+      /(var|let|const)(\s+)(\S+)()()(\s+of\s+)(.+)/.exec(code) ||
+      //     (        item      ,    key         ,    index     )           in        list
+      /()(?:\()?(\s*)(.+?)(?:\s*,\s*(.+?))?(?:\s*,\s*(.+?))?(?:\))?(\s+(?:in|of)\s+)(.+)/.exec(code)
 
   if (forMatch) {
     return {
-      list: forMatch[4],
-      item: forMatch[1] || '$item',
-      key: forMatch[2] || '$key',
-      index: forMatch[3] || '$index',
+      list: forMatch[7],
+      item: forMatch[3] || '$item',
+      key: forMatch[4] || '$key',
+      index: forMatch[5] || '$index',
     }
   }
 }
@@ -783,7 +791,7 @@ function detectTemplateError(code, node) {
       tpl = tpl.replace(/<\/.*?>/, '') // - </tag>
       tpl = parentNode.outerHTML.replace(tpl, `🐞${tpl}🐞`)
 
-      code = code.replace(/;"#(.*?)#";/g, '$1')
+      code = code.replace(/;"(.*?)";/g, '$1')
       var tplError = Error(`[TemplateError] ${error}\n${code}\n^\n${tpl}\n`)
 
       // throw tplError

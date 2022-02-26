@@ -34,7 +34,11 @@
 npm i -D HtmlComponent
 ```
 
-## {value} 插值
+---
+
+## ${value} 插值
+
+与 js \``${}`\` 模板字符串语法一致。其它所有语法也是符合 js 直觉的
 
 文本节点和属性节点都可以，任何变量或表达式你都可以插入
 
@@ -47,8 +51,10 @@ npm i -D HtmlComponent
   }
 </script>
 
-<h1 title="Hello {value} !">Hello { upper(value) } !</h1>
+<h1 title="Hello ${value} !">Hello { upper(value) } !</h1>
 ```
+
+_`$` 可以省略，即 `{value}`_
 
 ---
 
@@ -74,19 +80,31 @@ npm i -D HtmlComponent
 
 你可以把当前节点传给一个变量
 
+_`.ref` 可以是任意的 `.property`，只是为了获取当前节点_
+
 ```html
 <canvas .ref="el = this">text</canvas>
 ```
 
-_实际上 `.ref` 可以是任意的 `.property`，只是为了获取当前节点_
+<!--
+以下相当于 js `div[property] = value`
 
----
+_由于 dom 限制只支持全小写的变量名、不允许有空格_
+
+```html
+<div [property]="value">...</div>
+```
+-->
+
+以下相当于 js `Object.assign(div, obj)`
+
+```html
+<div ...="obj">...</div>
+```
 
 ## on 事件
 
-就是原生的语法，跟 `DOM0` 一致，`this` 指向的是当前节点，并且有一个名为 `event` 的事件变量
-
-它接受的是要执行的代码，你不应把过多逻辑写在这里
+与原生 `DOM0` 语法一致，`this` 指向的是当前节点，并且有一个名为 `event` 的事件变量，它接受的是要执行的代码
 
 ```html
 <a onclick="event.preventDefault(); console.log(this, event)">...</a>
@@ -99,12 +117,6 @@ _实际上 `.ref` 可以是任意的 `.property`，只是为了获取当前节�
 ```html
 <button .onclick="window.alert">button</button>
 ```
-
-```html
-<button .value="value" .oninput="()=> value=this.value">button</button>
-```
-
-所以注册事件并不需要额外的记忆
 
 ---
 
@@ -136,7 +148,7 @@ _实际上 `.ref` 可以是任意的 `.property`，只是为了获取当前节�
 
 ## if 条件节点
 
-语法跟 js `if`、 `else if`、 `else` 一致
+与 js `if`、 `else if`、 `else` 语法一致
 
 ```html
 <div if="(bool)"></div>
@@ -153,12 +165,14 @@ _实际上 `.ref` 可以是任意的 `.property`，只是为了获取当前节�
 <div else if="(bool)"></div>
 <div else></div>
 ```
+
+_括号可省略_
 
 ---
 
 ## for 循环节点
 
-语法跟 js `for..in`、 `for..of` 一致
+与 js `for..in`、 `for..of` 语法一致
 
 ```html
 <ul>
@@ -171,6 +185,10 @@ _实际上 `.ref` 可以是任意的 `.property`，只是为了获取当前节�
   <li for="(const item of array)" onclick="alert(item)">{item}</li>
 </ul>
 ```
+
+_括号可省略_
+
+_如果你习惯这种写法 `(item, key?, index?) in list` 也可以_
 
 _跟 label 标签的 for 属性同名，但是它们的语法不同，所以并不冲突_
 

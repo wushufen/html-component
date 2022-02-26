@@ -2,9 +2,12 @@
 
 <script>
   var el = null
-  var value = 'myValue'
+  var value = '<button>button</button>'
+  var prop = 'title'
 </script>
 
-<main .title="this.innerHTML">
+<main>
   <button .ref="el=this" .onclick="e=>console.log(el)">.property</button>
+  <div .innerHTML="value"></div>
+  <button [prop]="this.innerHTML" ...="{disabled:true}">[property]</button>
 </main>

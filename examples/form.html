@@ -1,4 +1,4 @@
-<!-- <script src="../src/Component.js"></script> -->
+<script src="../src/Component.js"></script>
 
 <pre>
 form: 
@@ -11,10 +11,8 @@ form:
     string: 'string',
     number: 100,
   }
-  var value = 2
 </script>
 
-<input type="text" oninput="with(window){value = this.value}" />
 <section>
   <form>
     <fieldset>
@@ -23,6 +21,7 @@ form:
 
     <fieldset>
       <input
+        placeholder="number"
         type="number"
         .value="form.value"
         oninput="form.value=Number(this.value)||0"

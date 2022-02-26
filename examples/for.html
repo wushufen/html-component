@@ -13,17 +13,17 @@
 </script>
 
 <ul>
-  <li for="(item,i) in string" title="{i}">{item}</li>
+  <li for="(var item of array)" title="{$index}">{item}</li>
 </ul>
 
 <hr />
 
 <ul>
-  <li for="(item,i) in array" title="{i}">{item}</li>
+  <li for="var key in object" title="{key}">{object[key]}</li>
 </ul>
 
 <hr />
 
 <ul>
-  <li for="(item,i) in object" title="{i}">{item}</li>
+  <li for="(item, key, i) in string" title="{i}">{item}</li>
 </ul>
