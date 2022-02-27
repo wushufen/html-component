@@ -250,7 +250,7 @@ class Component{
     })
 
     // varNames
-    var varNames = getVarNames(`${initCode};${scriptCode}`)
+    varNames = getVarNames(`${initCode};${scriptCode}`)
     self['#varNames'] = varNames
 
     // loop
@@ -744,15 +744,19 @@ function getForAttrMatch(code) {
 }
 
 // `var x; let y /* var z */` => ['x', 'y']
-function getVarNames(code, cb) {
-  code = code.replace(/\/\/.*|\/\*[^]*?\*\//g, '') // - //  /**/
+function getVarNames(code) {
+  code = code
+    // - //  /**/
+    .replace(/\/\/.*|\/\*[^]*?\*\//g, '')
+    // - { }
+    .match(/(^|\})[^]*?(\{|$)/g).join('\n')
+
   var vars = []
-  var reg = /(var|let|const)(\s+)(.*?)(\s|=|,|;|$)/g
+  var reg = /(var|let|function)(\s+)([^\s=;,(]+)/g
   var m
   while (m = reg.exec(code)) {
     var n = m[3]
     vars.push(n)
-    cb?.(n)
   }
   return vars
 }
