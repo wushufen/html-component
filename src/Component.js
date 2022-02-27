@@ -250,7 +250,7 @@ class Component{
     })
 
     // varNames
-    var varNames = getVarNames(`${initCode};${scriptCode}`)
+    varNames = getVarNames(`${initCode};${scriptCode}`)
     self['#varNames'] = varNames
 
     // loop
@@ -728,9 +728,11 @@ function getForAttrMatch(code) {
   code = code.replace(/^\((.*)\)$/, '$1')
 
   var forMatch =
+      // for...in
       /(var|let|const)(\s+)()(\S+)()(\s+in\s+)(.+)/.exec(code) ||
+      // for...of
       /(var|let|const)(\s+)(\S+)()()(\s+of\s+)(.+)/.exec(code) ||
-      //     (        item      ,    key         ,    index     )           in        list
+      //     (        item      ,    key         ,    index     )         in        list
       /()(?:\()?(\s*)(.+?)(?:\s*,\s*(.+?))?(?:\s*,\s*(.+?))?(?:\))?(\s+(?:in|of)\s+)(.+)/.exec(code)
 
   if (forMatch) {
@@ -744,15 +746,20 @@ function getForAttrMatch(code) {
 }
 
 // `var x; let y /* var z */` => ['x', 'y']
-function getVarNames(code, cb) {
-  code = code.replace(/\/\/.*|\/\*[^]*?\*\//g, '') // - //  /**/
+function getVarNames(code) {
+  code = code
+    // - //...  /*...*/
+    .replace(/\/\/.*|\/\*[^]*?\*\//g, '')
+    // - '...'  "..."  `...`
+    .replace(/'(\\.|.)*?'|"(\\.|.)*?"|`(\\.|[^])*?`/g, '')
+    // - {...}
+    .match(/(^|\})[^]*?(\{|$)/g).join('\n')
+
   var vars = []
-  var reg = /(var|let|const)(\s+)(.*?)(\s|=|,|;|$)/g
+  var reg = /\b(var|let|function)(\s+)([^\s=;,(]+)/g
   var m
   while (m = reg.exec(code)) {
-    var n = m[3]
-    vars.push(n)
-    cb?.(n)
+    vars.push(m[3])
   }
   return vars
 }
