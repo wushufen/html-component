@@ -16,7 +16,7 @@
     <script src="../src/HtmlComponent.js"></script>
   </head>
   <body>
-    <button onclick="click()">Hello { value } !</button>
+    <button onclick="click()">Hello ${ value }</button>
     <script>
       var value = 'world'
 
@@ -36,9 +36,9 @@ npm i -D HtmlComponent
 
 ---
 
-## ${value} 插值
+## ${ } 插值
 
-与 js \``${}`\` 模板字符串语法一致。其它所有语法也是符合 js 直觉的
+与 js \``${}`\` 模板字符串语法一致
 
 文本节点和属性节点都可以，任何变量或表达式你都可以插入
 
@@ -60,6 +60,8 @@ _`$` 可以省略，即 `{value}`_
 
 ## .property 设置节点的属性
 
+与 js `obj.key`、`obj[keyName]` 语法一致
+
 以下相当于 js `div.title = value`
 
 ```html
@@ -75,7 +77,7 @@ _`$` 可以省略，即 `{value}`_
 `this` 指向的是当前节点
 
 ```html
-<div .title="this.innerText">text</div>
+<div .title="this.innerText">...</div>
 ```
 
 你可以把当前节点传给一个变量
@@ -83,65 +85,23 @@ _`$` 可以省略，即 `{value}`_
 _`.ref` 可以是任意的 `.property`，只是为了获取当前节点_
 
 ```html
-<canvas .ref="el = this">text</canvas>
+<canvas .ref="el = this"></canvas>
 ```
 
-<!--
 以下相当于 js `div[property] = value`
 
-_由于 dom 限制只支持全小写的变量名、不允许有空格_
+_由于 html 限制只支持全小写的变量名、不允许有空格_
 
 ```html
 <div [property]="value">...</div>
 ```
--->
 
-以下相当于 js `Object.assign(div, obj)`
+以下相当于 js `Object.assign(div, object)`
 
-```html
-<div ...="obj">...</div>
-```
-
-## on 事件
-
-与原生 `DOM0` 语法一致，`this` 指向的是当前节点，并且有一个名为 `event` 的事件变量，它接受的是要执行的代码
+<!-- 以下相当于 js `Object.assign(div, {...object})` -->
 
 ```html
-<a onclick="event.preventDefault(); console.log(this, event)">...</a>
-```
-
-`.property` 语法一样可以注册事件，它接受的是函数
-
-以下相当于 js `button.onclick = window.alert`
-
-```html
-<button .onclick="window.alert">button</button>
-```
-
----
-
-## .property + on 双向绑定
-
-`.value` + `oninput` 实现双向绑定。没有语法糖，但更新清楚它发生了什么
-
-```html
-<input .value="value" oninput="value=this.value" />
-```
-
-输入 `Number` 类型，你可以非常灵活
-
-```html
-<input .value="value" oninput="value=Number(this.value)||0" />
-```
-
-`contenteditable` + `.innerText` + `oninput` 任何元素你都可以实现双向绑定
-
-```html
-<div
-  contenteditable="true"
-  .innerText="value"
-  oninput="value=this.innerText"
-></div>
+<div ...="object"></div>
 ```
 
 ---
@@ -196,6 +156,50 @@ _如果同一节点 `for` + `if` 同时存在，`for` 先于 `if` 运行，跟�
 
 ---
 
+## on 事件
+
+与原生 `DOM0` 语法一致，`this` 指向的是当前节点，并且有一个名为 `event` 的事件变量，它接受的是要执行的代码
+
+```html
+<a onclick="event.preventDefault(); console.log(this, event)">...</a>
+```
+
+`.property` 语法一样可以注册事件，它接受的是函数
+
+以下相当于 js `button.onclick = window.alert`
+
+```html
+<button .onclick="window.alert">button</button>
+```
+
+---
+
+## .property + on 双向绑定
+
+`.value` + `oninput` 实现双向绑定。没有语法糖，但更新清楚它发生了什么
+
+```html
+<input .value="value" oninput="value=this.value" />
+```
+
+输入 `Number` 类型，你可以非常灵活
+
+```html
+<input .value="value" oninput="value=Number(this.value)||0" />
+```
+
+`contenteditable` + `.innerText` + `oninput` 任何元素你都可以实现双向绑定
+
+```html
+<div
+  contenteditable="true"
+  .innerText="value"
+  oninput="value=this.innerText"
+></div>
+```
+
+---
+
 ## is 组件
 
 把 `html` 当成组件。每一个组件实例都有独立的作用域
@@ -204,23 +208,24 @@ _如果同一节点 `for` + `if` 同时存在，`for` 先于 `if` 运行，跟�
 <!-- App.html -->
 <script>
   import Com from './Com.html'
-  var myValue = 'myValue'
 </script>
 
-<div>
-  <div is="Com" .value="myValue"></div>
+<main>
+  <div is="Com" .log="alert"></div>
+
   <!-- 或者 -->
-  <Com .value="'myValue2'"></Com>
-</div>
+  <Com ...="{value:'myValue'}"></Com>
+</main>
 ```
 
 ```html
 <!-- Com.html -->
 <script>
   var value = 'defaultValue'
+  var log = console.log
 </script>
 
-<div>{value}</div>
+<div .onclick="log">{value}</div>
 ```
 
 通过 `.property` 语法传值，更新子组件的内部变量。你可以传任何值，包括函数，这样它们就有了双向通信的能力
