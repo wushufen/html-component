@@ -406,7 +406,7 @@ class Component{
       ${initCode}
 
       // <script />
-      ${isGlobal ? '/* global */' : injectRender(scriptCode, '!render.lock && Promise.resolve().then(self.render)')}
+      ${isGlobal ? '/* global */' : injectRender(scriptCode, '!render.lock && Promise.resolve().then(self.render);')}
 
       // getter setter
       this.get = function(){
@@ -776,13 +776,8 @@ function getUpdatePropsCode(vars, propsName = 'props') {
 }
 
 // fn(){code} => fn(){render(); code}
-// TODO
-// fixme if(){}
-// fixme for(){}
-// fixme width(){}
-// fixme `width(){}`
-function injectRender(code, render = 'self.render()') {
-  const functionReg = /\)\s*\{|=>\s*\{/g // (){  =>{
+function injectRender(code, render = 'self.render();') {
+  const functionReg = /\bfunction\b[^]*?\)\s*\{|=>\s*\{/g // function(){  =>{
   return code.replace(functionReg, `$& ${render}; `)
 }
 
