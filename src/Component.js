@@ -406,7 +406,7 @@ class Component{
       ${initCode}
 
       // <script />
-      ${isGlobal ? '/* global */' : injectRender(scriptCode, '!render.lock && Promise.resolve().then(self.render)')}
+      ${isGlobal ? '/* global */' : injectRender(scriptCode, '!render.lock && Promise.resolve().then(self.render);')}
 
       // getter setter
       this.get = function(){
@@ -728,9 +728,11 @@ function getForAttrMatch(code) {
   code = code.replace(/^\((.*)\)$/, '$1')
 
   var forMatch =
+      // for...in
       /(var|let|const)(\s+)()(\S+)()(\s+in\s+)(.+)/.exec(code) ||
+      // for...of
       /(var|let|const)(\s+)(\S+)()()(\s+of\s+)(.+)/.exec(code) ||
-      //     (        item      ,    key         ,    index     )           in        list
+      //     (        item      ,    key         ,    index     )         in        list
       /()(?:\()?(\s*)(.+?)(?:\s*,\s*(.+?))?(?:\s*,\s*(.+?))?(?:\))?(\s+(?:in|of)\s+)(.+)/.exec(code)
 
   if (forMatch) {
@@ -746,17 +748,18 @@ function getForAttrMatch(code) {
 // `var x; let y /* var z */` => ['x', 'y']
 function getVarNames(code) {
   code = code
-    // - //  /**/
+    // - //...  /*...*/
     .replace(/\/\/.*|\/\*[^]*?\*\//g, '')
-    // - { }
+    // - '...'  "..."  `...`
+    .replace(/'(\\.|.)*?'|"(\\.|.)*?"|`(\\.|[^])*?`/g, '')
+    // - {...}
     .match(/(^|\})[^]*?(\{|$)/g).join('\n')
 
   var vars = []
-  var reg = /(var|let|function)(\s+)([^\s=;,(]+)/g
+  var reg = /\b(var|let|function)(\s+)([^\s=;,(]+)/g
   var m
   while (m = reg.exec(code)) {
-    var n = m[3]
-    vars.push(n)
+    vars.push(m[3])
   }
   return vars
 }
@@ -773,13 +776,8 @@ function getUpdatePropsCode(vars, propsName = 'props') {
 }
 
 // fn(){code} => fn(){render(); code}
-// TODO
-// fixme if(){}
-// fixme for(){}
-// fixme width(){}
-// fixme `width(){}`
-function injectRender(code, render = 'self.render()') {
-  const functionReg = /\)\s*\{|=>\s*\{/g // (){  =>{
+function injectRender(code, render = 'self.render();') {
+  const functionReg = /\bfunction\b[^]*?\)\s*\{|=>\s*\{/g // function(){  =>{
   return code.replace(functionReg, `$& ${render}; `)
 }
 
