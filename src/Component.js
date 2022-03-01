@@ -849,6 +849,19 @@ if (typeof window === 'object' && this === window) {
   })
 }
 
+// pollyfill
+if (!document.documentElement.classList) {
+  function addClass(node, name) {
+    if (!RegExp('(^|\\s+)' + name + '(?=\\s|$)', 'g').test(node.className)) {
+      node.className += ' ' + name
+    }
+  }
+
+  function removeClass(node, name) {
+    node.className = node.className.replace(RegExp('(^|\\s+)' + name + '(?=\\s|$)', 'g'), '')
+  }
+}
+
 // export
 if (typeof module === 'object') {
   module.exports = Component
