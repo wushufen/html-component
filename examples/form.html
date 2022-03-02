@@ -1,95 +1,146 @@
 <script src="../src/Component.js"></script>
 
-<pre>
-form: 
-{form}
-</pre>
-
 <script>
   var form = {
-    value: null,
-    string: 'string',
-    number: 100,
+    value: 1,
+    array: [1, 2, 3, { k: 'v' }],
+    selected: [1, 2],
   }
 </script>
 
-<section>
-  <form>
-    <fieldset>
-      <input type="text" .value="form.value" oninput="form.value=this.value" />
-    </fieldset>
+<main>
+  <section>
+    <form>
+      <fieldset>
+        <input
+          type="text"
+          .value="form.value"
+          oninput="form.value=this.value"
+        />
+      </fieldset>
 
-    <fieldset>
-      <input
-        placeholder="number"
-        type="number"
-        .value="form.value"
-        oninput="form.value=Number(this.value)||0"
-      />
-    </fieldset>
+      <fieldset>
+        <input
+          placeholder="number"
+          type="number"
+          .value="Number(form.value)||0"
+          oninput="form.value=Number(this.value)||0"
+        />
+      </fieldset>
 
-    <fieldset>
-      <textarea
-        placeholder="textarea"
-        .value="form.value"
-        oninput="form.value=this.value"
-      ></textarea>
-    </fieldset>
+      <fieldset>
+        <textarea
+          placeholder="textarea"
+          .value="form.value"
+          oninput="form.value=this.value"
+        ></textarea>
+      </fieldset>
 
-    <fieldset>
-      <div
-        style="border: solid 1px"
-        contenteditable="true"
-        .innerText="form.value"
-        oninput="form.value=this.innerText"
-      ></div>
-    </fieldset>
+      <fieldset>
+        <div
+          style="border: solid 1px"
+          contenteditable="true"
+          .innerText="form.value"
+          oninput="form.value=this.innerText"
+        ></div>
+      </fieldset>
 
-    <fieldset>
-      <select .value="form.value" oninput="form.value=this.value">
-        <option value="">select</option>
-        <option value="1">option 1</option>
-        <option value="2">option 2</option>
-        <option value="3">option 3</option>
-        <option value="string">string</option>
-        <option value="string2">string2</option>
-      </select>
-    </fieldset>
+      <fieldset>
+        <select oninput="form.value = this.options[this.selectedIndex].data">
+          <option></option>
+          <option
+            for="item in form.array"
+            .data="item"
+            .selected="this.data === form.value"
+          >
+            {item}
+          </option>
+        </select>
+      </fieldset>
 
-    <fieldset>
-      <select multiple>
-        <option value="">select</option>
-        <option value="1">option 1</option>
-        <option value="2">option 2</option>
-        <option value="3">option 3</option>
-      </select>
-    </fieldset>
+      <fieldset>
+        <select
+          multiple
+          oninput="form.selected = [...this.selectedOptions].map(o=>o.data)"
+        >
+          <option
+            for="item in form.array"
+            .data="item"
+            .selected="form.selected.includes(item)"
+          >
+            {item}
+          </option>
+        </select>
+      </fieldset>
 
-    <fieldset>
-      <input type="range" .value="form.value" oninput="form.value=this.value" />
-    </fieldset>
+      <fieldset>
+        <input
+          type="range"
+          max="5"
+          .value="form.value"
+          oninput="form.value=Number(this.value)||0"
+        />
+      </fieldset>
 
-    <fieldset>
-      <label> <input type="radio" name="radio" /> radio </label>
-      <label> <input type="radio" name="radio" checked /> 单选 </label>
-    </fieldset>
+      <fieldset>
+        <label>
+          <input
+            type="radio"
+            .data="1"
+            .checked="this.data===form.value"
+            onclick="form.value=this.data"
+          />
+          1
+        </label>
+        <label>
+          <input
+            type="radio"
+            .data="2"
+            .checked="this.data===form.value"
+            onclick="form.value=this.data"
+          />
+          2
+        </label>
+      </fieldset>
 
-    <fieldset>
-      <label> <input type="checkbox" name="checkbox" /> checkbox </label>
-      <label>
-        <input type="checkbox" name="checkbox" checked required /> 复选
-      </label>
-    </fieldset>
-  </form>
-</section>
+      <fieldset>
+        <label>
+          <input
+            type="checkbox"
+            .checked="form.value"
+            onclick="form.value = !form.value"
+          />
+          checkbox
+        </label>
+      </fieldset>
+      <fieldset>
+        <label for="item in form.array" style="display: block">
+          <input
+            type="checkbox"
+            .checked="form.selected.includes(item)"
+            onclick="this.checked?form.selected.push(item):form.selected.splice(form.selected.indexOf(item), 1)"
+          />
+          {item}
+        </label>
+      </fieldset>
+    </form>
+  </section>
 
+  <pre>
+    {form}
+  </pre>
+</main>
 <style>
-  fieldset {
-    border: 0;
-  }
-
-  section {
+  main {
+    display: flex;
     max-width: 750px;
     margin: auto;
+  }
+  main > * {
+    flex: 1;
+    padding: 1em;
+  }
+  fieldset {
+    border: 0;
   }
 </style>
