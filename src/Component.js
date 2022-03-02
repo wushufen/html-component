@@ -169,7 +169,6 @@ class Component{
     $props[name] = value // component.render(node.$props)
 
     // activeElement
-    // if(value === node[name]) return
     if(value === node[name]) return
 
     // update dom
@@ -624,6 +623,11 @@ function getAttribute(node, name) {
   return node?.getAttribute?.(name) || ''
 }
 
+// node, name => attrValue
+function setAttribute(node, name, value) {
+  node?.setAttribute?.(name, value)
+}
+
 // node, name => bool
 function hasAttribute(node, name) {
   return node?.hasAttribute?.(name) || false
@@ -806,13 +810,13 @@ function detectTemplateError(code, node) {
 }
 
 // index.html
-if (typeof window === 'object' && this === window) {
+if (this === Function('return this')()) {
   var render = function(){}
 
   var __setInterval = window.setInterval
   window.setInterval = function(cb, time){
-    return __setInterval(function(){
-      var rs = cb.apply(this, arguments)
+    return __setInterval(function() {
+      var rs = typeof cb === 'function' ? cb.apply(this, arguments) : eval(cb)
       render()
       return rs
     }, time)
@@ -821,24 +825,23 @@ if (typeof window === 'object' && this === window) {
   var __setTimeout = window.setTimeout
   window.setTimeout = function(cb, time){
     return __setTimeout(function(){
-      var rs = cb.apply(this, arguments)
+      var rs = typeof cb === 'function' ? cb.apply(this, arguments) : eval(cb)
       render()
       return rs
     }, time)
   }
 
   var __requestAnimationFrame = window.requestAnimationFrame
-  window.requestAnimationFrame = function(cb, time){
+  window.requestAnimationFrame = function(cb){
     return __requestAnimationFrame(function(){
       var rs = cb.apply(this, arguments)
       render()
       return rs
-    }, time)
+    })
   }
 
   addEventListener('DOMContentLoaded', e => {
     var app = new Component(document.documentElement)
-    window.app = app
     app.render()
 
     render = function () {
@@ -846,21 +849,30 @@ if (typeof window === 'object' && this === window) {
     }
     window.setTimeout = __setTimeout
     window.setInterval = __setInterval
+    window.requestAnimationFrame = __requestAnimationFrame
+
+    window.app = app
   })
 }
 
-// pollyfill
-if (!document.documentElement.classList) {
-  function addClass(node, name) {
-    if (!RegExp('(^|\\s+)' + name + '(?=\\s|$)', 'g').test(node.className)) {
-      node.className += ' ' + name
-    }
-  }
 
-  function removeClass(node, name) {
-    node.className = node.className.replace(RegExp('(^|\\s+)' + name + '(?=\\s|$)', 'g'), '')
-  }
+// debug
+var debug = true
+if (debug) {
+  // .property
+  Component.prototype.prop = function (prop) {
+    return function (node, name, value, isCallValue) {
+      node = this.getNode(node)
+      if (isCallValue) {
+        value = value.call(node)
+        isCallValue = false
+      }
+      setAttribute(node, ':' + name, output(value))
+      prop.apply(this, arguments)
+    }
+  }(Component.prototype.prop)
 }
+
 
 // export
 if (typeof module === 'object') {
