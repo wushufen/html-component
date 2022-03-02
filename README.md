@@ -46,12 +46,14 @@ npm i -D HtmlComponent
 <script>
   var value = 'world'
 
-  function upper(string) {
-    return string.toUpperCase()
+  var computed = {
+    get value() {
+      return value.toUpperCase()
+    },
   }
 </script>
 
-<h1 title="Hello ${value} !">Hello { upper(value) } !</h1>
+<h1 title="Hello ${value} !">Hello ${ computed.value } !</h1>
 ```
 
 _`$` 可以省略，即 `{value}`_

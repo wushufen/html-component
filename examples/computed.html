@@ -1,0 +1,13 @@
+<script src="../src/Component.js"></script>
+
+<script>
+  let value = 1
+
+  const computed = {
+    get value2() {
+      return value * 2
+    },
+  }
+</script>
+
+<button onclick="value++">${value} * 2 = ${computed.value2}</button>
