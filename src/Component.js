@@ -809,36 +809,39 @@ function detectTemplateError(code, node) {
   }
 }
 
+// fn() => fn()+run()
+function after(fn, run){
+  return function(){
+    const rs = fn.apply(this, arguments)
+    run()
+    return rs
+  }
+}
+
 // index.html
 if (this === Function('return this')()) {
-  var render = function(){}
+  let render = function() {}
 
-  var __setInterval = window.setInterval
-  window.setInterval = function(cb, time){
-    return __setInterval(function() {
-      var rs = typeof cb === 'function' ? cb.apply(this, arguments) : eval(cb)
-      render()
-      return rs
-    }, time)
+  function injectSetTimout(setTimeout) {
+    var _setTimeout = window[setTimeout]
+    function back() {
+      window[setTimeout] = _setTimeout
+    }
+    if (!_setTimeout) return back
+
+    window[setTimeout] = function(cb, time){
+      return _setTimeout(function(){
+        var rs = typeof cb === 'function' ? cb.apply(this, arguments) : eval(cb)
+        render()
+        return rs
+      }, time)
+    }
+    return back
   }
 
-  var __setTimeout = window.setTimeout
-  window.setTimeout = function(cb, time){
-    return __setTimeout(function(){
-      var rs = typeof cb === 'function' ? cb.apply(this, arguments) : eval(cb)
-      render()
-      return rs
-    }, time)
-  }
-
-  var __requestAnimationFrame = window.requestAnimationFrame
-  window.requestAnimationFrame = function(cb){
-    return __requestAnimationFrame(function(){
-      var rs = cb.apply(this, arguments)
-      render()
-      return rs
-    })
-  }
+  var setTimeoutBack = injectSetTimout('setTimeout')
+  var setIntervalBack = injectSetTimout('setInterval')
+  var requestAnimationFrameBack = injectSetTimout('requestAnimationFrame')
 
   addEventListener('DOMContentLoaded', e => {
     var app = new Component(document.documentElement)
@@ -847,9 +850,9 @@ if (this === Function('return this')()) {
     render = function () {
       app.render()
     }
-    window.setTimeout = __setTimeout
-    window.setInterval = __setInterval
-    window.requestAnimationFrame = __requestAnimationFrame
+    setTimeoutBack()
+    setIntervalBack()
+    requestAnimationFrameBack()
 
     window.app = app
   })
