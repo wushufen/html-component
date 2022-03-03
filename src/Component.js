@@ -728,8 +728,12 @@ function output(value) {
 // for="(item, key, index) of list"
 // => {list,item,key,index}
 function getForAttrMatch(code) {
+
   // - ^( )$
-  code = code.replace(/^\((.*)\)$/, '$1')
+  // !!! (item) in list()
+  if (!/^\([^()]*?\)./.test(code)) {
+    code = code.replace(/^\((.*)\)$/, '$1')
+  }
 
   var forMatch =
       // for...in
