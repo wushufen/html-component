@@ -751,14 +751,6 @@ function getForAttrMatch(code) {
 
 // `var x; let y /* var z */` => ['x', 'y']
 function getVarNames(code) {
-  code = code
-    // - //...  /*...*/
-    .replace(/\/\/.*|\/\*[^]*?\*\//g, '')
-    // - '...'  "..."  `...`
-    .replace(/'(\\.|.)*?'|"(\\.|.)*?"|`(\\.|[^])*?`/g, '')
-    // - {...}
-    .match(/(^|\})[^]*?(\{|$)/g).join('\n')
-
   var vars = []
   var reg = /\b(var|let|function)(\s+)([^\s=;,(]+)/g
   var m
@@ -860,7 +852,7 @@ if (this === Function('return this')()) {
 
 
 // debug
-var debug = true
+var debug = !true
 if (debug) {
   // .property
   Component.prototype.prop = function (prop) {
