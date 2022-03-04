@@ -80,6 +80,7 @@ class Component{
           cloneNode['@id'] = `${originNodeId}${self.forPath}` // ***
           self.saveNode(cloneNode)
 
+          forEach(cloneNode.attributes, (e,i)=> saveCloneNode(e,node.attributes[i]))
           forEach(cloneNode.childNodes, (e,i)=> saveCloneNode(e,node.childNodes[i]))
         }
 
