@@ -204,9 +204,9 @@ class Component{
   }
   compile(tpl) {
     var self = this
-    var code = '\n'
-    var initCode = '\n'
     var scriptCode = '\n'
+    var innerComponentCode = '\n'
+    var code = '\n'
     var isGlobal = false
     var varNames = []
 
@@ -238,7 +238,7 @@ class Component{
     container.querySelectorAll('template').forEach(node => {
       var name = getAttribute(node, 'name')
       if (name) {
-        initCode += `
+        innerComponentCode += `
           var ${name} = this.constructor.prototype.${name}
           if(!${name}){
             ${name} = this.defineSubComponent(${quot(node.innerHTML)})
@@ -249,7 +249,7 @@ class Component{
     })
 
     // varNames
-    varNames = getVarNames(`${initCode};${scriptCode}`)
+    varNames = getVarNames(`${innerComponentCode};${scriptCode}`)
     self['#varNames'] = varNames
 
     // loop
@@ -398,14 +398,48 @@ class Component{
     // Scope(){var data; return render(){ dom }}
     var Scope = Function(`
       var self = this
-      // debugger
-      // console.warn(this, render)
 
       // initCode
-      ${initCode}
+      ${innerComponentCode}
 
       // <script />
       ${isGlobal ? '/* global */' : injectRender(scriptCode, '!render.lock && Promise.resolve().then(self.render);')}
+
+      // render
+      function render($props){
+        render.i ++
+
+        // lock: render=>render
+        if(render.lock) {
+          console.warn('render circular!', self, self.node)
+          return
+        }
+        // debounce
+        if (new Date - render.lastTime < render.delay) {
+            clearTimeout(render.timer)
+            render.timer = setTimeout(function () {
+                self.render()
+            }, render.delay)
+            return
+        }
+        render.lastTime = new Date
+        render._i ++
+        render.lock = true
+
+        // update props
+        $props = $props || {}
+        ${getUpdatePropsCode(varNames, '$props')}
+
+        // update dom
+        ${code}
+
+        // -lock
+        render.lock = false
+      }
+      render.lastTime = 0
+      render.delay = 1000 / 60 - 6
+      render.i = 0
+      render._i = 0
 
       // getter setter
       this.get = function(){
@@ -419,27 +453,6 @@ class Component{
           || eval('(function(){return '+arguments[0]+'='+arguments[1]+'})')
 
         return this.set['_' + arguments[0]](arguments[1])
-      }
-
-      // self.mount(target); self.render(target.$props)
-      function render($props){
-        // debugger
-        // console.warn(this, render)
-
-        // lock: render=>render
-        // console.warn('render.lock:', render.lock)
-        if(render.lock) return
-        render.lock = true
-
-        // props
-        $props = $props || {}
-        ${getUpdatePropsCode(varNames, '$props')}
-
-        // code
-        ${code}
-
-        // -lock
-        render.lock = false
       }
 
       return render
@@ -728,7 +741,6 @@ function output(value) {
 // for="(item, key, index) of list"
 // => {list,item,key,index}
 function getForAttrMatch(code) {
-
   // - ^( )$
   // !!! (item) in list()
   if (!/^\([^()]*?\)./.test(code)) {
