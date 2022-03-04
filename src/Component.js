@@ -175,7 +175,8 @@ class Component{
     node[name] = value // node.prop
   }
   output(value) {
-    return output(value)
+    // ${1,2} => 2
+    return output(arguments[arguments.length - 1])
   }
   on(id, event, cb){}
   is(id, SubComponent) {
