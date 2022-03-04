@@ -38,9 +38,7 @@ npm i -D HtmlComponent
 
 ## 语法
 
-语法与 `js` 一致，没有记忆负担
-
-基本语法
+模板语法，与 `js` 一致，没有记忆负担
 
 ```html
 <div>Hello ${'world'}</div>
@@ -54,13 +52,17 @@ npm i -D HtmlComponent
 <MyComponent />
 ```
 
-事件与原生一致
+事件与原生 `DOM0` 一致
 
 ```html
 <button onclick="console.log(this)" />
 
 <input .value="text" oninput="text=this.value" />
 ```
+
+看到这里，你就已经基本掌握它了！
+
+以下会分别介绍详细一点
 
 ---
 
@@ -81,14 +83,22 @@ npm i -D HtmlComponent
   }
 </script>
 
-<h1 title="Hello ${value} !">Hello ${ computed.value } !</h1>
+<div title="Hello ${value} !">Hello ${ computed.value } !</div>
 ```
 
-_`$` 可以省略，即 `{value}`_
+相当于以下 js
+
+```javascript
+div = document.querySelector('div')
+div.setAttribute('title', `Hello ${value} !`)
+div.innerText = `Hello ${computed.value} !`
+```
 
 _`undefined` 不会被输出_
 
 _`object`、`array` 会尝试转为 `json`_
+
+_`$` 可以省略，即 `{value}`_
 
 ---
 
@@ -102,21 +112,25 @@ _`object`、`array` 会尝试转为 `json`_
 <div .title="text">...</div>
 ```
 
-你可以这样输出富文本。以下相当于 js `div.innerHTML = html`
+输出富文本
 
-_虽然浏览器会强制把 html attribute 名转为小写，但是只要是 js dom property 都能正确映射_
+以下相当于 js `div.innerHTML = html`
+
+_虽然浏览器会强制把 html attribute 名转为小写，但只要是 js dom property 都能自动映射_
 
 ```html
 <div .innerHTML="html"></div>
 ```
 
-`this` 指向的是当前节点，可访问当前节点的其它 property
+`this` 指向的是当前节点
+
+你可以访问当前节点的其它 property
 
 ```html
 <div .title="this.innerText">...</div>
 ```
 
-你可以把当前节点传给一个变量
+将当前节点赋值给一个变量
 
 _`.ref` 可以是任意的 `.property`，只是为了获取当前节点_
 
@@ -214,19 +228,19 @@ _如果同一节点 `for` + `if` 同时存在，`for` 先于 `if` 运行，跟�
 
 ## .property + on 双向绑定
 
-`.value` + `oninput` 实现双向绑定。没有语法糖，但更新清楚它发生了什么
+`.value` + `oninput` 实现双向绑定
 
 ```html
 <input .value="text" oninput="text=this.value" />
 ```
 
-输入 `Number` 类型，你可以非常灵活
+输入 `Number` 类型
 
 ```html
 <input .value="number" oninput="number=Number(this.value)||0" />
 ```
 
-`contenteditable` + `.innerText` + `oninput` 任何元素你都可以实现双向绑定
+`contenteditable` + `.innerText` + `oninput` 任何元素都可以实现双向绑定
 
 ```html
 <div
@@ -240,7 +254,7 @@ _如果同一节点 `for` + `if` 同时存在，`for` 先于 `if` 运行，跟�
 
 ## is 组件
 
-把 `html` 当成组件。每一个组件实例都有独立的作用域
+把 `html` 当成组件，每一个组件实例都有独立的作用域
 
 ```html
 <!-- App.html -->

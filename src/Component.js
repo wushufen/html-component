@@ -262,7 +262,7 @@ class Component{
       if (/^(skip|script|style|template)$/i.test(node.tagName)) return
 
       // {exp}
-      if (node.nodeType === 3 && /\{[^]*?\}/.test(node.nodeValue)) {
+      if ((node.nodeType === 2 || node.nodeType === 3) && /\{[^]*?\}/.test(node.nodeValue)) {
         var exp = parseExp(node.nodeValue)
         code += `self.prop('${id}', 'nodeValue', ${exp})\n`
         detectTemplateError(exp, node)
@@ -348,15 +348,7 @@ class Component{
         }
 
         // attr="{}"
-        if (/\{[^]*?\}/.test(attrValue)) {
-          var propName = attr2prop(node, attrName)
-          var exp = parseExp(attrValue)
-          code += `self.prop('${id}', '${propName}', ${exp})\n`
-
-          detectTemplateError(exp, attribute)
-          removeAttribute(node, attrName)
-          return
-        }
+        loopTree(attribute)
 
       })
 
