@@ -1,0 +1,40 @@
+<script src="../src/Component.js"></script>
+
+<input onkeydown="enter(this, event)" />
+<button onclick="todoList = todoList.filter(item=>!item.done)">
+  删除已完成
+</button>
+
+<ol>
+  <li for="(const item of todoList)" onclick="item.done=!item.done">
+    <input type="checkbox" .checked="item.done" />
+    <del if="(item.done)">${item.text}</del>
+    <span else>${item.text}</span>
+  </li>
+</ol>
+
+<script>
+  function enter(input, event) {
+    if (event.key == 'Enter') {
+      todoList.push({ text: input.value })
+      input.value = ''
+    }
+  }
+
+  let todoList = [
+    {
+      text: 'abc',
+      done: true,
+    },
+    {
+      text: '123',
+      done: false,
+    },
+  ]
+</script>
+
+<style>
+  ol li {
+    cursor: pointer;
+  }
+</style>
