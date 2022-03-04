@@ -52,7 +52,7 @@ npm i -D HtmlComponent
 <MyComponent />
 ```
 
-事件与原生 `DOM0` 一致
+事件与原生 `DOM0` 一致，不需要额外记忆
 
 ```html
 <button onclick="console.log(this)" />
@@ -62,7 +62,7 @@ npm i -D HtmlComponent
 
 看到这里，你就已经基本掌握它了！
 
-以下会分别介绍详细一点
+以下是更详细一点的介绍
 
 ---
 
@@ -257,6 +257,18 @@ _如果同一节点 `for` + `if` 同时存在，`for` 先于 `if` 运行，跟�
 把 `html` 当成组件，每一个组件实例都有独立的作用域
 
 ```html
+<!-- MyComponent.html -->
+<script>
+  let value = 'defaultValue'
+  let log = console.log
+</script>
+
+<div .onclick="log">${value}</div>
+```
+
+通过 `.property` 语法给子组件的内部变量赋值。你可以传任何值，包括函数，这样它们就有了双向通信的能力
+
+```html
 <!-- App.html -->
 <script>
   import MyComponent from './MyComponent.html'
@@ -270,14 +282,19 @@ _如果同一节点 `for` + `if` 同时存在，`for` 先于 `if` 运行，跟�
 </main>
 ```
 
+`self` 指向当前组件实例，那么 `self.constructor` 则是当前组件的类（构造函数）
+
+`is="self.constructor"` 实现递归
+
+注意要有终止条件，避免死循环
+
 ```html
-<!-- MyComponent.html -->
 <script>
-  let value = 'defaultValue'
-  let log = console.log
+  let number = 10
 </script>
 
-<div .onclick="log">${value}</div>
+<main>
+  <div>${number}</div>
+  <div if="number" is="self.constructor" .number="number-1" />
+</main>
 ```
-
-通过 `.property` 语法给子组件的内部变量赋值。你可以传任何值，包括函数，这样它们就有了双向通信的能力
