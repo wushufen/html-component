@@ -52,7 +52,7 @@ npm i -D HtmlComponent
 <MyComponent />
 ```
 
-事件与原生 `DOM0` 一致，不需要额外记忆
+事件与原生 `DOM0` 一致
 
 ```html
 <button onclick="console.log(this)" />
@@ -62,7 +62,7 @@ npm i -D HtmlComponent
 
 看到这里，你就已经基本掌握它了！
 
-以下是更详细一点的介绍
+以下是详细介绍
 
 ---
 
@@ -83,13 +83,12 @@ npm i -D HtmlComponent
   }
 </script>
 
-<div title="Hello ${value} !">Hello ${ computed.value } !</div>
+<div title="Hello ${value} !">Hello ${computed.value} !</div>
 ```
 
 相当于以下 js
 
 ```javascript
-div = document.querySelector('div')
 div.setAttribute('title', `Hello ${value} !`)
 div.innerText = `Hello ${computed.value} !`
 ```
@@ -116,7 +115,7 @@ _`$` 可以省略，即 `{value}`_
 
 以下相当于 js `div.innerHTML = html`
 
-_虽然浏览器会强制把 html attribute 名转为小写，但只要是 js dom property 都能自动映射_
+_虽然浏览器会强制把 html attribute 名转为小写，但只要是 js dom property 本框架做了自动映射_
 
 ```html
 <div .innerHTML="html"></div>
@@ -140,7 +139,7 @@ _`.ref` 可以是任意的 `.property`，只是为了获取当前节点_
 
 以下相当于 js `div[property] = value`
 
-_由于 html 限制，这种方式只支持全小写的变量名、不允许有空格_
+_由于 html 限制，这种方式只支持全小写的变量名、不允许有空格。可以用下面的方式代替_
 
 ```html
 <div [property]="value">...</div>
@@ -150,10 +149,14 @@ _由于 html 限制，这种方式只支持全小写的变量名、不允许有�
 
 以下相当于 js `Object.assign(div, object)`
 
-<!-- 以下相当于 js `Object.assign(div, {...object})` -->
-
 ```html
 <div ...="object"></div>
+```
+
+以下相当于 js `Object.assign(div, { [property]: value })`
+
+```html
+<div ...="{ [property]: value }"></div>
 ```
 
 ---
@@ -188,13 +191,19 @@ _括号可省略_
 
 ```html
 <ul>
-  <li for="(var key in object)">{object[key]}</li>
+  <li for="(var key in object)">${object[key]}</li>
 </ul>
 ```
 
 ```html
 <ul>
-  <li for="(const item of array)" onclick="alert(item)">{item}</li>
+  <li for="(const item of array)" onclick="alert(item)">${item}</li>
+</ul>
+```
+
+```html
+<ul>
+  <li for="(const {id, name} of array)" onclick="alert(id)">${name}</li>
 </ul>
 ```
 
@@ -232,6 +241,18 @@ _如果同一节点 `for` + `if` 同时存在，`for` 先于 `if` 运行，跟�
 
 ```html
 <input .value="text" oninput="text=this.value" />
+```
+
+相当于以下 js
+
+```javascript
+// Model -> View
+input.value = text
+
+// View -> Model
+input.oninput = function (event) {
+  text = this.value
+}
 ```
 
 输入 `Number` 类型
@@ -284,9 +305,7 @@ _如果同一节点 `for` + `if` 同时存在，`for` 先于 `if` 运行，跟�
 
 `self` 指向当前组件实例，那么 `self.constructor` 则是当前组件的类（构造函数）
 
-`is="self.constructor"` 实现递归
-
-注意要有终止条件，避免死循环
+`is="self.constructor"` 可以实现递归，注意要有终止条件，避免死循环
 
 ```html
 <script>

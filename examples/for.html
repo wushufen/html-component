@@ -2,7 +2,7 @@
 
 <script>
   var string = 'string'
-  var array = [1, 2, 3]
+  var array = [{ id: 1 }, { id: 2 }]
   var object = {
     a: 1,
     b: 2,
@@ -10,10 +10,48 @@
       return 'oo'
     },
   }
+  var o = {}
+  o[Symbol.iterator] = function () {
+    return {
+      value: 5,
+      next() {
+        return {
+          value: --this.value,
+          done: !this.value,
+        }
+      },
+    }
+  }
+</script>
+
+<script>
+  for (const item of array) {
+    console.log(item)
+  }
+  for (const [key, value] of Object.entries(object)) {
+    console.log(key, value)
+  }
+  for (const item of o) {
+    console.log(item)
+  }
 </script>
 
 <ul>
-  <li for="(var item of array)" title="{$index}">{item}</li>
+  <li for="(const item of array)" title="{$index}">{item}</li>
+</ul>
+
+<hr />
+
+<ul>
+  <li for="(const [key, value] of Object.entries(object))" title="{$index}">
+    {key}:{value}
+  </li>
+</ul>
+
+<hr />
+
+<ul>
+  <li for="(const item of o)" title="{$index}">{item}</li>
 </ul>
 
 <hr />

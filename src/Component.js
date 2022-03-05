@@ -58,19 +58,14 @@ class Component{
     var forPath = this.forPath
     each(list, function(item, key, index) {
       self.forPath = `${forPath}#${key}` // ***
-      var cloneNode = cloneNodes[key]
-
-      // key: toString
-      if (!hasOwnProperty(cloneNodes, key)) {
-        cloneNode = undefined
-      }
+      var cloneNode = cloneNodes[`#${key}`] // #toString
 
       // ++ clone
       if (!cloneNode) {
         cloneNode = node.cloneNode(true)
         cloneNode['#for#'] = forMark
         cloneNode['@key'] = key
-        cloneNodes[key] = cloneNode
+        cloneNodes[`#${key}`] = cloneNode
 
         // originNodeId + forPath => cloneNode
         saveCloneNode(cloneNode, node)
@@ -91,6 +86,7 @@ class Component{
       if (!cloneNode['#isIfRemove#']) { // for(true)+if(false)
         self.if(cloneNode, true)
       }
+      cloneNode['#noRemove'] = true // for remove check
 
       // >>>
       cb.call(self, item, key, index)
@@ -99,11 +95,12 @@ class Component{
     // insertNode(fragment, forMark)
 
     // -- remove
-    each(cloneNodes, function(cloneNode, key) {
-      if (!hasOwnProperty(list, key)) {
+    each(cloneNodes, function(cloneNode) {
+      if (!cloneNode['#noRemove']) {
         // TODO setTimeout destroy?
         self.if(cloneNode, false)
       }
+      delete cloneNode['#noRemove']
     })
   }
   if(id, bool, cb) {
@@ -531,7 +528,16 @@ function each(list, cb) {
     forEach(list, function (item, i) {
       cb(item, i, i)
     })
-  } else {
+  }
+  else if (window.Symbol && list[Symbol.iterator]) {
+    const it = list[Symbol.iterator]()
+    let index = 0
+    let step
+    while (step = it.next(), !step.done) {
+      cb(step.value, index, index++)
+    }
+  }
+  else {
     var index = 0
     for (var key in list) {
       if (hasOwnProperty(list, key)) {
@@ -743,9 +749,9 @@ function getForAttrMatch(code) {
 
   var forMatch =
       // for...in
-      /(var|let|const)(\s+)()(\S+)()(\s+in\s+)(.+)/.exec(code) ||
+      /(var|let|const)(\s+)()(.*?)()(\s+in\s+)(.+)/.exec(code) ||
       // for...of
-      /(var|let|const)(\s+)(\S+)()()(\s+of\s+)(.+)/.exec(code) ||
+      /(var|let|const)(\s+)(.*?)()()(\s+of\s+)(.+)/.exec(code) ||
       //     (        item      ,    key         ,    index     )         in        list
       /()(?:\()?(\s*)(.+?)(?:\s*,\s*(.+?))?(?:\s*,\s*(.+?))?(?:\))?(\s+(?:in|of)\s+)(.+)/.exec(code)
 
