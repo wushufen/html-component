@@ -8,19 +8,21 @@
 
 ## 安装
 
-通过 `<script>` 标签引入，即可让 `html` 拥有自动更新视图的能力
+通过 `<script>` 标签引入，即可让 `html` 拥有数据绑定和自动更新视图的能力
 
 ```html
 <html>
   <head>
     <script src="../src/HtmlComponent.js"></script>
   </head>
+
   <body>
-    <button onclick="click()">Hello ${ value }</button>
+    <button onclick="change()">Hello ${ value }</button>
+
     <script>
       var value = 'world'
 
-      function click() {
+      function change() {
         value = value.split('').reverse().join('')
       }
     </script>
@@ -40,24 +42,70 @@ npm i -D HtmlComponent
 
 模板语法，与 `js` 一致，没有记忆负担
 
+<!-- prettier-ignore -->
 ```html
-<div>Hello ${'world'}</div>
+模板语法 html                               相当于 js
 
-<div .title="1 + 1" />
+<!-- ${} 插值 -->
+<div>Hello ${'world'}</div>               div.innerText = `Hello ${'world'}`
+<div attr="Hello ${'world'}" />           div.setAttribute('attr', `Hello ${'world'}`)
 
-<div if="(bool)" />
 
-<div for="(const item of list)" />
+<!-- .property 赋值 -->
+<div .prop="1 + 1" />                     div.prop = 1 + 1
+<div [key]="1 + 1" />                     div[key] = 1 + 1
+<div ...="{prop1: 1, prop2: 2}" />        { ...{prop1: 1, prop2: 2} }
 
-<MyComponent />
-```
 
-事件与原生 `DOM0` 一致
+<!-- if 条件 -->
+<div if="(bool)" />                       if (bool) { }
+<div else if="(bool)" />                  else if (bool) { }
+<div else />                              else { }
 
-```html
-<button onclick="console.log(this)" />
 
+<!-- for 循环 -->
+<div for="(const item of array)" />       for (const item of array) { }
+<div for="(var key in object)" />         for (var key in object) { }
+
+
+<!-- on 事件 -->
+<div onclick="change(this, event)" />     div.onclick = function(event){ change(this, event) }
+<div .onclick="console.log" />            div.onclick = console.log
+
+
+<!-- .property + on 双向绑定 -->
 <input .value="text" oninput="text=this.value" />
+                                          input.value = text
+                                          input.oninput = function(event){ text=this.value }
+
+<!-- is 组件 -->
+<!-- <el is="MyComponent" /> = <MyComponent /> -->
+<MyComponent .a="1" ...="{b: 2, c: 3}" /> if(!created) myComponent = new MyComponent()
+                                          myComponent.render({a: 1, ...{b: 2, c: 3}})
+
+
+模板可以访问所有当前组件定义的变量和全局变量
+修改组件变量后视图会自动更新
+通过 `.property` 语法可以给子组件变量赋值
+
+<script>
+  import MyComponent from './MyComponent.html'
+
+  var bool = true
+  let text = 'world'
+  const key = 'title'
+  const object = {}
+  const array = []
+
+  function  change() {
+    // 不同于其它框架，本框架更新变量的方式没有任何限制，没有记忆负担
+    bool = !bool
+    object.key = 'value'
+    array.length = 10
+    array.fill(Math.random())
+    array[2] = 2
+  }
+</script>
 ```
 
 看到这里，你就已经基本掌握它了！
@@ -101,7 +149,7 @@ _`$` 可以省略，即 `{value}`_
 
 ---
 
-## .property 设置节点的属性
+## .property 赋值
 
 与 js `obj.key`、`obj[key]` 语法一致
 
@@ -161,7 +209,7 @@ _由于 html 限制，这种方式只支持全小写的变量名、不允许有�
 
 ---
 
-## if 条件节点
+## if 条件
 
 与 js `if`、 `else if`、 `else` 语法一致
 
@@ -185,7 +233,7 @@ _括号可省略_
 
 ---
 
-## for 循环节点
+## for 循环
 
 与 js `for..in`、 `for..of` 语法一致
 
@@ -303,7 +351,7 @@ input.oninput = function (event) {
 </main>
 ```
 
-`self` 指向当前组件实例，那么 `self.constructor` 则是当前组件的类（构造函数）
+`self` 指向的是当前组件实例，那么 `self.constructor` 则是当前组件的类（构造函数）
 
 `is="self.constructor"` 可以实现递归，注意要有终止条件，避免死循环
 
@@ -316,4 +364,60 @@ input.oninput = function (event) {
   <div>${number}</div>
   <div if="number" is="self.constructor" .number="number-1" />
 </main>
+```
+
+---
+
+## 总结
+
+模板语法跟 `js` 是一致的，相当于把 `js` 的能力扩展到 `html`，只要你会 `js` 看一遍就能记住它所有语法
+
+<!-- prettier-ignore -->
+```html
+模板语法 html                                相当于 js
+
+<div>Hello ${'world'}</div>                 div.innerText = `Hello ${'world'}`
+
+<div attr="Hello ${'world'}" />             div.setAttribute('attr', `Hello ${'world'}`)
+
+
+<div .prop="1 + 1" />                       div.prop = 1 + 1
+
+<div [key]="1 + 1" />                       div[key] = 1 + 1
+
+<div ...="{prop1: 1, prop2: 2}" />          { ...{prop1: 1, prop2: 2} }
+
+
+<div if="(bool)" />                         if (bool) { }
+
+<div else if="(bool)" />                    else if (bool) { }
+
+<div else />                                else { }
+
+
+<div for="(var key in object)" />           for (var key in object) { }
+
+<div for="(const item of array)" />         for (const item of array) { }
+
+
+<div onclick="console.log(this, event)" />  div.onclick = function(event){ console.log(this, event) }
+
+<div .onclick="alert" />                    div.onclick = alert
+
+
+<MyComponent .a="1" ...="{b: 2}" />         (myComponent||new MyComponent()).render({a: 1,...{b: 2}})
+
+
+模板中可以访问当前组件定义的所有变量和全局变量，修改组件变量视图会自动更新
+
+通过 `.property` 语法可以修改子组件变量
+
+<script>
+  import MyComponent from './MyComponent.html'
+
+  var bool = true
+  const key = 'title'
+  let object = {}
+  const array = []
+</script>
 ```
