@@ -854,13 +854,14 @@ if (this === Function('return this')()) {
   addEventListener('DOMContentLoaded', e => {
     var app = new Component(document.documentElement)
     app.render()
+    window.render = app.render
 
     render = function () {
       app.render()
     }
     setTimeoutBack()
     setIntervalBack()
-    requestAnimationFrameBack()
+    // requestAnimationFrameBack()
 
     window.app = app
   })
