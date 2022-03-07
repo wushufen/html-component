@@ -1,0 +1,42 @@
+<script src="../src/Component.js"></script>
+
+<svg>
+  <rect
+    for="(item,i) in list"
+    x="10"
+    y="0"
+    width="10"
+    height="10"
+    .="attrs(this, {x: i*40, height: item})"
+  />
+</svg>
+
+<script>
+  var list = []
+  list.length = 50
+  list.fill(0)
+
+  function attrs(node, map) {
+    for (const key in map) {
+      node.setAttribute(key, map[key])
+    }
+  }
+
+  function update() {
+    for (var i = 0; i < list.length; i++) {
+      list[i] = Math.random() * (1000 - 20)
+    }
+  }
+
+  setInterval(update, 1000)
+</script>
+
+<style>
+  svg {
+    overflow: visible;
+  }
+  rect {
+    fill: #0af;
+    transition: 1.3s;
+  }
+</style>
