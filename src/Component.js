@@ -110,15 +110,11 @@ class Component{
     var target = node['#if#'] || node['#for#'] // for+if?
 
     if (bool) {
-      // insertNode(node, target)
-      var inClassName = node['@originNode']?.['@in'] || node['@in']
-      animateInsertNode(node, target, inClassName)
+      insertNode(node, target)
       cb && cb.call(this)
     } else {
       markNode(node, '#if#')
-      // removeNode(node)
-      var outClassName = node['@originNode']?.['@out'] || node['@out']
-      animateRemoveNode(node, outClassName)
+      removeNode(node)
       node['#isIfRemove#'] = !!cb
     }
 
@@ -554,14 +550,54 @@ function hasOwnProperty(object, key) {
 }
 
 // node, target -> <node><!-- target -->
-function insertNode(node, target) {
+function insertNode(node, target, beforeInsert = node.hooks?.beforeInsert, afterInsert = node.hooks?.afterInsert ) {
+  console.log('insertNode:', node)
+  node.__removeDone?.()
   if (node.parentNode) return
-  target.parentNode?.insertBefore(node, target)
+
+  if (beforeInsert) {
+    beforeInsert.apply(node, [done])
+    !beforeInsert.length && done()
+  } else {
+    done()
+  }
+
+  function done() {
+    if (done.yes) return
+    done.yes = true
+    delete node.__insertDone
+    target.parentNode?.insertBefore(node, target)
+
+    if (afterInsert) {
+      afterInsert.apply(node)
+    }
+  }
+  node.__insertDone = done
 }
 
 // node -> --
-function removeNode(node) {
-  node.parentNode?.removeChild(node)
+function removeNode(node, beforeRemove = node.hooks?.beforeRemove, afterRemove = node.hooks?.afterRemove) {
+  node.__insertDone?.()
+  if (!node.parentNode) return
+
+  if (beforeRemove) {
+    beforeRemove.apply(node, [done])
+    !beforeRemove.length && done()
+  } else {
+    done()
+  }
+
+  function done() {
+    if (done.yes) return
+    done.yes = true
+    delete node.__removeDone
+    node.parentNode?.removeChild(node)
+
+    if (afterRemove) {
+      afterRemove.apply(node)
+    }
+  }
+  node.__removeDone = done
 }
 
 // animate -> cb()

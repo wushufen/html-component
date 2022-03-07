@@ -1,0 +1,73 @@
+<script src="../src/Component.js"></script>
+
+<script>
+  var bool = true
+
+  var hooks = {
+    beforeInsert: null,
+    afterInsert: null,
+    beforeRemove: null,
+    afterRemove: null,
+    beforeMove: null,
+    afterMove: null,
+  }
+
+  var hooks = {
+    beforeInsert: function () {
+      console.log('insert', this)
+
+      this.classList.add('fadeIn')
+      setTimeout(() => {
+        this.classList.remove('fadeIn')
+      }, 1000)
+    },
+    beforeRemove: function (done) {
+      console.log('remove', this)
+
+      this.classList.add('fadeOut')
+      setTimeout(() => {
+        this.classList.remove('fadeOut')
+        done()
+      }, 1000)
+    },
+  }
+</script>
+
+<button onclick="bool=!bool">${bool}</button>
+<div if="(bool)" .hooks="hooks">if</div>
+
+<style>
+  .opacity1 {
+    opacity: 1;
+    transition: 0.5s;
+  }
+
+  .opacity0 {
+    opacity: 0;
+    transition: 0.5s;
+  }
+
+  .fadeIn {
+    animation: fadeIn 1s;
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .fadeOut {
+    animation: fadeOut 1s;
+  }
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+</style>

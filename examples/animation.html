@@ -7,6 +7,26 @@
 <script>
   var list = 'hello world'
   var bool = true
+
+  var hooks = {
+    beforeInsert: function () {
+      console.log('insert', this)
+
+      this.classList.add('fadeIn')
+      setTimeout(() => {
+        this.classList.remove('fadeIn')
+      }, 1000)
+    },
+    beforeRemove: function (done) {
+      console.log('remove', this)
+
+      this.classList.add('fadeOut')
+      setTimeout(() => {
+        this.classList.remove('fadeOut')
+        done()
+      }, 1000)
+    },
+  }
 </script>
 
 <input oninput="list=this.value" .value="list" autofocus />
@@ -14,15 +34,22 @@
 
 <!-- <h1 if="bool" class="fadeIn@in fadeOut@out">{bool}</h1> -->
 
-<ul if="bool" class="animate__bounceIn@in animate__bounceOut@out">
+<ul
+  if="bool"
+  xclass="animate__bounceIn@in animate__bounceOut@out"
+  .hooks="hooks"
+>
+  <!-- for >> .hooks 所以无效 -->
   <li
     for="(item,i) in list"
-    class="animate__fadeInDown@in animate__fadeOutDown@out"
+    xclass="animate__fadeInDown@in animate__fadeOutDown@out"
+    .hooks="hooks"
   >
     <!-- <span>{item}</span> -->
     <span
       for="(item,i) in list"
-      class="animate__fadeInLeft@in animate__fadeOutRight@out"
+      xclass="animate__fadeInLeft@in animate__fadeOutRight@out"
+      .hooks="hooks"
       >{item}</span
     >
   </li>
