@@ -82,6 +82,9 @@ class Component{
         // insertNode(cloneNode, forMark)
         // fragment.appendChild(cloneNode)
       }
+
+      // TODO 交换 insert 和 cb.call() 提升性能，但是 for(true)+if(false) 的逻辑需要重新处理
+
       // ++ insert
       if (!cloneNode['#isIfRemove#']) { // for(true)+if(false)
         self.if(cloneNode, true)
