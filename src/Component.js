@@ -529,19 +529,19 @@ function each(list, cb) {
       cb(item, i, i)
     })
   }
-  else if (window.Symbol && list[Symbol.iterator]) {
-    const it = list[Symbol.iterator]()
+  else if (window.Symbol && list?.[Symbol.iterator]) {
+    const iterator = list[Symbol.iterator]()
     let index = 0
     let step
-    while (step = it.next(), !step.done) {
+    while (step = iterator.next(), !step.done) {
       cb(step.value, index, index++)
     }
   }
   else {
-    var index = 0
-    for (var key in list) {
+    let index = 0
+    for (const key in list) {
       if (hasOwnProperty(list, key)) {
-        var item = list[key]
+        const item = list[key]
         cb(item, key, index++)
       }
     }
