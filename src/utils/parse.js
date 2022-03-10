@@ -24,7 +24,7 @@ function parseExp(text) {
     .replace(/"\f([^]*?)\f"/g, function ($a, $1) {
       return quot($1)
     })
-    .replace(/\v([^]*?)\v/g, 'self.output($1)')
+    .replace(/\v([^]*?)\v/g, 'self.exp($1)')
 }
 
 // undefined => ''
