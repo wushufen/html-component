@@ -4,13 +4,11 @@ module.exports = {
     node: true,
     es2021: true,
   },
-  extends: [
-  ],
+  extends: [],
   parserOptions: {
     sourceType: 'module',
   },
-  plugins: [
-  ],
+  plugins: [],
   rules: {
     indent: [1, 2],
     quotes: [1, 'single'],

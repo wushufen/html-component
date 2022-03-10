@@ -27,25 +27,6 @@ function parseExp(text) {
     .replace(/\v([^]*?)\v/g, 'self.exp($1)')
 }
 
-// undefined => ''
-// object => json
-// array => json
-function output(value) {
-  if (value === undefined) {
-    return ''
-  }
-
-  if (value?.constructor === Object || value instanceof Array) {
-    try {
-      return `\n${JSON.stringify(value, null, '  ')}\n`
-    } catch (_) {
-      return value
-    }
-  }
-
-  return value
-}
-
 // for="(var key in list)"
 // for="(var item of list)"
 // for="(item, key, index) of list"
@@ -69,7 +50,7 @@ function parseFor(code) {
 
   if (forMatch) {
     return {
-      raw: code,
+      code,
       list: forMatch[7],
       item: forMatch[3] || '$item',
       key: forMatch[4] || '$key',
@@ -79,7 +60,7 @@ function parseFor(code) {
 }
 
 // `var x; let y /* var z */` => ['x', 'y']
-function getVarNames(code) {
+function parseVars(code) {
   var vars = []
   var reg = /\b(var|let|function)(\s+)([^\s=;,(]+)/g
   var m
@@ -89,32 +70,49 @@ function getVarNames(code) {
   return vars
 }
 
-// var propName == props.propname
-// ["propName"] => `"propname" in props && (propName=props.propname)`
-function getUpdatePropsCode(vars, propsName = 'props') {
-  var string = '\n'
-  vars.forEach(function (varName) {
-    var propname = varName.toLowerCase()
-    string += `"${propname}" in ${propsName} && (${varName}=${propsName}.${propname})\n`
-  })
-  return string
+// 'innerhtml' => 'innerHTML'
+function attr2prop(node, attr) {
+  var prop = attr2prop[`prop:${attr}`] // cache
+  if(prop) return prop
+
+  for (prop in node) {
+    if (prop.toLowerCase() === attr) {
+      attr2prop[`prop:${attr}`] = prop
+      return prop
+    }
+  }
+
+  prop = {
+    class: 'className',
+  }[attr] || attr
+
+  return prop
 }
 
 // code => error? throw 🐞
-function detectTemplateError(code, node) {
+function detectError(code, raw, tpl) {
   try {
     Function(code)
   } catch (error) {
     try {
       Function(`(${code})`) // (function(){})
     } catch (_) {
-      var parentNode  = node.parentNode || node.ownerElement?.parentNode || node
-      var tpl = node.nodeValue || node.cloneNode().outerHTML
-      tpl = tpl.replace(/<\/.*?>/, '') // - </tag>
-      tpl = parentNode.outerHTML.replace(tpl, `🐞${tpl}🐞`)
+      // line
+      let line = tpl.match(RegExp(`.*${raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*`))?.[0]
 
-      code = code.replace(/;"(.*?)";/g, '$1')
-      var tplError = Error(`[TemplateError] ${error}\n${code}\n^\n${tpl}\n`)
+      // 🐞
+      line = line.replace(raw, `🐞${raw}🐞`)
+      tpl = tpl.replace(raw, `🐞${raw}🐞`)
+
+      // error
+      var tplError = Error(`[TemplateError] ${error}
+${code}
+^
+---------------------------------
+${line}
+---------------------------------
+${tpl}
+`)
 
       // throw tplError
       console.error(tplError)
@@ -128,9 +126,8 @@ export {
   parseHTML,
   quot,
   parseExp,
-  output,
   parseFor,
-  getVarNames,
-  getUpdatePropsCode,
-  detectTemplateError,
+  parseVars,
+  attr2prop,
+  detectError,
 }

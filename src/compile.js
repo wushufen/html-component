@@ -1,72 +1,66 @@
 import {
   parseHTML,
-  quot,
   parseExp,
-  output,
   parseFor,
-  getVarNames,
-  getUpdatePropsCode,
-  detectTemplateError,
-} from './utils/parse.js'
-import {
-  insertNode,
-  removeNode,
-  getAttribute,
-  setAttribute,
-  hasAttribute,
-  removeAttribute,
+  parseVars,
   attr2prop,
-  addClass,
-  removeClass,
-  computeStyle,
-  on,
-} from './utils/dom.js'
+  detectError,
+} from './utils/parse.js'
 
-
-const ID_KEY = '_'
-const OLD_ID_KEY = `_old_${ID_KEY}`
-const TEXT_PLACE_TAG = '_'
+const ID_KEY = '_' // <el ID>
+const BACKUP_ID_PREFIX = '_backup_' // _backup_ID
+const TEXT_PLACE_TAG = 't_' // text => <_ ID>text</_>
 
 /**
  * ${1}
- * <ul title="${2}" .prop="22" [key]="222" ...="{a:2222}">
- *   <li for="const item of list3" if="item!=3" is="MyComponent" .value="3">
+ * <ul title="${2}" .prop="2" [key]="2">
+ *   <li for="const item of list3" if="item!=3" .value="3" is="MyComponent">
  *     ${4}
  *   </li>
  * </ul>
  * ==>
- * <text id=1>${1}</text>
- * <ul id=2>
- *   <li id=3>
- *     <text id=4>${4}</text>
+ * <_ ID=1>${1}</_>
+ * <ul ID=2>
+ *   <li ID=3>
+ *     <_ ID=4>${4}</_>
  *   </li>
  * </ul>
  * ==>
- * self.prop(1, 'nodeValue', 1)
+ * self.text(1, `${1}`)
+ *
  * self.attr(2, 'title', `${2}`)
- * self.prop(2, 'prop', 22)
- * self.prop(2, key, 222)
- * self.prop(2, '..', {a:2222})
+ * self.prop(2, 'prop', 2)
+ * self.prop(2, key, 2)
+ *
  * self.for(3, list3, function(item, $key, $index){
  *   self.if(item!=3, function() {
  *     self.prop(3, 'value', 3)
- *     self.is(3, 'MyComponent')
- *     self.prop(4, 'nodeValue', `${4}`)
+ *     self.is(3, MyComponent)
+ *
+ *     self.text(4, `${4}`)
  *   })
  * })
- * @param {string} tpl
+ * @param {string|Element} tpl
  */
 function compile(tpl) {
-  const wrapper = parseHTML(tpl)
-  let id = 0
+  let _id = 0
   let scriptCode = '' // <script>...</script>
   let code = '' // render
 
+  // parse
+  const wrapper = tpl.nodeType ? tpl : parseHTML(tpl)
+
   // <script>
-  Array(...wrapper.getElementsByTagName('script')).forEach(e=>scriptCode += '// <script>' + e.innerHTML + '// </script>\n')
+  Array(...wrapper.getElementsByTagName('script')).forEach(
+    (e) => (scriptCode += '// <script>' + e.innerHTML + '// </script>\n'),
+  )
+  var vars = parseVars(scriptCode).sort() // Com > com
 
-
-  loopNodeTree([...wrapper.childNodes])
+  // loop
+  loopNodeTree(wrapper)
+  /**
+   * @param {Element|Node|Node[]} node
+   */
   function loopNodeTree(node) {
     // node || [node]
     if (node instanceof Array) {
@@ -74,25 +68,39 @@ function compile(tpl) {
       return
     }
 
-    // id
-    code += `\n// ${(node.nodeValue || node.cloneNode().outerHTML).replace(/\s+/g, ' ').replace(/<\/.*?>$/, '')}\n`
-    function ID() {
-      if (ID.id) return ID.id
-      ID.id = ++id
+    // id: lazy + cache
+    const id = {
+      toString() {
+        this.toString = function () {
+          return _id
+        }
+        ++_id
 
-      if (node.nodeType === 3) {
-        const text = document.createElement(TEXT_PLACE_TAG)
-        text.setAttribute(ID_KEY, id)
-        node.parentNode.insertBefore(text, node)
-        text.appendChild(node)
-        return id
-      }
-      if (node.nodeType === 1) {
-        const oldId = node.getAttribute(ID_KEY)
-        if (oldId) node.setAttribute(OLD_ID_KEY, oldId)
-        node.setAttribute(ID_KEY, id)
-        return id
-      }
+        // <el /> => <el ID />
+        if (node.nodeType === 1) {
+          const oldId = node.getAttribute(ID_KEY)
+          if (oldId) node.setAttribute(BACKUP_ID_PREFIX + ID_KEY, oldId)
+          node.setAttribute(ID_KEY, _id)
+        }
+        // ${exp} => <text ID>${exp}</text>
+        else if (node.nodeType === 3) {
+          const text = document.createElement(TEXT_PLACE_TAG)
+          text.setAttribute(ID_KEY, _id)
+          node.parentNode.insertBefore(text, node)
+          text.appendChild(node)
+        }
+
+        return _id
+      },
+    }
+
+    // /* <node /> */
+    const nodeString = (node.nodeValue || node.cloneNode().outerHTML)
+      .replace(/\s+/g, ' ')
+      .replace(/<\/[^<]*?>$/, '')
+      .replace(/\*\//g, '*\u200B/')
+    if (nodeString.match(/\S/)) {
+      code += `\n/* ${nodeString} */\n`
     }
 
     // skip
@@ -102,44 +110,47 @@ function compile(tpl) {
     // text: ${}
     if (node.nodeType === 3) {
       if (/\$?\{[^]*?\}/.test(node.nodeValue)) {
-
         // ${exp}
         const exp = parseExp(node.nodeValue)
-        code += `self.text('${ID()}', ${exp})\n`
-        detectTemplateError(exp, node)
+        code += `self.text('${id}', ${exp})\n`
+        detectError(exp, node.nodeValue, tpl)
       }
       return
     }
 
     // for > if > .prop > is >>> childNodes <<< /if < /for
 
-
     // for
     const _for_ = parseFor(node.getAttribute('for'))
     if (_for_) {
-      code += `self.for('${ID()}', (${_for_.list}), function(${_for_.item},${_for_.key},${_for_.index}){\n`
-      detectTemplateError(_for_.raw.replace(/^\((.+)\)$/, '$1').replace(/var|let|const/g, ';"$&";').replace(/of/, ';"$&";'), node)
+      code += `self.for('${id}', (${_for_.list}), function(${_for_.item},${_for_.key},${_for_.index}){\n`
+      detectError(
+        _for_.code.replace(/\b(var|let|const|of)\b/g, ';"$&";'),
+        _for_.code,
+        tpl,
+      )
+      node.removeAttribute('for')
     }
 
     // if
-    const _if_ = getAttribute(node, 'if')
-    const _else_ = hasAttribute(node, 'else')
+    const _if_ = node.getAttribute('if')
+    const _else_ = node.hasAttribute('else')
     if (_if_) {
       if (!_else_) {
-        code += `self.if('${ID()}', (${_if_}), function(){\n`
+        code += `self.if('${id}', (${_if_}), function(){\n`
       } else {
-        code += `.elseif('${ID()}', (${_if_}), function(){\n`
-        removeAttribute(node, 'else')
+        code += `.elseif('${id}', (${_if_}), function(){\n`
+        node.removeAttribute('else')
       }
-      detectTemplateError(_if_, node)
-      removeAttribute(node, 'if')
+      detectError(_if_, _if_, tpl)
+      node.removeAttribute('if')
     } else if (_else_) {
-      code += `.else('${ID()}', function(){\n`
-      removeAttribute(node, 'else')
+      code += `.else('${id}', function(){\n`
+      node.removeAttribute('else')
     }
 
     // [attr]
-    Array(...node.attributes).forEach(attribute => {
+    Array(...node.attributes).forEach((attribute) => {
       const attrName = attribute.nodeName
       const attrValue = attribute.nodeValue
 
@@ -151,12 +162,12 @@ function compile(tpl) {
           onType = attrName.slice(1)
           onCode = `(${attrValue}).apply(this, arguments)`
         }
-        code += `self.on('${ID()}', "${onType}", function(event){
+        code += `self.on('${id}', "${onType}", function(event){
           ${onCode}; self.render()
         })\n`
 
-        detectTemplateError(onCode, attribute)
-        removeAttribute(node, attrName)
+        detectError(onCode, attrValue, tpl)
+        node.removeAttribute(attrName)
         return
       }
 
@@ -164,29 +175,43 @@ function compile(tpl) {
       if (/^\.|^\[.*\]$/.test(attrName)) {
         let propname = attrName.replace(/^\.|^\[|\]$/g, '')
         let propName = attr2prop(node, propname)
-        if(/^\./.test(attrName)) propName = `'${propName}'`
-        code += `self.prop('${ID()}', ${propName}, function(){return ${attrValue}})\n`
+        // .
+        if (/^\./.test(attrName)) {
+          propName = `'${propName}'`
+        }
+        // []
+        else {
+          detectError(propName, attrName, tpl)
+        }
+        code += `self.prop('${id}', ${propName}, function(){return ${attrValue}})\n`
 
-        detectTemplateError(attrValue, attribute)
-        removeAttribute(node, attrName)
+        detectError(attrValue, attrValue, tpl)
+        node.removeAttribute(attrName)
         return
       }
 
       // attr="${}"
       if (/\$?\{[^]*?\}/.test(attrValue)) {
         const exp = parseExp(attrValue)
-        code += `self.attr('${ID()}', '${attrName}', ${exp})\n`
-        detectTemplateError(exp, node)
+        code += `self.attr('${id}', '${attrName}', ${exp})\n`
+        detectError(exp, attrValue, tpl)
       }
     })
 
     // is
-    var _is_ = getAttribute(node, 'is')
+    var _is_ = node.getAttribute('is')
     if (_is_) {
-      code += `self.is('${ID()}', ${_is_})\n`
+      code += `self.is('${id}', ${_is_})\n`
 
-      detectTemplateError(_is_, node)
-      removeAttribute(node, 'is')
+      detectError(_is_, _is_, tpl)
+      node.removeAttribute('is')
+    } else {
+      for (const _var_ of vars) {
+        if (RegExp(`^${node.tagName}$`, 'i').test(_var_)) {
+          code += `self.is('${id}', typeof ${_var_} !== 'undefined' && ${_var_})\n`
+          break
+        }
+      }
     }
 
     // >>>
@@ -204,23 +229,51 @@ function compile(tpl) {
     }
   }
 
-  const render = Function(code)
-
-  console.log(wrapper.outerHTML, wrapper, scriptCode, render)
-  return wrapper
+  return {
+    wrapper,
+    scriptCode,
+    code,
+  }
 }
 
-const html = `
-\${1}
-<h1></h1>
-<ul title="\${2}" .prop="22" [key]="222" ...="{a:2222}">
-  <li for="const item of list4" if="item!=4" is="MyComponent" .value="4" onclick="alert()" .oninput="console.log">
-    \${5}
-  </li>
-</ul>
-<script>
-var a = 1
-</script>
-`
+/**
+ * only once per id
+ * @param {Element} root
+ * @param {string|number} id
+ * @returns {Element|Text}
+ */
+function queryNode(root, id) {
+  const el = queryNodeByAttr(root, ID_KEY, id)
+  if (!el) {
+    console.error('queryNode:', `!${id}`)
+    return
+  }
 
-compile(html)
+  // <_ ID>text</_>  ->  text
+  if (el.tagName.toLowerCase() == TEXT_PLACE_TAG) {
+    const text = el.firstChild
+    el.parentNode.replaceChild(el.firstChild, el)
+    return text
+  }
+
+  // <el ID>  ->  <el>
+  el.removeAttribute(ID_KEY)
+  const oid = el.getAttribute(BACKUP_ID_PREFIX + ID_KEY)
+  if (oid) {
+    el.setAttribute(ID_KEY, oid)
+  }
+
+  return el
+}
+
+/**
+ * @param {Element} root
+ * @param {string} attr
+ * @param {string|number} value
+ * @returns {Element|Text}
+ */
+function queryNodeByAttr(root, attr, value) {
+  return root.querySelector(`[${attr}="${value}"]`)
+}
+
+export { compile as default, compile, queryNode }

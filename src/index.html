@@ -1,6 +1,36 @@
-<script src="./compile.js" type="module"></script>
+<style>
+  html {
+    background: #222;
+    color: #fff;
+  }
+</style>
 
-<div>
-  abc
-  <!--  -->
-</div>
+${text}
+<div if="text">if</div>
+<ul title="${2}" .prop="2" [key]="2">
+  <li for="const item of list" if="item!=3" .value="3" is="MyComponent">
+    ${4}
+  </li>
+</ul>
+<script>
+  var text = 'text'
+  var key = 'kkk'
+  var MyComponent
+  var list
+</script>
+
+<script type="module">
+  console.clear()
+  import { compile, queryNode } from './compile.js'
+  import { Component } from './class.js'
+  // const { code, wrapper } = compile(document.documentElement)
+
+  // console.log(Function(code))
+  // console.log('wrapper:', wrapper)
+  // window.queryNode = queryNode
+  // window.wrapper = wrapper
+
+  const component = new Component(document.documentElement)
+  console.log('component:', component)
+  window.app = component
+</script>
