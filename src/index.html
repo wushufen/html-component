@@ -7,7 +7,14 @@
 
 ${text}
 <div if="text">if</div>
-<ul title="${2}" .prop="2" [key]="2">
+<ul
+  title="${2}"
+  .prop="2"
+  [key]="2"
+  ...="{a:1}"
+  onclick="console.log(this, event)"
+  .ondblclick="console.warn"
+>
   <li for="const item of list" if="item!=3" .value="3" is="MyComponent">
     ${4}
   </li>
@@ -33,4 +40,5 @@ ${text}
   const component = new Component(document.documentElement)
   console.log('component:', component)
   window.app = component
+  app.render()
 </script>

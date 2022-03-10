@@ -7,9 +7,10 @@ import {
   detectError,
 } from './utils/parse.js'
 
-const ID_KEY = '_' // <el ID>
+const ID_KEY = 'id_' // <el ID>
 const BACKUP_ID_PREFIX = '_backup_' // _backup_ID
-const TEXT_PLACE_TAG = 't_' // text => <_ ID>text</_>
+const TEXT_PLACE_TAG = 'text' // text => <text ID>text</text>
+const TEXT_ID_PREFIX = 'text:' // <text ID="text:ID">text</text>
 
 /**
  * ${1}
@@ -43,7 +44,7 @@ const TEXT_PLACE_TAG = 't_' // text => <_ ID>text</_>
  * @param {string|Element} tpl
  */
 function compile(tpl) {
-  let _id = 0
+  let i = 0
   let scriptCode = '' // <script>...</script>
   let code = '' // render
 
@@ -71,26 +72,29 @@ function compile(tpl) {
     // id: lazy + cache
     const id = {
       toString() {
+        ++i
+        let id_ = String(i)
+
         this.toString = function () {
-          return _id
+          return id_
         }
-        ++_id
 
         // <el /> => <el ID />
         if (node.nodeType === 1) {
           const oldId = node.getAttribute(ID_KEY)
           if (oldId) node.setAttribute(BACKUP_ID_PREFIX + ID_KEY, oldId)
-          node.setAttribute(ID_KEY, _id)
+          node.setAttribute(ID_KEY, id_)
         }
         // ${exp} => <text ID>${exp}</text>
         else if (node.nodeType === 3) {
           const text = document.createElement(TEXT_PLACE_TAG)
-          text.setAttribute(ID_KEY, _id)
+          id_ = TEXT_ID_PREFIX + i
+          text.setAttribute(ID_KEY, id_)
           node.parentNode.insertBefore(text, node)
           text.appendChild(node)
         }
 
-        return _id
+        return String(this)
       },
     }
 
@@ -193,7 +197,7 @@ function compile(tpl) {
       // attr="${}"
       if (/\$?\{[^]*?\}/.test(attrValue)) {
         const exp = parseExp(attrValue)
-        code += `self.attr('${id}', '${attrName}', ${exp})\n`
+        code += `self.attr('${id}', '${attrName}', function(){return ${exp}})\n`
         detectError(exp, attrValue, tpl)
       }
     })
@@ -239,7 +243,7 @@ function compile(tpl) {
 /**
  * only once per id
  * @param {Element} root
- * @param {string|number} id
+ * @param {string} id
  * @returns {Element|Text}
  */
 function queryNode(root, id) {
@@ -249,19 +253,17 @@ function queryNode(root, id) {
     return
   }
 
-  // <_ ID>text</_>  ->  text
-  if (el.tagName.toLowerCase() == TEXT_PLACE_TAG) {
+  // <text>text</text>  ->  text
+  if (RegExp(TEXT_ID_PREFIX).test(id)) {
     const text = el.firstChild
-    el.parentNode.replaceChild(el.firstChild, el)
+    el.parentNode.replaceChild(text, el)
     return text
   }
 
   // <el ID>  ->  <el>
   el.removeAttribute(ID_KEY)
   const oid = el.getAttribute(BACKUP_ID_PREFIX + ID_KEY)
-  if (oid) {
-    el.setAttribute(ID_KEY, oid)
-  }
+  if (oid) el.setAttribute(ID_KEY, oid)
 
   return el
 }

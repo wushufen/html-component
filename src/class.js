@@ -20,8 +20,10 @@ class Component {
       this.render = Function(`
         var self = this
       
+        // <script> scriptCode </script>
         ${isNodeTpl? '' : scriptCode}
 
+        // render code
         this.render = function($props){
           ${code}
         }
@@ -31,12 +33,9 @@ class Component {
     }
   }
   $(id) {
-    let node = this.nodeMap[id]
-    if (!node) {
-      node = queryNode(this.wrapper, id)
-      this.nodeMap[id] = node
-    }
-    return node
+    return this.nodeMap[id] || (
+      this.nodeMap[id] = queryNode(this.wrapper, id)
+    )
   }
   exp(...args) {
     return args.pop()
@@ -47,13 +46,14 @@ class Component {
       node.nodeValue = value
     }
   }
-  attr(id, name, value) {
+  attr(id, name, calc) {
     const node = this.$(id)
+    const value = calc.call(node)
     node.setAttribute(name, value)
   }
   prop(id, name, calc) {
     const node = this.$(id)
-    const value = calc.call(this)
+    const value = calc.call(node)
     node[name] = value
   }
   on(id, name, handler) {
