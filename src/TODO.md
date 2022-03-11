@@ -3,36 +3,25 @@ class HComponent {}
 
 class Component extends HComponent {}
 
+stringTpl: course.html
+
+parsedStringTpl: compiled.html
+
 nodeTpl
 
 parsedNodeTpl
-
-stringTpl
-
-parsedStringTpl
 ```
 
 ```javascript
 class HComponent {
-  static tpl = `
-  <h1>Hello world!</h1>
+  static compiledTpl = `
+    <h1><text id_="text:1">\${date.toLocaleString()}</text></h1>
   `
   container = null
   nodeMap = {}
-  constructor(tpl = this.constructor.tpl) {
-    // node
-    if (tpl.nodeType) {
-      // compile
-      const { container, scriptCode, code } = compile(tpl)
-      this.container = container
-      this.render = Function(`
-        ${code}
-      `)
-    }
-    // string: compiled tpl
-    else {
-      this.container = parseHTML(this.tpl)
-    }
+  constructor() {
+    // create dom
+    this.container = parseHTML(this.constructor.compiledTpl)
   }
   $(id) {
     return (
@@ -45,7 +34,23 @@ class HComponent {
   for() {}
   if() {}
   is() {}
-  render() {}
+  render() {
+    var self = this
+
+    // <script>
+    var date = new Date()
+    setInterval(function () {
+      date = new Date()
+      /* --inject render-- */
+      self.render()
+    }, 1000)
+    // </script>
+
+    this.render = function ($props) {
+      self.text('text:1', `${date}`)
+    }
+    this.render()
+  }
 }
 
 // App.html
@@ -61,7 +66,7 @@ var text = 'world'
 import HComponent from './HComponent.js'
 
 class Component extends HComponent {
-  static tpl = `
+  static compiledTpl = `
     <h2><text id_="text:1">\${text}</text></h2>
   `
   render($props) {

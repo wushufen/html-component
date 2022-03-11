@@ -9,8 +9,6 @@ import {
 
 const ID_KEY = 'id_' // <el ID>
 const BACKUP_ID_PREFIX = '_backup_' // _backup_ID
-const TEXT_PLACE_TAG = 'text' // text => <text ID>text</text>
-const TEXT_ID_PREFIX = 'text:' // <text ID="text:ID">text</text>
 
 /**
  * ${1}
@@ -20,10 +18,10 @@ const TEXT_ID_PREFIX = 'text:' // <text ID="text:ID">text</text>
  *   </li>
  * </ul>
  * ==>
- * <_ ID=1>${1}</_>
+ * <text ID=1>${1}</text>
  * <ul ID=2>
  *   <li ID=3>
- *     <_ ID=4>${4}</_>
+ *     <text ID=4>${4}</text>
  *   </li>
  * </ul>
  * ==>
@@ -53,7 +51,7 @@ function compile(tpl) {
 
   // <script>
   Array(...wrapper.getElementsByTagName('script')).forEach(
-    (e) => (scriptCode += '// <script>' + e.innerHTML + '// </script>\n'),
+    (e) => (scriptCode += '// <script>' + e.innerHTML + '// </script>\n')
   )
   var vars = parseVars(scriptCode).sort() // Com > com
 
@@ -73,28 +71,25 @@ function compile(tpl) {
     const id = {
       toString() {
         ++i
-        let id_ = String(i)
-
-        this.toString = function () {
-          return id_
-        }
 
         // <el /> => <el ID />
         if (node.nodeType === 1) {
           const oldId = node.getAttribute(ID_KEY)
           if (oldId) node.setAttribute(BACKUP_ID_PREFIX + ID_KEY, oldId)
-          node.setAttribute(ID_KEY, id_)
+          node.setAttribute(ID_KEY, i)
         }
         // ${exp} => <text ID>${exp}</text>
         else if (node.nodeType === 3) {
-          const text = document.createElement(TEXT_PLACE_TAG)
-          id_ = TEXT_ID_PREFIX + i
-          text.setAttribute(ID_KEY, id_)
+          const text = document.createElement('text')
+          text.setAttribute(ID_KEY, i)
           node.parentNode.insertBefore(text, node)
           text.appendChild(node)
         }
 
-        return String(this)
+        this.toString = function () {
+          return i
+        }
+        return i
       },
     }
 
@@ -131,7 +126,7 @@ function compile(tpl) {
       detectError(
         _for_.code.replace(/\b(var|let|const|of)\b/g, ';"$&";'),
         _for_.code,
-        tpl,
+        tpl
       )
       node.removeAttribute('for')
     }
@@ -246,7 +241,7 @@ function compile(tpl) {
  * @param {string} id
  * @returns {Element|Text}
  */
-function queryNode(root, id) {
+function queryNode(root, id, isText) {
   const el = queryNodeByAttr(root, ID_KEY, id)
   if (!el) {
     console.error('queryNode:', `!${id}`)
@@ -254,7 +249,7 @@ function queryNode(root, id) {
   }
 
   // <text>text</text>  ->  text
-  if (RegExp(TEXT_ID_PREFIX).test(id)) {
+  if (isText) {
     const text = el.firstChild
     el.parentNode.replaceChild(text, el)
     return text

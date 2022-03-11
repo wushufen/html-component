@@ -1,47 +1,63 @@
 import { removeNode } from './utils/dom.js'
+// eslint-disable-next-line no-unused-vars
 import { parseHTML } from './utils/parse.js'
-import { compile, queryNode } from "./compile.js";
-
-const helloTpl = `
-    <div><t_ _="1">Hello \${text}</t_></div>
-`
+// eslint-disable-next-line no-unused-vars
+import { compile, queryNode } from './compile.js'
 
 class Component {
-  tpl = helloTpl
-  wrapper = null
+  static compiledTpl = `
+    <h1><text id_="1">Hello \${date.toLocaleString()}</text></h1>
+  `
+
+  container = null
   nodeMap = {}
-
-  constructor(tpl) {
-    if (tpl) {
-      const isNodeTpl = !!tpl.nodeType
-      const {wrapper, code, scriptCode} = compile(tpl)
-      this.wrapper = wrapper
-
-      this.render = Function(`
-        var self = this
-      
-        // <script> scriptCode </script>
-        ${isNodeTpl? '' : scriptCode}
-
-        // render code
-        this.render = function($props){
-          ${code}
-        }
-
-        this.render()
-      `)
-    }
+  constructor() {
+    // init dom
+    this.container = parseHTML(this.constructor.compiledTpl)
   }
-  $(id) {
-    return this.nodeMap[id] || (
-      this.nodeMap[id] = queryNode(this.wrapper, id)
+  render() {
+    var self = this
+
+    // <script>
+    var date = new Date()
+    setInterval(function () {
+      self.$render()
+      /* --inject render-- */
+
+      date = new Date()
+    }, 1000)
+    // </script>
+
+    this.render = function ($props) {
+      self.text('1', `Hello ${date.toLocaleString()}`)
+    }
+    this.render()
+  }
+  $render() {
+    Promise.resolve().then(this.render.bind(this))
+  }
+  $(id, isText) {
+    return (
+      this.nodeMap[id] ||
+      (this.nodeMap[id] = queryNode(this.container, id, isText))
     )
   }
   exp(...args) {
-    return args.pop()
+    const value = args.pop()
+    if (value === undefined) return ''
+
+    if (value?.constructor === Object || value instanceof Array) {
+      try {
+        return `\n${JSON.stringify(value, null, '  ')}\n`
+      } catch (_) {
+        return value
+      }
+    }
+
+    return value
   }
   text(id, value) {
-    const node = this.$(id)
+    const node = this.$(id, true)
     if (node.nodeValue !== value) {
       node.nodeValue = value
     }
@@ -57,7 +73,7 @@ class Component {
     node[name] = value
   }
   on(id, name, handler) {
-    this.prop(id, name, function(){
+    this.prop(id, name, function () {
       return handler
     })
   }
@@ -81,21 +97,10 @@ class Component {
     // TODO
     node.innerHTML = `TODO: is ${Class.name}`
   }
-  render() {
-    const self = this
-
-    var text = 'world'
-
-    this.render = function ($props) {
-      self.text(1, `Hello ${self.exp(text)}`)
-    }
-
-    this.render()
-  }
+  setTimeout() {}
+  setInterval() {}
   destory() {}
 }
 
 export default Component
-export {
-  Component
-}
+export { Component }

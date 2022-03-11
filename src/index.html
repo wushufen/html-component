@@ -37,8 +37,8 @@ ${text}
   // window.queryNode = queryNode
   // window.wrapper = wrapper
 
-  const component = new Component(document.documentElement)
-  console.log('component:', component)
+  const component = new Component()
   window.app = component
+  document.body.appendChild(app.container)
   app.render()
 </script>

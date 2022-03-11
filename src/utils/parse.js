@@ -1,8 +1,8 @@
 // html => node
-function parseHTML(html) {
-  const wrapper = document.createElement('div')
-  wrapper.innerHTML = html
-  return wrapper
+function parseHTML(html, containerTagName = 'div') {
+  const container = document.createElement(containerTagName)
+  container.innerHTML = html
+  return container
 }
 
 // `  \  "  \n  ` => `"  \\  \"  \\n  "`
@@ -41,12 +41,14 @@ function parseFor(code) {
   }
 
   var forMatch =
-      // for...in
-      /(var|let|const)(\s+)()(.*?)()(\s+in\s+)(.+)/.exec(code) ||
-      // for...of
-      /(var|let|const)(\s+)(.*?)()()(\s+of\s+)(.+)/.exec(code) ||
-      //     (        item      ,    key         ,    index     )         in        list
-      /()(?:\()?(\s*)(.+?)(?:\s*,\s*(.+?))?(?:\s*,\s*(.+?))?(?:\))?(\s+(?:in|of)\s+)(.+)/.exec(code)
+    // for...in
+    /(var|let|const)(\s+)()(.*?)()(\s+in\s+)(.+)/.exec(code) ||
+    // for...of
+    /(var|let|const)(\s+)(.*?)()()(\s+of\s+)(.+)/.exec(code) ||
+    //     (        item      ,    key         ,    index     )         in        list
+    /()(?:\()?(\s*)(.+?)(?:\s*,\s*(.+?))?(?:\s*,\s*(.+?))?(?:\))?(\s+(?:in|of)\s+)(.+)/.exec(
+      code
+    )
 
   if (forMatch) {
     return {
@@ -64,7 +66,7 @@ function parseVars(code) {
   var vars = []
   var reg = /\b(var|let|function)(\s+)([^\s=;,(]+)/g
   var m
-  while (m = reg.exec(code)) {
+  while ((m = reg.exec(code))) {
     vars.push(m[3])
   }
   return vars
@@ -73,7 +75,7 @@ function parseVars(code) {
 // 'innerhtml' => 'innerHTML'
 function attr2prop(node, attr) {
   var prop = attr2prop[`prop:${attr}`] // cache
-  if(prop) return prop
+  if (prop) return prop
 
   for (prop in node) {
     if (prop.toLowerCase() === attr) {
@@ -82,9 +84,10 @@ function attr2prop(node, attr) {
     }
   }
 
-  prop = {
-    class: 'className',
-  }[attr] || attr
+  prop =
+    {
+      class: 'className',
+    }[attr] || attr
 
   return prop
 }
@@ -98,7 +101,9 @@ function detectError(code, raw, tpl) {
       Function(`(${code})`) // (function(){})
     } catch (_) {
       // line
-      let line = tpl.match(RegExp(`.*${raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*`))?.[0]
+      let line = tpl.match(
+        RegExp(`.*${raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*`)
+      )?.[0]
 
       // 🐞
       line = line.replace(raw, `🐞${raw}🐞`)
