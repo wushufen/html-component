@@ -7,7 +7,7 @@
   class C extends HTMLElement {
     constructor() {
       super()
-      var shadow = this.attachShadow({ mode: 'open' })
+      var shadow = this.attachShadow({ mode: 'closed' })
 
       var component = new Component(`
         <h1>Hello {name}</h1>

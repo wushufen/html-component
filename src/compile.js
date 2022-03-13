@@ -47,16 +47,18 @@ function compile(tpl) {
   let code = '' // render
 
   // parse
-  const wrapper = tpl.nodeType ? tpl : parseHTML(tpl)
+  const container = tpl.nodeType ? tpl : parseHTML(tpl)
 
   // <script>
-  Array(...wrapper.getElementsByTagName('script')).forEach(
-    (e) => (scriptCode += '// <script>' + e.innerHTML + '// </script>\n')
+  scriptCode += '// <script>\n'
+  Array(...container.getElementsByTagName('script')).forEach(
+    (e) => (scriptCode += e.innerHTML + '\n')
   )
+  scriptCode += '// </script>\n'
   var vars = parseVars(scriptCode).sort() // Com > com
 
   // loop
-  loopNodeTree(wrapper)
+  loopNodeTree(container)
   /**
    * @param {Element|Node|Node[]} node
    */
@@ -81,7 +83,7 @@ function compile(tpl) {
         // ${exp} => <text ID>${exp}</text>
         else if (node.nodeType === 3) {
           const text = document.createElement('text')
-          text.setAttribute(ID_KEY, i)
+          text.setAttribute(ID_KEY, `${i}#`)
           node.parentNode.insertBefore(text, node)
           text.appendChild(node)
         }
@@ -97,21 +99,20 @@ function compile(tpl) {
     const nodeString = (node.nodeValue || node.cloneNode().outerHTML)
       .replace(/\s+/g, ' ')
       .replace(/<\/[^<]*?>$/, '')
-      .replace(/\*\//g, '*\u200B/')
     if (nodeString.match(/\S/)) {
-      code += `\n/* ${nodeString} */\n`
+      code += `\n// ${nodeString}\n`
     }
 
     // skip
-    if (/^(skip|script|style|template)$/i.test(node.tagName)) return
     if (node.nodeType !== 1 && node.nodeType !== 3) return
+    if (/^(skip|script|style|template)$/i.test(node.tagName)) return
 
     // text: ${}
     if (node.nodeType === 3) {
       if (/\$?\{[^]*?\}/.test(node.nodeValue)) {
         // ${exp}
         const exp = parseExp(node.nodeValue)
-        code += `self.text('${id}', ${exp})\n`
+        code += `self.text('${id}#', ${exp})\n`
         detectError(exp, node.nodeValue, tpl)
       }
       return
@@ -229,48 +230,39 @@ function compile(tpl) {
   }
 
   return {
-    wrapper,
+    container,
     scriptCode,
     code,
   }
 }
 
 /**
- * only once per id
+ *
  * @param {Element} root
- * @param {string} id
- * @returns {Element|Text}
+ * @returns {Object}
  */
-function queryNode(root, id, isText) {
-  const el = queryNodeByAttr(root, ID_KEY, id)
-  if (!el) {
-    console.error('queryNode:', `!${id}`)
-    return
+function getNodeMap(root) {
+  const nodeMap = {}
+
+  loop(root)
+  function loop(node) {
+    const id = node.getAttribute?.(ID_KEY)
+    if (id) {
+      // <text ID>text</text> => text
+      if (/#/.test(id)) {
+        nodeMap[id] = node.firstChild
+        node.parentNode.replaceChild(node.firstChild, node)
+      } else {
+        nodeMap[id] = node
+        node.removeAttribute(ID_KEY)
+        const oid = node.getAttribute(BACKUP_ID_PREFIX + ID_KEY)
+        if (oid) node.setAttribute(ID_KEY, oid)
+      }
+    }
+    Array(...node.children).forEach(loop)
   }
 
-  // <text>text</text>  ->  text
-  if (isText) {
-    const text = el.firstChild
-    el.parentNode.replaceChild(text, el)
-    return text
-  }
-
-  // <el ID>  ->  <el>
-  el.removeAttribute(ID_KEY)
-  const oid = el.getAttribute(BACKUP_ID_PREFIX + ID_KEY)
-  if (oid) el.setAttribute(ID_KEY, oid)
-
-  return el
+  return nodeMap
 }
 
-/**
- * @param {Element} root
- * @param {string} attr
- * @param {string|number} value
- * @returns {Element|Text}
- */
-function queryNodeByAttr(root, attr, value) {
-  return root.querySelector(`[${attr}="${value}"]`)
-}
-
-export { compile as default, compile, queryNode }
+export { compile as default, compile, getNodeMap }

@@ -28,17 +28,15 @@ ${text}
 
 <script type="module">
   console.clear()
-  import { compile, queryNode } from './compile.js'
-  import { Component } from './class.js'
-  // const { code, wrapper } = compile(document.documentElement)
+  import { compile } from './compile.js'
+  import { Component, HelloWorld } from './class.js'
+  window.Component = Component
 
-  // console.log(Function(code))
-  // console.log('wrapper:', wrapper)
-  // window.queryNode = queryNode
-  // window.wrapper = wrapper
+  // const component = new Component(document.documentElement)
+  // window.app = component
+  // document.body.appendChild(app.fragment)
 
-  const component = new Component()
-  window.app = component
-  document.body.appendChild(app.container)
-  app.render()
+  const helloWorld = new Component()
+  window.helloWorld = helloWorld
+  document.body.appendChild(helloWorld.fragment)
 </script>

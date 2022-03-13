@@ -5,6 +5,19 @@ function parseHTML(html, containerTagName = 'div') {
   return container
 }
 
+function childNodesToFragment(container) {
+  const fragment = document.createDocumentFragment()
+  Array(...container.childNodes).forEach((e) => fragment.appendChild(e))
+  return fragment
+}
+
+function parseFragment(html) {
+  const fragment = document.createDocumentFragment()
+  const container = parseHTML(html)
+  Array(...container.childNodes).forEach((e) => fragment.appendChild(e))
+  return fragment
+}
+
 // `  \  "  \n  ` => `"  \\  \"  \\n  "`
 function quot(string, q = '"') {
   return `${q}${
@@ -129,6 +142,8 @@ ${tpl}
 
 export {
   parseHTML,
+  parseFragment,
+  childNodesToFragment,
   quot,
   parseExp,
   parseFor,
