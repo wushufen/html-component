@@ -7,13 +7,12 @@ import {
   detectError,
 } from './utils/parse.js'
 
-const ID_KEY = 'id_' // <el ID>
-const BACKUP_ID_PREFIX = '_backup_' // _backup_ID
+const ID_KEY = 'id' // <el ID>
 
 /**
  * ${1}
  * <ul title="${2}" .prop="2" [key]="2">
- *   <li for="const item of list3" if="item!=3" .value="3" is="MyComponent">
+ *   <li for="const item of list3" if="item!=3" .value="3" new="MyComponent">
  *     ${4}
  *   </li>
  * </ul>
@@ -34,7 +33,7 @@ const BACKUP_ID_PREFIX = '_backup_' // _backup_ID
  * self.for(3, list3, function(item, $key, $index){
  *   self.if(item!=3, function() {
  *     self.prop(3, 'value', 3)
- *     self.is(3, MyComponent)
+ *     self.new(3, MyComponent)
  *
  *     self.text(4, `${4}`)
  *   })
@@ -76,9 +75,8 @@ function compile(tpl) {
 
         // <el /> => <el ID />
         if (node.nodeType === 1) {
-          const oldId = node.getAttribute(ID_KEY)
-          if (oldId) node.setAttribute(BACKUP_ID_PREFIX + ID_KEY, oldId)
-          node.setAttribute(ID_KEY, i)
+          const oid = node.getAttribute(ID_KEY)
+          node.setAttribute(ID_KEY, !oid ? i : `${i}|${oid}`)
         }
         // ${exp} => <text ID>${exp}</text>
         else if (node.nodeType === 3) {
@@ -118,7 +116,7 @@ function compile(tpl) {
       return
     }
 
-    // for > if > .prop > is >>> childNodes <<< /if < /for
+    // for > if > .prop > new >>> childNodes <<< /if < /for
 
     // for
     const _for_ = parseFor(node.getAttribute('for'))
@@ -198,17 +196,17 @@ function compile(tpl) {
       }
     })
 
-    // is
-    var _is_ = node.getAttribute('is')
+    // new
+    var _is_ = node.getAttribute('new')
     if (_is_) {
-      code += `self.is('${id}', ${_is_})\n`
+      code += `self.new('${id}', ${_is_})\n`
 
       detectError(_is_, _is_, tpl)
-      node.removeAttribute('is')
+      node.removeAttribute('new')
     } else {
       for (const _var_ of vars) {
         if (RegExp(`^${node.tagName}$`, 'i').test(_var_)) {
-          code += `self.is('${id}', typeof ${_var_} !== 'undefined' && ${_var_})\n`
+          code += `self.new('${id}', typeof ${_var_} !== 'undefined' && ${_var_})\n`
           break
         }
       }
@@ -238,25 +236,31 @@ function compile(tpl) {
 
 /**
  *
- * @param {Element} root
+ * @param {Element} root compiledTpl
  * @returns {Object}
  */
-function getNodeMap(root) {
+function parseId(root) {
   const nodeMap = {}
 
   loop(root)
   function loop(node) {
-    const id = node.getAttribute?.(ID_KEY)
-    if (id) {
+    const id_oid = node.getAttribute?.(ID_KEY)
+    const id = id_oid
+    if (id_oid) {
       // <text ID>text</text> => text
       if (/#/.test(id)) {
-        nodeMap[id] = node.firstChild
-        node.parentNode.replaceChild(node.firstChild, node)
-      } else {
+        const text = node.firstChild
+        nodeMap[id] = text
+        text['#id'] = id
+        node.parentNode.replaceChild(text, node)
+      }
+      // <el ID /> => <el />
+      else {
+        const [id, oid] = id_oid.split('|')
         nodeMap[id] = node
-        node.removeAttribute(ID_KEY)
-        const oid = node.getAttribute(BACKUP_ID_PREFIX + ID_KEY)
+        node['#id'] = id
         if (oid) node.setAttribute(ID_KEY, oid)
+        else node.removeAttribute(ID_KEY)
       }
     }
     Array(...node.children).forEach(loop)
@@ -265,4 +269,26 @@ function getNodeMap(root) {
   return nodeMap
 }
 
-export { compile as default, compile, getNodeMap }
+function cloneWithId(node, forKey) {
+  const cloneNode = node.cloneNode(true)
+
+  loop(node, cloneNode)
+  function loop(node, cloneNode) {
+    const origin = node['#for<origin>'] || node
+    const originId = origin['#id']
+    if (originId) {
+      cloneNode['#for<origin>'] = origin
+      cloneNode['#id'] = `${originId}${forKey}`
+      // self.$(id) => origin + forKey => cloneNode
+      origin[`#<clone>${originId}${forKey}`] = cloneNode
+    }
+
+    Array(...node.childNodes).forEach((child, index) =>
+      loop(child, cloneNode.childNodes[index])
+    )
+  }
+
+  return cloneNode
+}
+
+export { compile as default, compile, parseId, cloneWithId }

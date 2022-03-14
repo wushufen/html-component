@@ -54,7 +54,7 @@ npm i -D HtmlComponent
 <!-- .property 赋值 -->
 <div .prop="1 + 1" />                       div.prop = 1 + 1
 <div [key]="1 + 1" />                       div[key] = 1 + 1
-<div ...="{prop1: 1, prop2: 2}" />          { ...{prop1: 1, prop2: 2} }
+<div ...="{prop1: 1, prop2: 2}" />          ...{prop1: 1, prop2: 2}
 
 
 <!-- if 条件 -->

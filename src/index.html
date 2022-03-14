@@ -5,38 +5,40 @@
   }
 </style>
 
-${text}
-<div if="text">if</div>
-<ul
-  title="${2}"
-  .prop="2"
-  [key]="2"
-  ...="{a:1}"
-  onclick="console.log(this, event)"
-  .ondblclick="console.warn"
->
-  <li for="const item of list" if="item!=3" .value="3" is="MyComponent">
-    ${4}
+<ul>
+  <li for="const item of list" if="item!=3" .title="item">
+    <span for="const c of item">${c}</span>
   </li>
 </ul>
+
+<hello-World></hello-World>
+<div is="hello-world"></div>
+<hello-World new="HelloWorld"></hello-World>
+<!-- <HelloWorld></HelloWorld> -->
+<div new="Time"></div>
+
 <script>
-  var text = 'text'
-  var key = 'kkk'
-  var MyComponent
-  var list
+  var HelloWorld
+  var Time
+
+  var list = {
+    apple: 'apple',
+    banana: 'banana',
+  }
 </script>
 
 <script type="module">
   console.clear()
   import { compile } from './compile.js'
-  import { Component, HelloWorld } from './class.js'
+  import { Component, HelloWorld, Time } from './class.js'
   window.Component = Component
+  window.HelloWorld = HelloWorld
+  window.Time = Time
 
-  // const component = new Component(document.documentElement)
-  // window.app = component
-  // document.body.appendChild(app.fragment)
+  const component = new Component(document.documentElement)
+  window.app = component
 
-  const helloWorld = new Component()
-  window.helloWorld = helloWorld
-  document.body.appendChild(helloWorld.fragment)
+  // const helloWorld = new Component()
+  // window.helloWorld = helloWorld
+  // document.body.appendChild(helloWorld.fragment)
 </script>

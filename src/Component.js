@@ -7,7 +7,7 @@
   })
 
 */
-class Component{
+class Component {
   constructor(tpl) {
     this.nodeMap = {
       // id: node,
@@ -26,17 +26,20 @@ class Component{
       nodeString = `[${node.nodeName}=${node.nodeValue}]`
     }
 
-    var id = node['@id'] || `${this.nodeMap.length++}: ${nodeString} `
-      .replace(/\s+/g, ' ')
-      .replace(/'/g, '"')
-      .replace(/\\/g, '')
+    var id =
+      node['@id'] ||
+      `${this.nodeMap.length++}: ${nodeString} `
+        .replace(/\s+/g, ' ')
+        .replace(/'/g, '"')
+        .replace(/\\/g, '')
 
     this.nodeMap[id] = node
     node['@id'] = id
     return id
   }
   getNode(id) {
-    if (id?.nodeType) { // node
+    if (id?.nodeType) {
+      // node
       return id
     }
 
@@ -52,11 +55,11 @@ class Component{
     var node = this.getNode(id)
     var forMark = markNode(node, '#for#')
     removeNode(node)
-    var cloneNodes = node['@cloneNodes'] = node['@cloneNodes'] || {}
+    var cloneNodes = (node['@cloneNodes'] = node['@cloneNodes'] || {})
     // var fragment = document.createDocumentFragment() // ??
 
     var forPath = this.forPath
-    each(list, function(item, key, index) {
+    each(list, function (item, key, index) {
       self.forPath = `${forPath}#${key}` // ***
       var cloneNode = cloneNodes[`#${key}`] // #toString
 
@@ -69,21 +72,27 @@ class Component{
 
         // originNodeId + forPath => cloneNode
         saveCloneNode(cloneNode, node)
+        // eslint-disable-next-line no-inner-declarations
         function saveCloneNode(cloneNode, node) {
           cloneNode['@originNode'] = node['@originNode'] || node
           var originNodeId = cloneNode['@originNode']['@id']
           cloneNode['@id'] = `${originNodeId}${self.forPath}` // ***
           self.saveNode(cloneNode)
 
-          forEach(cloneNode.attributes, (e,i)=> saveCloneNode(e,node.attributes[i]))
-          forEach(cloneNode.childNodes, (e,i)=> saveCloneNode(e,node.childNodes[i]))
+          forEach(cloneNode.attributes, (e, i) =>
+            saveCloneNode(e, node.attributes[i])
+          )
+          forEach(cloneNode.childNodes, (e, i) =>
+            saveCloneNode(e, node.childNodes[i])
+          )
         }
 
         // insertNode(cloneNode, forMark)
         // fragment.appendChild(cloneNode)
       }
       // ++ insert
-      if (!cloneNode['#isIfRemove#']) { // for(true)+if(false)
+      if (!cloneNode['#isIfRemove#']) {
+        // for(true)+if(false)
         self.if(cloneNode, true)
       }
       cloneNode['#noRemove'] = true // for remove check
@@ -95,7 +104,7 @@ class Component{
     // insertNode(fragment, forMark)
 
     // -- remove
-    each(cloneNodes, function(cloneNode) {
+    each(cloneNodes, function (cloneNode) {
       if (!cloneNode['#noRemove']) {
         // TODO setTimeout destroy?
         self.if(cloneNode, false)
@@ -146,7 +155,7 @@ class Component{
   }
   prop(id, name, value, isCallValue) {
     var node = this.getNode(id)
-    var $props = node.$props = node.$props || {}
+    var $props = (node.$props = node.$props || {})
     var self = this
 
     // el.ref="el=this"
@@ -167,7 +176,7 @@ class Component{
     $props[name] = value // component.render(node.$props)
 
     // activeElement
-    if(value === node[name]) return
+    if (value === node[name]) return
 
     // update dom
     node[name] = value // node.prop
@@ -176,7 +185,7 @@ class Component{
     // ${1,2} => 2
     return output(arguments[arguments.length - 1])
   }
-  on(id, event, cb){}
+  on(id, event, cb) {}
   is(id, SubComponent) {
     var node = this.getNode(id)
 
@@ -195,11 +204,10 @@ class Component{
     }
 
     if (SubComponent?.then) {
-      SubComponent.then(SubComponent => _is(node, SubComponent))
+      SubComponent.then((SubComponent) => _is(node, SubComponent))
     } else {
       _is(node, SubComponent)
     }
-
   }
   compile(tpl) {
     var self = this
@@ -231,10 +239,14 @@ class Component{
     this.node['#component'] = this
 
     // <script>
-    container.querySelectorAll('script').forEach(e=>scriptCode += '// <script>' + e.innerHTML + '// </script>\n')
+    container
+      .querySelectorAll('script')
+      .forEach(
+        (e) => (scriptCode += '// <script>' + e.innerHTML + '// </script>\n')
+      )
 
     // <template name>
-    container.querySelectorAll('template').forEach(node => {
+    container.querySelectorAll('template').forEach((node) => {
       var name = getAttribute(node, 'name')
       if (name) {
         innerComponentCode += `
@@ -261,7 +273,10 @@ class Component{
       if (/^(skip|script|style|template)$/i.test(node.tagName)) return
 
       // {exp}
-      if ((node.nodeType === 2 || node.nodeType === 3) && /\{[^]*?\}/.test(node.nodeValue)) {
+      if (
+        (node.nodeType === 2 || node.nodeType === 3) &&
+        /\{[^]*?\}/.test(node.nodeValue)
+      ) {
         var exp = parseExp(node.nodeValue)
         code += `self.prop('${id}', 'nodeValue', ${exp})\n`
         detectTemplateError(exp, node)
@@ -275,8 +290,14 @@ class Component{
       var fm = getForAttrMatch(forAttr)
       if (fm) {
         code += `self.for('${id}', ${fm.list}, function(${fm.item},${fm.key},${fm.index}){\n`
-        detectTemplateError(forAttr.replace(/^\((.+)\)$/, '$1').replace(/var|let|const/g, ';"$&";').replace(/of/, ';"$&";'), node)
-        removeAttribute(node,  'for')
+        detectTemplateError(
+          forAttr
+            .replace(/^\((.+)\)$/, '$1')
+            .replace(/var|let|const/g, ';"$&";')
+            .replace(/of/, ';"$&";'),
+          node
+        )
+        removeAttribute(node, 'for')
       }
 
       // if
@@ -348,7 +369,6 @@ class Component{
 
         // attr="{}"
         loopTree(attribute)
-
       })
 
       // is="SubCom"
@@ -363,7 +383,10 @@ class Component{
       else {
         for (let varName of varNames) {
           // var SubCom, html: SubCom, tagName: SUBCOM, localName: subcom
-          if (/^[A-Z]/.test(varName) && RegExp(`^${varName}$`, 'i').test(node.tagName)) {
+          if (
+            /^[A-Z]/.test(varName) &&
+            RegExp(`^${varName}$`, 'i').test(node.tagName)
+          ) {
             code += `self.is('${id}', ${varName})\n`
             break
           }
@@ -371,7 +394,7 @@ class Component{
       }
 
       // >>>
-      forEach(toArray(node.childNodes), childNode => loopTree(childNode))
+      forEach(toArray(node.childNodes), (childNode) => loopTree(childNode))
       // <<<
 
       // end if
@@ -383,7 +406,6 @@ class Component{
       if (fm) {
         code += '})\n'
       }
-
     }
 
     // Scope(){var data; return render(){ dom }}
@@ -394,7 +416,14 @@ class Component{
       ${innerComponentCode}
 
       // <script />
-      ${isGlobal ? '/* global */' : injectRender(scriptCode, '!render.lock && Promise.resolve().then(self.render);')}
+      ${
+        isGlobal
+          ? '/* global */'
+          : injectRender(
+              scriptCode,
+              '!render.lock && Promise.resolve().then(self.render);'
+            )
+      }
 
       // render
       function render($props){
@@ -468,13 +497,13 @@ class Component{
     // TODO scoped
     var constructor = this.constructor
     if (!constructor['#styled']) {
-      this.container.querySelectorAll('style').forEach(style => {
+      this.container.querySelectorAll('style').forEach((style) => {
         document.head.appendChild(style)
       })
       constructor['#styled'] = true
     }
     Component['#ci'] = Component['#ci'] || 1
-    constructor['#c'] = constructor['#c'] || (Component['#ci']++)
+    constructor['#c'] = constructor['#c'] || Component['#ci']++
     this.node.setAttribute(`c${constructor['#c']}`, '')
 
     return this.node
@@ -483,7 +512,7 @@ class Component{
     return Component.define(tpl)
   }
   static define(tpl) {
-    return class SubComponent extends Component{
+    return class SubComponent extends Component {
       constructor() {
         super(tpl)
       }
@@ -491,7 +520,7 @@ class Component{
   }
   static async load(url) {
     var tpl = await (await fetch(url)).text()
-    tpl = tpl.replace(/require\(\s*['"](.*?)['"]\s*\)/g, function($, $1) {
+    tpl = tpl.replace(/require\(\s*['"](.*?)['"]\s*\)/g, function ($, $1) {
       if (/\.html$/.test($1)) {
         var base = new URL(url, location).toString()
         var url2 = new URL($1, base).toString()
@@ -528,16 +557,14 @@ function each(list, cb) {
     forEach(list, function (item, i) {
       cb(item, i, i)
     })
-  }
-  else if (window.Symbol && list?.[Symbol.iterator]) {
+  } else if (window.Symbol && list?.[Symbol.iterator]) {
     const iterator = list[Symbol.iterator]()
     let index = 0
     let step
-    while (step = iterator.next(), !step.done) {
+    while (((step = iterator.next()), !step.done)) {
       cb(step.value, index, index++)
     }
-  }
-  else {
+  } else {
     let index = 0
     for (const key in list) {
       if (hasOwnProperty(list, key)) {
@@ -599,8 +626,7 @@ function animateInsertNode(node, target, className) {
     node['#animateRemoved'] = false
 
     insertNode(node, target)
-    animateNode(node, className, function() {
-    })
+    animateNode(node, className, function () {})
   }
 }
 
@@ -609,7 +635,7 @@ function animateRemoveNode(node, className) {
   if (!node['#animateRemoved']) {
     node['#animateRemoved'] = true
 
-    animateNode(node, className, function() {
+    animateNode(node, className, function () {
       removeNode(node)
     })
   }
@@ -620,7 +646,7 @@ function markNode(node, name) {
   var prop = `${name}`
   if (node[prop]) return node[prop]
 
-  var text = ` ${name}: ${node.cloneNode().outerHTML} ${node['@key'] ?? '' }`
+  var text = ` ${name}: ${node.cloneNode().outerHTML} ${node['@key'] ?? ''}`
   var mark = document.createComment(text)
   // var mark = document.createTextNode('')
   node.parentNode.insertBefore(mark, node)
@@ -679,7 +705,7 @@ function on(node, name, cb) {
 // 'innerhtml' => 'innerHTML'
 function attr2prop(node, attr) {
   var prop = attr2prop[`prop:${attr}`] // cache
-  if(prop) return prop
+  if (prop) return prop
 
   for (prop in node) {
     if (prop.toLowerCase() === attr) {
@@ -688,9 +714,10 @@ function attr2prop(node, attr) {
     }
   }
 
-  prop = {
-    class: 'className',
-  }[attr] || attr
+  prop =
+    {
+      class: 'className',
+    }[attr] || attr
 
   return prop
 }
@@ -748,12 +775,14 @@ function getForAttrMatch(code) {
   }
 
   var forMatch =
-      // for...in
-      /(var|let|const)(\s+)()(.*?)()(\s+in\s+)(.+)/.exec(code) ||
-      // for...of
-      /(var|let|const)(\s+)(.*?)()()(\s+of\s+)(.+)/.exec(code) ||
-      //     (        item      ,    key         ,    index     )         in        list
-      /()(?:\()?(\s*)(.+?)(?:\s*,\s*(.+?))?(?:\s*,\s*(.+?))?(?:\))?(\s+(?:in|of)\s+)(.+)/.exec(code)
+    // for...in
+    /(var|let|const)(\s+)()(.*?)()(\s+in\s+)(.+)/.exec(code) ||
+    // for...of
+    /(var|let|const)(\s+)(.*?)()()(\s+of\s+)(.+)/.exec(code) ||
+    //     (        item      ,    key         ,    index     )         in        list
+    /()(?:\()?(\s*)(.+?)(?:\s*,\s*(.+?))?(?:\s*,\s*(.+?))?(?:\))?(\s+(?:in|of)\s+)(.+)/.exec(
+      code
+    )
 
   if (forMatch) {
     return {
@@ -770,7 +799,7 @@ function getVarNames(code) {
   var vars = []
   var reg = /\b(var|let|function)(\s+)([^\s=;,(]+)/g
   var m
-  while (m = reg.exec(code)) {
+  while ((m = reg.exec(code))) {
     vars.push(m[3])
   }
   return vars
@@ -801,7 +830,7 @@ function detectTemplateError(code, node) {
     try {
       Function(`(${code})`) // (function(){})
     } catch (_) {
-      var parentNode  = node.parentNode || node.ownerElement?.parentNode || node
+      var parentNode = node.parentNode || node.ownerElement?.parentNode || node
       var tpl = node.nodeValue || node.cloneNode().outerHTML
       tpl = tpl.replace(/<\/.*?>/, '') // - </tag>
       tpl = parentNode.outerHTML.replace(tpl, `🐞${tpl}🐞`)
@@ -818,8 +847,8 @@ function detectTemplateError(code, node) {
 }
 
 // fn() => fn()+run()
-function after(fn, run){
-  return function(){
+function after(fn, run) {
+  return function () {
     const rs = fn.apply(this, arguments)
     run()
     return rs
@@ -828,7 +857,7 @@ function after(fn, run){
 
 // index.html
 if (this === Function('return this')()) {
-  let render = function() {}
+  let render = function () {}
 
   function injectSetTimout(setTimeout) {
     var _setTimeout = window[setTimeout]
@@ -837,8 +866,8 @@ if (this === Function('return this')()) {
     }
     if (!_setTimeout) return back
 
-    window[setTimeout] = function(cb, time){
-      return _setTimeout(function(){
+    window[setTimeout] = function (cb, time) {
+      return _setTimeout(function () {
         var rs = typeof cb === 'function' ? cb.apply(this, arguments) : eval(cb)
         render()
         return rs
@@ -851,7 +880,7 @@ if (this === Function('return this')()) {
   var setIntervalBack = injectSetTimout('setInterval')
   var requestAnimationFrameBack = injectSetTimout('requestAnimationFrame')
 
-  addEventListener('DOMContentLoaded', e => {
+  addEventListener('DOMContentLoaded', (e) => {
     var app = new Component(document.documentElement)
     app.render()
     window.render = app.render
@@ -867,12 +896,11 @@ if (this === Function('return this')()) {
   })
 }
 
-
 // debug
 var debug = !true
 if (debug) {
   // .property
-  Component.prototype.prop = function (prop) {
+  Component.prototype.prop = (function (prop) {
     return function (node, name, value, isCallValue) {
       node = this.getNode(node)
       if (isCallValue) {
@@ -882,9 +910,8 @@ if (debug) {
       setAttribute(node, ':' + name, output(value))
       prop.apply(this, arguments)
     }
-  }(Component.prototype.prop)
+  })(Component.prototype.prop)
 }
-
 
 // export
 if (typeof module === 'object') {

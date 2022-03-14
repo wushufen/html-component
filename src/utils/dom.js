@@ -1,88 +1,39 @@
-// node, target -> <node><!-- target -->
-function insertNode(node, target) {
-  if (node.parentNode) return
-  target.parentNode?.insertBefore(node, target)
+/**
+ *
+ * @param {Node} node
+ * @param {Node} to
+ */
+function insert(node, to) {
+  if (!node.parentNode) {
+    to.parentNode?.insertBefore(node, to)
+  }
 }
 
-// node -> --
-function removeNode(node) {
+/**
+ *
+ * @param {Node} node
+ */
+function remove(node) {
   node.parentNode?.removeChild(node)
 }
 
-// node, name => attrValue
-function getAttribute(node, name) {
-  return node?.getAttribute?.(name) || ''
+/**
+ *
+ * @param {Node} node
+ * @param {Node} newNode
+ */
+function replace(node, newNode) {
+  node.parentNode?.replaceChild(newNode, node)
 }
 
-// node, name => attrValue
-function setAttribute(node, name, value) {
-  node?.setAttribute?.(name, value)
+/**
+ *
+ * @param {string} comment
+ * @param {boolean} debug
+ * @returns
+ */
+function createPlace(comment, debug) {
+  return debug ? document.createComment(comment) : document.createTextNode('')
 }
 
-// node, name => bool
-function hasAttribute(node, name) {
-  return node?.hasAttribute?.(name) || false
-}
-
-// attrName => --
-function removeAttribute(node, name) {
-  node?.removeAttribute?.(name)
-}
-
-// 'innerhtml' => 'innerHTML'
-function attr2prop(node, attr) {
-  var prop = attr2prop[`prop:${attr}`] // cache
-  if(prop) return prop
-
-  for (prop in node) {
-    if (prop.toLowerCase() === attr) {
-      attr2prop[`prop:${attr}`] = prop
-      return prop
-    }
-  }
-
-  prop = {
-    class: 'className',
-  }[attr] || attr
-
-  return prop
-}
-
-// + .class
-function addClass(node, name) {
-  node.classList.add(name)
-}
-
-// - .class
-function removeClass(node, name) {
-  node.classList.remove(name)
-}
-
-// => computedStyle[name]
-function computeStyle(node, name, Type = String) {
-  // TODO prefix: webkit, moz, ms
-  return Type(getComputedStyle(node)[name])
-}
-
-// + addEventListener => cancel()
-function on(node, name, cb) {
-  // TODO prefix
-  node.addEventListener(name, cb)
-  return function () {
-    node.removeEventListener(name, cb)
-  }
-}
-
-export {
-  insertNode,
-  removeNode,
-  getAttribute,
-  setAttribute,
-  hasAttribute,
-  removeAttribute,
-  attr2prop,
-  addClass,
-  removeClass,
-  computeStyle,
-  on,
-}
+export { insert, remove, replace, createPlace }
