@@ -1,11 +1,6 @@
 import { each } from './utils/index.js'
-import { insert, remove, replace, createPlace } from './utils/dom.js'
-import {
-  parseHTML,
-  parseFragment,
-  childNodesToFragment,
-} from './utils/parse.js'
-import { compile, parseId, cloneWithId } from './compile.js'
+import { insert, remove, replace, Dom, Fragment, Place } from './utils/dom.js'
+import { compile, NodeMap, cloneWithId } from './compile.js'
 
 class Component {
   static debug = !false
@@ -22,19 +17,19 @@ class Component {
   constructor(tpl) {
     if (!tpl) {
       // init dom
-      this.fragment = parseFragment(this.constructor.compiledTpl)
-      this.nodeMap = parseId(this.fragment)
+      this.fragment = Fragment(this.constructor.compiledTpl)
+      this.nodeMap = NodeMap(this.fragment)
       this.childNodes = [...this.fragment.childNodes]
     } else {
       let node = tpl
       const isStringTpl = typeof tpl === 'string'
       if (isStringTpl) {
-        node = parseHTML(tpl)
+        node = Dom(tpl)
       }
 
       const { scriptCode, code } = compile(node)
-      this.fragment = isStringTpl ? childNodesToFragment(node) : node
-      this.nodeMap = parseId(node)
+      this.fragment = isStringTpl ? Fragment(node.childNodes) : node
+      this.nodeMap = NodeMap(node)
       this.childNodes = isStringTpl ? [this.fragment] : [node]
 
       this.render = Function(`
@@ -122,7 +117,7 @@ class Component {
     let place = node['#for<place>']
 
     if (!place) {
-      place = createPlace('for', Component.debug)
+      place = Place('for', Component.debug)
       node['#for<place>'] = place
       place['#//for<node>'] = node
       replace(node, place)
@@ -172,7 +167,7 @@ class Component {
         replace(place, node)
       } else {
         if (!place) {
-          place = createPlace('if', Component.debug)
+          place = Place('if', Component.debug)
           node['#if<place>'] = place
           place['#//if.node'] = node
         }

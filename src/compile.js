@@ -1,5 +1,5 @@
+import { Dom, Fragment } from './utils/dom.js'
 import {
-  parseHTML,
   parseExp,
   parseFor,
   parseVars,
@@ -46,7 +46,7 @@ function compile(tpl) {
   let code = '' // render
 
   // parse
-  const container = tpl.nodeType ? tpl : parseHTML(tpl)
+  const container = tpl.nodeType ? tpl : Dom(tpl)
 
   // <script>
   scriptCode += '// <script>\n'
@@ -239,7 +239,7 @@ function compile(tpl) {
  * @param {Element} root compiledTpl
  * @returns {Object}
  */
-function parseId(root) {
+function NodeMap(root) {
   const nodeMap = {}
 
   loop(root)
@@ -291,4 +291,4 @@ function cloneWithId(node, forKey) {
   return cloneNode
 }
 
-export { compile as default, compile, parseId, cloneWithId }
+export { compile as default, compile, NodeMap, cloneWithId }
