@@ -10,7 +10,7 @@ import {
 import { compile, NodeMap, cloneWithId } from './compile.js'
 
 class Component {
-  static debug = !false
+  // static debug = !false
   static compiledTpl = ``
   render() {}
   $render() {
@@ -210,26 +210,27 @@ class Component {
     }
 
     if (bool) {
-      cb.call(this)
+      cb?.call(this)
     }
 
+    const self = this
     return {
-      elseif: (id, bool_, cb) => {
+      elseif(id, bool_, cb) {
         if (!bool && bool_) {
-          this.if(id, true)
-          cb.call(this)
+          self.if(id, true)
+          cb.call(self)
           bool = true
         } else {
-          this.if(id, false)
+          self.if(id, false)
         }
         return this
       },
-      else: (id, cb) => {
+      else(id, cb) {
         if (bool) {
-          this.if(id, false)
+          self.if(id, false)
         } else {
-          this.if(id, true)
-          cb.call(this)
+          self.if(id, true)
+          cb.call(self)
         }
       },
     }
@@ -255,10 +256,11 @@ class Component {
         if (!component) {
           component = new Class()
           node['#component'] = component
-          // replace(node, component.fragment)
 
-          const shadow = node.attachShadow({ mode: 'open' })
-          shadow.appendChild(component.fragment)
+          replace(node, component.fragment)
+
+          // const shadow = node.attachShadow({ mode: 'open' })
+          // shadow.appendChild(component.fragment)
         }
         // render
         // TODO props && diff
@@ -349,7 +351,7 @@ class Time extends Component {
     setInterval(function () {
       self.$render() // injected
       date = new Date()
-    }, 10)
+    }, 1000 / 24)
     // </script>
 
     // compiledCode

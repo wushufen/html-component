@@ -1,70 +1,100 @@
-<style>
-  html {
-    background: #222;
-    color: #fff;
-  }
-</style>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <!-- ${} 插值 -->
+    <div>Hello ${value}</div>
+    <div attr="Hello ${value}">attr</div>
 
-<button .disabled="!text">${text}</button>
-<button
-  onclick="bool=!bool"
-  .class="{yes:bool}"
-  .style="{height: number*2, 'line-height': 1}"
->
-  ${bool}
-</button>
+    <!-- .property 赋值 -->
+    <div .value="value">.prop</div>
+    <div [value]="value">[value]</div>
+    <div class="a" .class="{a:value}">.class</div>
+    <div style="border: solid 1px" .style="{width:value}">.style</div>
+    <div ...="{prop1: 1, prop2: 2}">...</div>
 
-<ul>
-  <li for="const item of list" if="item!=3" .title="item">
-    <span for="const c of item">${c}</span>
-  </li>
-</ul>
+    <!-- if 条件 -->
+    <div if="(value.length==1)">if</div>
+    <div else if="(value.length==2)">else if</div>
+    <div else>else</div>
 
-<hello-World></hello-World>
-<div is="hello-world"></div>
-<hello-World new="HelloWorld"></hello-World>
-<!-- <HelloWorld></HelloWorld> -->
-<div new="Time">${text}</div>
+    <!-- for 循环 -->
+    <div for="(const item of value)">
+      for: <span for="(var key in value)">${value[key]}</span>
+    </div>
 
-<!-- <div .ref="attachShadow(this, Time)">attachShadow</div> -->
+    <!-- on 事件 -->
+    <div onclick="console.log(this, event)">on</div>
+    <div .onclick="console.count">.on</div>
 
-<script>
-  var HelloWorld
-  var Time
+    <!-- .property + on 双向绑定 -->
+    <input
+      .value="value"
+      oninput="if(!(event.isComposing&&/[a-z]/i.test(event.data))) value=Number(this.value)||this.value"
+      xxxoncompositionend="console.error(event)"
+      autofocus
+    />
+    ${typeof value}: ${value.length||value}
 
-  var text = 'TEXT'
-  var bool = true
-  var number = 10
-  var object = {
-    a: 0,
-    b: 1,
-  }
-  var list = {
-    apple: 'apple',
-    banana: 'banana',
-  }
+    <!-- new 组件 -->
+    <HelloWorld .a="1" ...="{b: 2, c: 3}"></HelloWorld>
+    <div new="Time">${value}</div>
 
-  function attachShadow(node, Component) {
-    if (node.shadowRoot) return
-    if (!Component) return
+    <!-- ??? -->
+    <!-- <hello-World></hello-World> -->
+    <!-- <div is="hello-world"></div> -->
 
-    const shadow = node.attachShadow({ mode: 'open' })
-    shadow.append(new Component().fragment)
-  }
-</script>
+    <!-- <div .ref="attachShadow(this, Time)">attachShadow</div> -->
 
-<script type="module">
-  import { compile } from './compile.js'
-  import { Component, HelloWorld, Time } from './Component.js'
+    <script>
+      var HelloWorld
+      var Time
 
-  window.Component = Component
-  window.HelloWorld = HelloWorld
-  window.Time = Time
+      var value = 'VALUE'
+      var text = 'TEXT'
+      var bool = true
+      var number = 10
+      var array = [1, 2, 3]
+      var object = {
+        a: 0,
+        b: 1,
+      }
 
-  const component = new Component(document.documentElement)
-  window.app = component
+      function attachShadow(node, Component) {
+        if (node.shadowRoot) return
+        if (!Component) return
 
-  // const helloWorld = new Component()
-  // window.helloWorld = helloWorld
-  // document.body.appendChild(helloWorld.fragment)
-</script>
+        const shadow = node.attachShadow({ mode: 'open' })
+        shadow.append(new Component().fragment)
+      }
+    </script>
+
+    <script type="module">
+      import { compile } from './compile.js'
+      import { Component, HelloWorld, Time } from './Component.js'
+
+      window.Component = Component
+      window.HelloWorld = HelloWorld
+      window.Time = Time
+
+      const component = new Component(document.documentElement)
+      window.app = component
+
+      // const helloWorld = new Component()
+      // window.helloWorld = helloWorld
+      // document.body.appendChild(helloWorld.fragment)
+    </script>
+
+    <style>
+      html {
+        background: #222;
+        color: #fff;
+      }
+    </style>
+  </body>
+</html>
