@@ -1,3 +1,5 @@
+const hasOwnProperty = Object.prototype.hasOwnProperty
+
 // [] -> each
 function forEach(arrayLike, fn) {
   if (!arrayLike) return
@@ -23,7 +25,7 @@ function each(list, cb) {
   } else {
     let index = 0
     for (const key in list) {
-      if (hasOwnProperty(list, key)) {
+      if (hasOwnProperty.call(list, key)) {
         const item = list[key]
         cb(item, key, index++)
       }
@@ -32,8 +34,8 @@ function each(list, cb) {
 }
 
 // object, key => bool
-function hasOwnProperty(object, key) {
-  return Object.hasOwnProperty.call(object, key)
+function hasOwn(object, key) {
+  return object && hasOwnProperty.call(object, key)
 }
 
-export { forEach, each }
+export { hasOwnProperty, forEach, each, hasOwn }

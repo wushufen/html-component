@@ -5,6 +5,15 @@
   }
 </style>
 
+<button .disabled="!text">${text}</button>
+<button
+  onclick="bool=!bool"
+  .class="{yes:bool}"
+  .style="{height: number*2, 'line-height': 1}"
+>
+  ${bool}
+</button>
+
 <ul>
   <li for="const item of list" if="item!=3" .title="item">
     <span for="const c of item">${c}</span>
@@ -15,22 +24,39 @@
 <div is="hello-world"></div>
 <hello-World new="HelloWorld"></hello-World>
 <!-- <HelloWorld></HelloWorld> -->
-<div new="Time"></div>
+<div new="Time">${text}</div>
+
+<!-- <div .ref="attachShadow(this, Time)">attachShadow</div> -->
 
 <script>
   var HelloWorld
   var Time
 
+  var text = 'TEXT'
+  var bool = true
+  var number = 10
+  var object = {
+    a: 0,
+    b: 1,
+  }
   var list = {
     apple: 'apple',
     banana: 'banana',
   }
+
+  function attachShadow(node, Component) {
+    if (node.shadowRoot) return
+    if (!Component) return
+
+    const shadow = node.attachShadow({ mode: 'open' })
+    shadow.append(new Component().fragment)
+  }
 </script>
 
 <script type="module">
-  console.clear()
   import { compile } from './compile.js'
-  import { Component, HelloWorld, Time } from './class.js'
+  import { Component, HelloWorld, Time } from './Component.js'
+
   window.Component = Component
   window.HelloWorld = HelloWorld
   window.Time = Time

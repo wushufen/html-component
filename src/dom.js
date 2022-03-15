@@ -41,7 +41,7 @@ function append(node, childNodes) {
  * @param {string} html
  * @param {string} tag
  */
-function Dom(html, tag = 'div') {
+function parseHTML(html, tag = 'div') {
   const container = document.createElement(tag)
   container.innerHTML = html
   return container
@@ -49,13 +49,13 @@ function Dom(html, tag = 'div') {
 
 /**
  *
- * @param {Node|NodeList} nodeList
+ * @param {Node|NodeList|string} nodeList
  * @returns {DocumentFragment}
  */
-function Fragment(nodeList) {
+function createFragment(nodeList) {
   const fragment = document.createDocumentFragment()
   if (typeof nodeList === 'string') {
-    nodeList = Dom(nodeList).childNodes
+    nodeList = parseHTML(nodeList).childNodes
   }
   append(fragment, nodeList)
   return fragment
@@ -65,10 +65,18 @@ function Fragment(nodeList) {
  *
  * @param {string} comment
  * @param {boolean} debug
- * @returns
+ * @returns {Node}
  */
-function Place(comment, debug) {
+function createComment(comment, debug) {
   return debug ? document.createComment(comment) : document.createTextNode('')
 }
 
-export { insert, remove, replace, append, Dom, Fragment, Place }
+export {
+  insert,
+  remove,
+  replace,
+  append,
+  parseHTML,
+  createFragment,
+  createComment,
+}

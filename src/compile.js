@@ -1,13 +1,13 @@
-import { Dom, Fragment } from './utils/dom.js'
+import { parseHTML } from './dom.js'
 import {
   parseExp,
   parseFor,
   parseVars,
   attr2prop,
   detectError,
-} from './utils/parse.js'
+} from './parse.js'
 
-const ID_KEY = 'id' // <el ID>
+const ID_KEY = 'id' // <el ID=ID|OLD />  <text ID=ID#>${value}</text>
 
 /**
  * ${1}
@@ -17,10 +17,10 @@ const ID_KEY = 'id' // <el ID>
  *   </li>
  * </ul>
  * ==>
- * <text ID=1>${1}</text>
+ * <text ID=1#>${1}</text>
  * <ul ID=2>
  *   <li ID=3>
- *     <text ID=4>${4}</text>
+ *     <text ID=4#>${4}</text>
  *   </li>
  * </ul>
  * ==>
@@ -46,7 +46,7 @@ function compile(tpl) {
   let code = '' // render
 
   // parse
-  const container = tpl.nodeType ? tpl : Dom(tpl)
+  const container = tpl.nodeType ? tpl : parseHTML(tpl)
 
   // <script>
   scriptCode += '// <script>\n'
@@ -68,12 +68,12 @@ function compile(tpl) {
       return
     }
 
-    // id: lazy + cache
+    // <el ID>: lazy + cache
     const id = {
       toString() {
         ++i
 
-        // <el /> => <el ID />
+        // <el> => <el ID>
         if (node.nodeType === 1) {
           const oid = node.getAttribute(ID_KEY)
           node.setAttribute(ID_KEY, !oid ? i : `${i}|${oid}`)
@@ -110,7 +110,7 @@ function compile(tpl) {
       if (/\$?\{[^]*?\}/.test(node.nodeValue)) {
         // ${exp}
         const exp = parseExp(node.nodeValue)
-        code += `self.text('${id}#', ${exp})\n`
+        code += `self.text('${id}', ${exp})\n`
         detectError(exp, node.nodeValue, tpl)
       }
       return
@@ -197,11 +197,11 @@ function compile(tpl) {
     })
 
     // new
-    var _is_ = node.getAttribute('new')
-    if (_is_) {
-      code += `self.new('${id}', ${_is_})\n`
+    var _new_ = node.getAttribute('new')
+    if (_new_) {
+      code += `self.new('${id}', ${_new_})\n`
 
-      detectError(_is_, _is_, tpl)
+      detectError(_new_, _new_, tpl)
       node.removeAttribute('new')
     } else {
       for (const _var_ of vars) {
@@ -235,6 +235,8 @@ function compile(tpl) {
 }
 
 /**
+ * <text ID>text</text> => text
+ * <el ID /> => <el />
  *
  * @param {Element} root compiledTpl
  * @returns {Object}
@@ -244,11 +246,11 @@ function NodeMap(root) {
 
   loop(root)
   function loop(node) {
-    const id_oid = node.getAttribute?.(ID_KEY)
-    const id = id_oid
-    if (id_oid) {
+    const idx = node.getAttribute?.(ID_KEY)
+    if (idx) {
       // <text ID>text</text> => text
-      if (/#/.test(id)) {
+      if (/#/.test(idx)) {
+        const id = idx.replace('#', '')
         const text = node.firstChild
         nodeMap[id] = text
         text['#id'] = id
@@ -256,10 +258,10 @@ function NodeMap(root) {
       }
       // <el ID /> => <el />
       else {
-        const [id, oid] = id_oid.split('|')
+        const [id, old] = idx.split('|')
         nodeMap[id] = node
         node['#id'] = id
-        if (oid) node.setAttribute(ID_KEY, oid)
+        if (old) node.setAttribute(ID_KEY, old)
         else node.removeAttribute(ID_KEY)
       }
     }
@@ -269,13 +271,22 @@ function NodeMap(root) {
   return nodeMap
 }
 
+/**
+ * <el ID> => cloneNode[ID]=`${ID}${forKey}`
+ * self.$(ID) + forKey => el[`#<clone>${ID}${forKey}`] => cloneNode
+ *
+ * @param {Node} node
+ * @param {string} forKey
+ * @returns {Node} cloneNode
+ */
 function cloneWithId(node, forKey) {
   const cloneNode = node.cloneNode(true)
 
   loop(node, cloneNode)
   function loop(node, cloneNode) {
-    const origin = node['#for<origin>'] || node
+    const origin = node['#for<origin>'] || node // !! for+for
     const originId = origin['#id']
+
     if (originId) {
       cloneNode['#for<origin>'] = origin
       cloneNode['#id'] = `${originId}${forKey}`

@@ -80,8 +80,7 @@ npm i -D HtmlComponent
 
 <!-- is 组件 -->
 <!-- <el is="MyComponent" /> = <MyComponent /> -->
-<MyComponent .a="1" ...="{b: 2, c: 3}" />   if(!created) myComponent = new MyComponent()
-                                            myComponent.render({a: 1, ...{b: 2, c: 3}})
+<MyComponent .a="1" ...="{b: 2, c: 3}" />   new MyComponent({a: 1, ...{b: 2, c: 3}})
 
 
 模板可以访问所有当前组件定义的变量和全局变量
@@ -193,6 +192,22 @@ _由于 html 限制，这种方式只支持全小写的变量名、不允许有�
 <div [property]="value">...</div>
 ```
 
+`.class`
+
+按 `bool` 值增删 `css类`
+
+```html
+<div class="some" .class="{active: bool}" />
+```
+
+`.style`
+
+动态设置 `style`，自动按需 `+'px'`
+
+```html
+<div style="height:10px" .style="{width: 10}" />
+```
+
 批量设置属性
 
 以下相当于 js `Object.assign(div, object)`
@@ -275,10 +290,10 @@ _如果同一节点 `for` + `if` 同时存在，`for` 先于 `if` 运行，跟�
 
 `.property` 语法一样可以注册事件，它接受的是函数
 
-以下相当于 js `button.onclick = alert`
+以下相当于 js `button.onclick = console.count`
 
 ```html
-<button .onclick="alert">button</button>
+<button .onclick="console.count">button</button>
 ```
 
 ---

@@ -67,31 +67,31 @@ function parseVars(code) {
 
 // 'innerhtml' => 'innerHTML'
 function attr2prop(node, attr) {
-  var prop = attr2prop[`prop:${attr}`] // cache
+  var prop = attr2prop[`#${attr}`] // cache
   if (prop) return prop
 
   for (prop in node) {
     if (prop.toLowerCase() === attr) {
-      attr2prop[`prop:${attr}`] = prop
+      attr2prop[`#${attr}`] = prop
       return prop
     }
   }
 
   prop =
     {
-      class: 'className',
+      // class: 'className',
     }[attr] || attr
 
   return prop
 }
-
+window.attr2prop = attr2prop
 // code => error? throw 🐞
 function detectError(code, raw, tpl) {
   try {
-    Function(code)
+    Function(`(${code})`) // (function(){})
   } catch (error) {
     try {
-      Function(`(${code})`) // (function(){})
+      Function(code)
     } catch (_) {
       // line
       let line = tpl.match(
