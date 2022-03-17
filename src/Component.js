@@ -223,20 +223,12 @@ class Component {
     const self = this
     return {
       elseif(id, bool_, cb) {
-        if (!bool && bool_) {
-          self.if(id, true, cb)
-          bool = true
-        } else {
-          self.if(id, false)
-        }
+        self.if(id, !bool && bool_, cb)
+        if (!bool && bool_) bool = true
         return this
       },
       else(id, cb) {
-        if (bool) {
-          self.if(id, false)
-        } else {
-          self.if(id, true, cb)
-        }
+        self.if(id, !bool, cb)
       },
     }
   }
