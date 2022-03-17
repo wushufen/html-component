@@ -7,16 +7,26 @@ import {
   createFragment,
   createComment,
 } from './dom.js'
+import { createPropsUpdateCode } from './parse.js'
 import { compile, NodeMap, cloneWithId } from './compile.js'
 
 class Component {
-  // static debug = !false
-  static compiledTpl = ``
-  render() {}
+  static debug = !false
+  static compiledTpl = `
+    <!-- default -->
+  `
+  render() {
+    // default
+  }
   $render() {
-    Promise.resolve().then(this.render.bind(this))
+    const self = this
+    Promise.resolve().then(function () {
+      self.render()
+    })
   }
 
+  props = {}
+  childComponents = []
   fragment = null
   childNodes = null
   nodeMap = null
@@ -34,9 +44,9 @@ class Component {
         node = parseHTML(tpl)
       }
 
-      const { scriptCode, code } = compile(node)
+      const { scriptCode, vars, code } = compile(node)
       this.fragment = isStringTpl ? createFragment(node.childNodes) : node
-      this.nodeMap = NodeMap(node)
+      this.nodeMap = NodeMap(this.fragment)
       this.childNodes = isStringTpl ? [this.fragment] : [node]
 
       this.render = Function(`
@@ -44,13 +54,21 @@ class Component {
 
         ${isStringTpl ? scriptCode : `// <script>...</script>`}
 
+        this.updateProps = function () {
+          ${createPropsUpdateCode(vars, 'this.props')}
+        }
+
         this.render = function(){
+          // props
+          this.updateProps()
+
+          // dom
           ${code}
         }
         this.render()
       `)
     }
-    this.render()
+    console.log('com', this)
   }
   $(id) {
     let node = this.nodeMap[id]
@@ -122,7 +140,11 @@ class Component {
     // activeElement
     if (value === node[name]) return
 
-    node[name] = value
+    try {
+      node[name] = value
+    } catch (error) {
+      // todo
+    }
   }
   on(id, name, handler) {
     this.prop(id, name, function () {
@@ -237,11 +259,12 @@ class Component {
   }
   new(id, Class) {
     const node = this.$(id)
+    const self = this
 
     if (Class?.then) {
-      Class.then((Class) => render(node, Class))
+      Class.then((Class) => newOrRender(node, Class))
     } else {
-      render(node, Class)
+      newOrRender(node, Class)
     }
 
     /**
@@ -249,15 +272,23 @@ class Component {
      * @param {Element} node
      * @param {function} Class
      */
-    function render(node, Class) {
+    function newOrRender(node, Class) {
       if (Class === Component || Class?.prototype instanceof Component) {
         let component = node['#component']
         // new
         if (!component) {
           component = new Class()
+          component.target = node
+          component.props = node['#props'] || {}
+          self.childComponents.push(component)
           node['#component'] = component
 
-          replace(node, component.fragment)
+          const place = createComment('new', Component.debug)
+          insert(place, node)
+          place['#//node'] = node
+
+          // replace(node, component.fragment)
+          insert(component.fragment, place)
 
           // const shadow = node.attachShadow({ mode: 'open' })
           // shadow.appendChild(component.fragment)
@@ -270,6 +301,9 @@ class Component {
   }
   destory() {
     console.debug('destory', this)
+  }
+  static defineSetter(name, setter) {
+    Component.propSetters[name] = setter
   }
 }
 
@@ -324,6 +358,12 @@ Component.propSetters = {
   },
 }
 
+Component.defineSetter('debug', function (value) {
+  console.log('debug:', value)
+  // eslint-disable-next-line no-debugger
+  debugger
+})
+
 class HelloWorld extends Component {
   static compiledTpl = `
     <h1><t id="1#">Hello \${text}</t></h1>
@@ -340,7 +380,6 @@ class HelloWorld extends Component {
 
 class Time extends Component {
   static compiledTpl = `
-    <strong><slot /></strong>
     <text id="1#">Time: \${date.toJSON()}</text>
   `
   render() {
@@ -351,7 +390,7 @@ class Time extends Component {
     setInterval(function () {
       self.$render() // injected
       date = new Date()
-    }, 1000 / 24)
+    }, 1000 / 60)
     // </script>
 
     // compiledCode
@@ -362,5 +401,62 @@ class Time extends Component {
   }
 }
 
+class Tree extends Component {
+  static compiledTpl = `
+    <ul>
+      <li id=1 for="const item of tree">
+        <strong><t id="2#">\${item}</t></strong>
+        <ul id=3 new="self.constructor" .tree="[...item.children]"></ul>
+      </li>
+    </ul>
+  `
+  render() {
+    var self = this
+
+    // <script>
+
+    var tree = [
+      {
+        name: 'default',
+        children: [],
+      },
+    ]
+
+    // </script>
+
+    this.updateProps = function () {
+      'tree' in this.props && (tree = this.props.tree)
+    }
+
+    this.render = function () {
+      // props
+      this.updateProps()
+
+      // dom
+
+      // <div>
+
+      // <ul>
+
+      // <li for="const item of tree">
+      self.for('1', tree, function (item, $key, $index) {
+        // <strong>
+
+        // ${item}
+        self.text('2', '' + self.exp(item) + '')
+
+        // <ul new="self.constructor" .tree="[...item.children]">
+        self.prop('3', 'tree', function () {
+          return [...item.children]
+        })
+        self.new('3', self.constructor)
+      })
+
+      // <script>
+    }
+    this.render()
+  }
+}
+
 export default Component
-export { Component, HelloWorld, Time }
+export { Component, HelloWorld, Time, Tree }

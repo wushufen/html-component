@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -7,6 +7,7 @@
     <title>Document</title>
   </head>
   <body>
+    <h1>--</h1>
     <!-- ${} 插值 -->
     <div>Hello ${value}</div>
     <div attr="Hello ${value}">attr</div>
@@ -15,7 +16,7 @@
     <div .value="value">.prop</div>
     <div [value]="value">[value]</div>
     <div class="a" .class="{a:value}">.class</div>
-    <div style="border: solid 1px" .style="{width:value}">.style</div>
+    <div style="background: #8882" .style="{width:value}">.style</div>
     <div ...="{prop1: 1, prop2: 2}">...</div>
 
     <!-- if 条件 -->
@@ -43,7 +44,8 @@
 
     <!-- new 组件 -->
     <HelloWorld .a="1" ...="{b: 2, c: 3}"></HelloWorld>
-    <div new="Time">${value}</div>
+    <!-- <div new="Time">${value}</div> -->
+    <Tree .tree="[document.head]"></Tree>
 
     <!-- ??? -->
     <!-- <hello-World></hello-World> -->
@@ -54,6 +56,7 @@
     <script>
       var HelloWorld
       var Time
+      var Tree
 
       var value = 'VALUE'
       var text = 'TEXT'
@@ -76,24 +79,22 @@
 
     <script type="module">
       import { compile } from './compile.js'
-      import { Component, HelloWorld, Time } from './Component.js'
+      import { Component, HelloWorld, Time, Tree } from './Component.js'
 
       window.Component = Component
       window.HelloWorld = HelloWorld
       window.Time = Time
+      window.Tree = Tree
 
       const component = new Component(document.documentElement)
       window.app = component
-
-      // const helloWorld = new Component()
-      // window.helloWorld = helloWorld
-      // document.body.appendChild(helloWorld.fragment)
+      app.render()
     </script>
 
     <style>
-      html {
+      * {
         background: #222;
-        color: #fff;
+        color: #fff2;
       }
     </style>
   </body>

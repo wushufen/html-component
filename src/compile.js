@@ -204,8 +204,8 @@ function compile(tpl) {
       detectError(_new_, _new_, tpl)
       node.removeAttribute('new')
     } else {
-      for (const _var_ of vars) {
-        if (RegExp(`^${node.tagName}$`, 'i').test(_var_)) {
+      for (const _var_ of ['this'].concat(vars)) {
+        if (RegExp(`^${node.tagName}(\\.|$)`, 'i').test(_var_)) {
           code += `self.new('${id}', typeof ${_var_} !== 'undefined' && ${_var_})\n`
           break
         }
@@ -230,6 +230,7 @@ function compile(tpl) {
   return {
     container,
     scriptCode,
+    vars,
     code,
   }
 }

@@ -65,6 +65,17 @@ function parseVars(code) {
   return vars
 }
 
+// var propName == props.propname
+// ["propName"] => `"propname" in props && (propName=props.propname)`
+function createPropsUpdateCode(vars, propsName = 'props') {
+  var string = '\n'
+  vars.forEach(function (varName) {
+    var propname = varName.toLowerCase()
+    string += `"${propname}" in ${propsName} && (${varName}=${propsName}.${propname})\n`
+  })
+  return string
+}
+
 // 'innerhtml' => 'innerHTML'
 function attr2prop(node, attr) {
   var prop = attr2prop[`#${attr}`] // cache
@@ -84,7 +95,7 @@ function attr2prop(node, attr) {
 
   return prop
 }
-window.attr2prop = attr2prop
+
 // code => error? throw 🐞
 function detectError(code, raw, tpl) {
   try {
@@ -120,4 +131,12 @@ ${tpl}
   }
 }
 
-export { quot, parseExp, parseFor, parseVars, attr2prop, detectError }
+export {
+  quot,
+  parseExp,
+  parseFor,
+  parseVars,
+  createPropsUpdateCode,
+  attr2prop,
+  detectError,
+}
