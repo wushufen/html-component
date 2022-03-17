@@ -217,15 +217,14 @@ class Component {
     }
 
     if (bool) {
-      cb?.call(this)
+      cb.call(this)
     }
 
     const self = this
     return {
       elseif(id, bool_, cb) {
         if (!bool && bool_) {
-          self.if(id, true)
-          cb.call(self)
+          self.if(id, true, cb)
           bool = true
         } else {
           self.if(id, false)
@@ -236,8 +235,7 @@ class Component {
         if (bool) {
           self.if(id, false)
         } else {
-          self.if(id, true)
-          cb.call(self)
+          self.if(id, true, cb)
         }
       },
     }
