@@ -254,9 +254,6 @@ class Component {
         if (!component) {
           component = new Class({ target, mode })
           self.childComponents.push(component)
-
-          // const shadow = node.attachShadow({ mode: 'open' })
-          // shadow.appendChild(component.fragment)
         }
         // render
         else {
