@@ -22,8 +22,6 @@
   },
   "homepage": "https://github.com/wusfen/HtmlComponent#readme",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.14.0",
-    "@typescript-eslint/parser": "^5.14.0",
-    "eslint": "^8.10.0"
+    "eslint": "^8.11.0"
   }
 }

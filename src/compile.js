@@ -197,19 +197,22 @@ function compile(tpl) {
     })
 
     // new
-    var _new_ = node.getAttribute('new')
-    if (_new_) {
-      code += `self.new('${id}', ${_new_})\n`
-
-      detectError(_new_, _new_, tpl)
-      node.removeAttribute('new')
-    } else {
+    const _new_ = node.getAttribute('new')
+    const _mode_ = node.getAttribute('mode')
+    let _Class_ = _new_
+    if (!_new_) {
       for (const _var_ of ['this'].concat(vars)) {
         if (RegExp(`^${node.tagName}(\\.|$)`, 'i').test(_var_)) {
-          code += `self.new('${id}', typeof ${_var_} !== 'undefined' && ${_var_})\n`
+          _Class_ = _var_
           break
         }
       }
+    }
+    if (_Class_) {
+      code += `self.new('${id}', typeof ${_Class_} !== 'undefined' && ${_Class_}, '${_mode_}')\n`
+      detectError(_Class_, _Class_, tpl)
+      node.removeAttribute('new')
+      node.removeAttribute('mode')
     }
 
     // >>>

@@ -3,20 +3,18 @@ import {
   insert,
   remove,
   replace,
-  parseHTML,
   createFragment,
   createComment,
 } from './dom.js'
-import { createPropsUpdateCode } from './parse.js'
 import { compile, NodeMap, cloneWithId } from './compile.js'
 
 class Component {
   static debug = !false
   static compiledTpl = `
-    <!-- default -->
+    <!-- tpl -->
   `
   render() {
-    // default
+    // code
   }
   $render() {
     const self = this
@@ -25,50 +23,34 @@ class Component {
     })
   }
 
+  target = null
   props = {}
   childComponents = []
   fragment = null
   childNodes = null
   nodeMap = null
   forKey = ''
-  constructor(tpl) {
-    if (!tpl) {
-      // init dom
+  constructor({ target, mode } = {}) {
+    if (target) {
       this.fragment = createFragment(this.constructor.compiledTpl)
       this.nodeMap = NodeMap(this.fragment)
       this.childNodes = [...this.fragment.childNodes]
-    } else {
-      let node = tpl
-      const isStringTpl = typeof tpl === 'string'
-      if (isStringTpl) {
-        node = parseHTML(tpl)
+
+      this.target = target
+      this.props = target['#props']
+      target['#component'] = this
+
+      if (mode === 'web') {
+        const shadow = target.attachShadow({ mode: 'open' })
+        shadow.appendChild(this.fragment)
+      } else if (mode === 'wrap') {
+        target.appendChild(this.fragment)
+      } else {
+        replace(target, this.fragment)
       }
 
-      const { scriptCode, vars, code } = compile(node)
-      this.fragment = isStringTpl ? createFragment(node.childNodes) : node
-      this.nodeMap = NodeMap(this.fragment)
-      this.childNodes = isStringTpl ? [this.fragment] : [node]
-
-      this.render = Function(`
-        var self = this
-
-        ${isStringTpl ? scriptCode : `// <script>...</script>`}
-
-        this.updateProps = function () {
-          ${createPropsUpdateCode(vars, 'this.props')}
-        }
-
-        this.render = function(){
-          // props
-          this.updateProps()
-
-          // dom
-          ${code}
-        }
-        this.render()
-      `)
+      this.render()
     }
-    console.log('com', this)
   }
   $(id) {
     let node = this.nodeMap[id]
@@ -124,7 +106,10 @@ class Component {
 
     // ...="{}" => prop(ID, '..', {})
     if (name == '..') {
-      for (const k in value) this.prop(id, k, value[k])
+      for (const k in value)
+        this.prop(id, k, function () {
+          return value[k]
+        })
       return
     }
 
@@ -257,14 +242,14 @@ class Component {
       },
     }
   }
-  new(id, Class) {
-    const node = this.$(id)
+  new(id, Class, mode) {
+    const target = this.$(id)
     const self = this
 
     if (Class?.then) {
-      Class.then((Class) => newOrRender(node, Class))
+      Class.then((Class) => newOrRender(target, Class))
     } else {
-      newOrRender(node, Class)
+      newOrRender(target, Class)
     }
 
     /**
@@ -277,30 +262,47 @@ class Component {
         let component = node['#component']
         // new
         if (!component) {
-          component = new Class()
-          component.target = node
-          component.props = node['#props'] || {}
+          component = new Class({ target, mode })
           self.childComponents.push(component)
-          node['#component'] = component
-
-          const place = createComment('new', Component.debug)
-          insert(place, node)
-          place['#//node'] = node
-
-          // replace(node, component.fragment)
-          insert(component.fragment, place)
 
           // const shadow = node.attachShadow({ mode: 'open' })
           // shadow.appendChild(component.fragment)
         }
         // render
-        // TODO props && diff
-        component.render()
+        else {
+          // TODO props && diff
+          component.render()
+        }
       }
     }
   }
-  destory() {
-    console.debug('destory', this)
+  onbeforeunload() {
+    console.debug('onbeforeunload', this)
+  }
+  static create(node) {
+    const { code } = compile(node)
+
+    class App extends Component {
+      constructor() {
+        super()
+        this.nodeMap = NodeMap(node)
+
+        this.render = Function(`
+          var self = this
+
+          this.render = function(){
+            ${code}
+          }
+          this.render()
+        `)
+      }
+    }
+
+    const app = new App()
+    node['#component'] = app
+
+    app.render()
+    return app
   }
   static defineSetter(name, setter) {
     Component.propSetters[name] = setter
@@ -370,8 +372,17 @@ class HelloWorld extends Component {
   `
   render() {
     const self = this
-    const text = 'world'
+
+    // <script>
+    let text = 'world'
+    // </script>
+
+    this.updateProps = function () {
+      'text' in this.props && (text = this.props.text)
+    }
     self.render = function () {
+      this.updateProps()
+
       self.text('1', `Hello ${text}`)
     }
     self.render()

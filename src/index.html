@@ -43,7 +43,10 @@
     ${typeof value}: ${value.length||value}
 
     <!-- new 组件 -->
-    <HelloWorld .a="1" ...="{b: 2, c: 3}"></HelloWorld>
+    <HelloWorld .text="+new Date"></HelloWorld>
+    <HelloWorld mode="wrap" .text="+new Date"></HelloWorld>
+    <hello-world .text="'todo'"></hello-world>
+    <hello-world new="HelloWorld" mode="web" .text="+new Date"></hello-world>
     <!-- <div new="Time">${value}</div> -->
     <Tree .tree="[document.head]"></Tree>
 
@@ -86,9 +89,8 @@
       window.Time = Time
       window.Tree = Tree
 
-      const component = new Component(document.documentElement)
+      const component = Component.create(document.documentElement)
       window.app = component
-      app.render()
     </script>
 
     <style>

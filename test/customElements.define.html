@@ -1,4 +1,4 @@
-<c-x></c-x>
+<user-></user->
 
 <script>
   class Com extends HTMLElement {
@@ -6,11 +6,10 @@
       super()
       var shadow = this.attachShadow({ mode: 'open' })
 
-      var span = document.createElement('span')
-      span.innerHTML = 'yes'
-
-      shadow.appendChild(span)
+      shadow.innerHTML = `
+        <button>button</button>
+      `
     }
   }
-  customElements.define('c-x', Com)
+  customElements.define('user-', Com)
 </script>
