@@ -67,7 +67,7 @@ function parseVars(code) {
 
 // var propName == props.propname
 // ["propName"] => `"propname" in props && (propName=props.propname)`
-function createPropsUpdateCode(vars, propsName = 'props') {
+function createUpdatePropsCode(vars, propsName = 'this.props') {
   var string = '\n'
   vars.forEach(function (varName) {
     var propname = varName.toLowerCase()
@@ -100,10 +100,10 @@ function attr2prop(node, attr) {
 function detectError(code, raw, tpl) {
   try {
     Function(`(${code})`) // (function(){})
-  } catch (error) {
+  } catch (_) {
     try {
       Function(code)
-    } catch (_) {
+    } catch (error) {
       // line
       let line = tpl.match(
         RegExp(`.*${raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*`)
@@ -115,15 +115,17 @@ function detectError(code, raw, tpl) {
 
       // error
       var tplError = Error(`[TemplateError] ${error}
-${code}
-^
----------------------------------
+${raw}
+
+--------------------------------------------------
 ${line}
----------------------------------
+--------------------------------------------------
+
 ${tpl}
-`)
+     `)
 
       // throw tplError
+      console.dir(error)
       console.error(tplError)
 
       return true
@@ -136,7 +138,7 @@ export {
   parseExp,
   parseFor,
   parseVars,
-  createPropsUpdateCode,
+  createUpdatePropsCode,
   attr2prop,
   detectError,
 }

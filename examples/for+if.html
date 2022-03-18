@@ -1,4 +1,4 @@
-<script src="../src/Component.js"></script>
+<script type="module" src="../src/Component.js"></script>
 
 <script>
   var list = []
@@ -10,9 +10,10 @@
       .forEach((e, i) => (list[i] = Math.random().toString().slice(-1)))
   }
 
-  setInterval(() => {
-    random()
-  }, 100)
+  // setInterval(() => {
+  //   random()
+  //   document.documentElement['#//component']?.render()
+  // }, 100)
 </script>
 
 <output>{list}</output>

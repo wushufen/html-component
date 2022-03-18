@@ -3,14 +3,16 @@ import {
   insert,
   remove,
   replace,
-  createFragment,
+  append,
+  parseHTML,
   createComment,
 } from './dom.js'
-import { compile, NodeMap, cloneWithId } from './compile.js'
+import { compile, getNodeMap, cloneWithId } from './compile.js'
 
 class Component {
   static debug = !false
-  static compiledTpl = `
+  // tpl(id)
+  static tpl = `
     <!-- tpl -->
   `
   render() {
@@ -23,41 +25,52 @@ class Component {
     })
   }
 
+  props = null
   target = null
-  props = {}
-  childComponents = []
-  fragment = null
   childNodes = null
   nodeMap = null
+  parentComponent = null
+  childComponents = []
   forKey = ''
   constructor({ target, mode } = {}) {
     if (target) {
-      this.fragment = createFragment(this.constructor.compiledTpl)
-      this.nodeMap = NodeMap(this.fragment)
-      this.childNodes = [...this.fragment.childNodes]
+      const _container = parseHTML(this.constructor.tpl)
+      // id => node
+      this.nodeMap = getNodeMap(_container)
+      this.childNodes = [..._container.childNodes]
 
+      // //debug
+      const firstChild =
+        _container.firstElementChild || _container.firstChild || ''
+      firstChild['#//component'] = this
+
+      // target
       this.target = target
-      this.props = target['#props']
-      target['#component'] = this
+      this.props = target['#props'] || {}
 
+      // insert this.childNodes
       if (mode === 'web') {
-        const shadow = target.attachShadow({ mode: 'open' })
-        shadow.appendChild(this.fragment)
+        const shadowRoot =
+          target.shadowRoot || target.attachShadow({ mode: 'open' })
+        shadowRoot.innerHTML = ''
+        append(shadowRoot, this.childNodes)
       } else if (mode === 'wrap') {
-        target.appendChild(this.fragment)
+        append(target, this.childNodes)
       } else {
-        replace(target, this.fragment)
+        replace(target, this.childNodes)
       }
 
+      // first render
       this.render()
     }
   }
   $(id) {
+    if (id.nodeType) return id // debug
+
     let node = this.nodeMap[id]
     if (this.forKey) {
       node = node[`#<clone>${id}${this.forKey}`]
     }
-    if (id.nodeType) node = id // dev
 
     if (!node['#//nodeValue']) {
       node['#//nodeValue'] = node.nodeValue || node.cloneNode().outerHTML
@@ -81,7 +94,10 @@ class Component {
   }
   text(id, value) {
     const node = this.$(id)
+
+    // diff?
     if (node.nodeValue === value) return
+
     node.nodeValue = value
   }
   attr(id, name, value) {
@@ -89,9 +105,11 @@ class Component {
     const attrs = node['#attrs'] || (node['#attrs'] = {})
     if (value instanceof Function) value = value.call(node)
 
+    // diff?
     if (attrs[name] === value && hasOwnProperty.call(attrs, name)) return
     attrs[name] = value
 
+    // <div attr="${false}">
     if (/^(false|null|undefined)$/.test(value)) {
       node.removeAttribute(name)
       return
@@ -113,6 +131,7 @@ class Component {
       return
     }
 
+    // diff?
     if (props[name] === value && hasOwnProperty.call(props, name)) return
     props[name] = value
 
@@ -128,6 +147,7 @@ class Component {
     try {
       node[name] = value
     } catch (error) {
+      console.warn(error)
       // todo
     }
   }
@@ -138,9 +158,9 @@ class Component {
   }
   /**
    * <div for="(item,key) in list">
-   *   <a .title="item" />
+   *   <a .title="item"></a>
    *   <span for="(c,k) in item">
-   *     <b .title="c" />
+   *     <b .title="c"></b>
    *   </span>
    * </div>
    *
@@ -178,7 +198,11 @@ class Component {
         cloneNode['#for<node>'] = node
       }
       cloneNode['#noRemove'] = true
-      insert(cloneNode, comment)
+
+      // ! for(true)+if(false)
+      if (cloneNode['#if(bool)'] !== false) {
+        insert(cloneNode, comment)
+      }
 
       // >>>
       cb.call(this, item, key, index)
@@ -188,7 +212,7 @@ class Component {
     // --
     each(cloneNodes, (cloneNode) => {
       if (!cloneNode['#noRemove']) {
-        remove(cloneNode)
+        this.remove(cloneNode)
         // !delete: reuse
         // delete cloneNodes['key:' + cloneNode['#key']] // todo: for+for length--
         // delete origin[`#<clone>${cloneNode['#id']}`]
@@ -210,7 +234,7 @@ class Component {
         if (!comment) {
           comment = createComment('if', Component.debug)
           node['#if<comment>'] = comment
-          comment['#//if.node'] = node
+          comment['#//if<node>'] = node
         }
         replace(node, comment)
       }
@@ -230,6 +254,18 @@ class Component {
       else(id, cb) {
         self.if(id, !bool, cb)
       },
+    }
+  }
+  // todo
+  insert(node) {}
+  // todo
+  remove(node, removeComment, destoryComponent) {
+    remove(node)
+    if (removeComment && node['#if<comment>']) {
+      remove(node['#if<comment>'])
+    }
+    if (destoryComponent && node['#component']) {
+      node['#component'].destory()
     }
   }
   new(id, Class, mode) {
@@ -253,7 +289,9 @@ class Component {
         // new
         if (!component) {
           component = new Class({ target, mode })
+          component.parentComponent = self
           self.childComponents.push(component)
+          target['#component'] = component
         }
         // render
         else {
@@ -264,32 +302,15 @@ class Component {
     }
   }
   onbeforeunload() {
-    console.debug('onbeforeunload', this)
+    console.log('onbeforeunload', this)
   }
-  static create(node) {
-    const { code } = compile(node)
+  destory() {
+    this.onbeforeunload()
 
-    class App extends Component {
-      constructor() {
-        super()
-        this.nodeMap = NodeMap(node)
-
-        this.render = Function(`
-          var self = this
-
-          this.render = function(){
-            ${code}
-          }
-          this.render()
-        `)
-      }
+    for (const childNode of this.childNodes) {
+      remove(childNode)
     }
-
-    const app = new App()
-    node['#component'] = app
-
-    app.render()
-    return app
+    this.target['#component'] = null
   }
   static defineSetter(name, setter) {
     Component.propSetters[name] = setter
@@ -347,114 +368,91 @@ Component.propSetters = {
   },
 }
 
-Component.defineSetter('debug', function (value) {
-  console.log('debug:', value)
-  // eslint-disable-next-line no-debugger
-  debugger
-})
+/**
+ *
+ * @param {string} html
+ * @param {string} className
+ * @returns {Component}
+ */
+function loader(html, className = '') {
+  const _container = parseHTML(html)
+  const { scriptCode, updatePropsCode, code } = compile(_container)
 
-class HelloWorld extends Component {
-  static compiledTpl = `
-    <h1><t id="1#">Hello \${text}</t></h1>
-  `
-  render() {
+  // - <script>
+  Array(..._container.getElementsByTagName('script')).forEach(remove)
+
+  return Function(
+    'Component',
+    `return class ${className} extends Component {
+  static tpl = \`${_container.innerHTML.replace(/[\\`$]/g, '\\$&')}\`
+
+  render(){
     const self = this
 
     // <script>
-    let text = 'world'
+    ${scriptCode}
     // </script>
 
     this.updateProps = function () {
-      'text' in this.props && (text = this.props.text)
+      ${updatePropsCode}
     }
-    self.render = function () {
+    this.render = function(){
       this.updateProps()
-
-      self.text('1', `Hello ${text}`)
-    }
-    self.render()
-  }
-}
-
-class Time extends Component {
-  static compiledTpl = `
-    <text id="1#">Time: \${date.toJSON()}</text>
-  `
-  render() {
-    var self = this
-
-    // <script>
-    let date = new Date()
-    setInterval(function () {
-      self.$render() // injected
-      date = new Date()
-    }, 1000 / 60)
-    // </script>
-
-    // compiledCode
-    self.render = function () {
-      self.text('1', `Time: ${date.toJSON()}`)
-    }
-    self.render()
-  }
-}
-
-class Tree extends Component {
-  static compiledTpl = `
-    <ul>
-      <li id=1 for="const item of tree">
-        <strong><t id="2#">\${item}</t></strong>
-        <ul id=3 new="self.constructor" .tree="[...item.children]"></ul>
-      </li>
-    </ul>
-  `
-  render() {
-    var self = this
-
-    // <script>
-
-    var tree = [
-      {
-        name: 'default',
-        children: [],
-      },
-    ]
-
-    // </script>
-
-    this.updateProps = function () {
-      'tree' in this.props && (tree = this.props.tree)
-    }
-
-    this.render = function () {
-      // props
-      this.updateProps()
-
-      // dom
-
-      // <div>
-
-      // <ul>
-
-      // <li for="const item of tree">
-      self.for('1', tree, function (item, $key, $index) {
-        // <strong>
-
-        // ${item}
-        self.text('2', '' + self.exp(item) + '')
-
-        // <ul new="self.constructor" .tree="[...item.children]">
-        self.prop('3', 'tree', function () {
-          return [...item.children]
-        })
-        self.new('3', self.constructor)
-      })
-
-      // <script>
+      ${code}
     }
     this.render()
   }
+}`
+  )(Component)
 }
 
-export default Component
-export { Component, HelloWorld, Time, Tree }
+const HelloWorld = loader(
+  `
+  <div id="hello">Hello \${value}</div>
+
+  <script>
+    var value = 'world'
+  </script>
+  `,
+  'HelloWorld'
+)
+
+/**
+ * index.html
+ */
+function initIndex() {
+  if (initIndex.done) return
+  initIndex.done = true
+
+  const node = document.documentElement
+  const { code } = compile(node)
+
+  class Index extends Component {
+    constructor() {
+      super()
+      this.nodeMap = getNodeMap(node)
+
+      this.render = Function(`
+        var self = this
+
+        this.render = function(){
+          ${code}
+        }
+        this.render()
+      `)
+
+      node['#//component'] = this
+      this.render()
+    }
+  }
+
+  new Index()
+}
+if (document.readyState === 'complete') {
+  initIndex()
+} else {
+  addEventListener('DOMContentLoaded', initIndex)
+  addEventListener('load', initIndex)
+}
+
+export { Component as default, Component, loader, HelloWorld }

@@ -1,4 +1,4 @@
-<script src="../src/Component.js"></script>
+<script type="module" src="../src/Component.js"></script>
 
 <script>
   let characters = ['🥳', '🎉', '✨']
@@ -23,12 +23,14 @@
       return emoji
     })
 
+    document.documentElement['#//component']?.render()
     requestAnimationFrame(loop)
   }
 </script>
 
 <style>
-  :global(body) {
+  html,
+  body {
     overflow: hidden;
   }
 
@@ -40,6 +42,6 @@
 
 <span
   for="c in confetti"
-  style="left: {c.x}%; top: {c.y}%; transform: scale({c.r})"
-  >{c.character}</span
+  .style="{left: c.x+'%', top: c.y+'%', transform: `scale(${c.r})`}"
+  >${c.character}</span
 >

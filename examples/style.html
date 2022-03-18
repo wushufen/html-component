@@ -1,0 +1,27 @@
+<script type="module" src="../src/Component.js"></script>
+
+<script>
+  var bool = true
+  var number = 100
+</script>
+
+<button
+  class="a"
+  .class="{b:bool}"
+  style="width: 150px"
+  .style="{width:number}"
+  onclick="bool=!bool; number+=10"
+>
+  {bool}
+</button>
+
+<style>
+  .a {
+    width: 100px;
+    height: 100px;
+    border: 0;
+  }
+  .b {
+    background-color: #0af;
+  }
+</style>

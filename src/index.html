@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>${value}</title>
   </head>
   <body>
     <h1>--</h1>
@@ -15,8 +15,8 @@
     <!-- .property 赋值 -->
     <div .value="value">.prop</div>
     <div [value]="value">[value]</div>
-    <div class="a" .class="{a:value}">.class</div>
-    <div style="background: #8882" .style="{width:value}">.style</div>
+    <div class="active" .class="{active:value}">.class</div>
+    <div style="background: #8882" .style="{width:value.length*8}">.style</div>
     <div ...="{prop1: 1, prop2: 2}">...</div>
 
     <!-- if 条件 -->
@@ -43,23 +43,14 @@
     ${typeof value}: ${value.length||value}
 
     <!-- new 组件 -->
-    <HelloWorld .text="+new Date"></HelloWorld>
-    <HelloWorld mode="wrap" .text="+new Date"></HelloWorld>
-    <hello-world .text="'todo'"></hello-world>
-    <hello-world new="HelloWorld" mode="web" .text="+new Date"></hello-world>
-    <!-- <div new="Time">${value}</div> -->
-    <Tree .tree="[document.head]"></Tree>
-
-    <!-- ??? -->
-    <!-- <hello-World></hello-World> -->
-    <!-- <div is="hello-world"></div> -->
-
-    <!-- <div .ref="attachShadow(this, Time)">attachShadow</div> -->
+    <HelloWorld></HelloWorld>
+    <HelloWorld mode="wrap" .value="+new Date"></HelloWorld>
+    <hello-world new="HelloWorld" mode="web" .value="+new Date"></hello-world>
+    <div new="HelloWorld"></div>
+    <!-- <hello-world .value="'todo'"></hello-world> -->
 
     <script>
       var HelloWorld
-      var Time
-      var Tree
 
       var value = 'VALUE'
       var text = 'TEXT'
@@ -70,33 +61,22 @@
         a: 0,
         b: 1,
       }
-
-      function attachShadow(node, Component) {
-        if (node.shadowRoot) return
-        if (!Component) return
-
-        const shadow = node.attachShadow({ mode: 'open' })
-        shadow.append(new Component().fragment)
-      }
     </script>
 
     <script type="module">
-      import { compile } from './compile.js'
-      import { Component, HelloWorld, Time, Tree } from './Component.js'
-
+      import { Component, HelloWorld } from './Component.js'
       window.Component = Component
       window.HelloWorld = HelloWorld
-      window.Time = Time
-      window.Tree = Tree
-
-      const component = Component.create(document.documentElement)
-      window.app = component
     </script>
 
     <style>
       * {
         background: #222;
         color: #fff2;
+      }
+
+      .active {
+        color: #fff8;
       }
     </style>
   </body>

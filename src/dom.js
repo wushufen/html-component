@@ -20,16 +20,22 @@ function remove(node) {
 /**
  *
  * @param {Node} node
- * @param {Node} newNode
+ * @param {Node|Node[]|NodeList} newNodes
  */
-function replace(node, newNode) {
-  node.parentNode?.replaceChild(newNode, node)
+function replace(node, newNodes) {
+  if (newNodes.nodeType) {
+    node.parentNode?.replaceChild(newNodes, node)
+  } else {
+    const fragment = document.createDocumentFragment()
+    newNodes.forEach((newNode) => fragment.appendChild(newNode))
+    node.parentNode?.replaceChild(fragment, node)
+  }
 }
 
 /**
  *
  * @param {Element|DocumentFragment} node
- * @param {Node|NodeList} childNodes
+ * @param {Node|Node[]|NodeList} childNodes
  */
 function append(node, childNodes) {
   childNodes = childNodes.nodeType ? [childNodes] : [...childNodes]
@@ -39,26 +45,12 @@ function append(node, childNodes) {
 /**
  *
  * @param {string} html
- * @param {string} tag
+ * @param {Element} container
+ * @returns container
  */
-function parseHTML(html, tag = 'div') {
-  const container = document.createElement(tag)
+function parseHTML(html, container = document.createElement('div')) {
   container.innerHTML = html
   return container
-}
-
-/**
- *
- * @param {Node|NodeList|string} nodeList
- * @returns {DocumentFragment}
- */
-function createFragment(nodeList) {
-  const fragment = document.createDocumentFragment()
-  if (typeof nodeList === 'string') {
-    nodeList = parseHTML(nodeList).childNodes
-  }
-  append(fragment, nodeList)
-  return fragment
 }
 
 /**
@@ -71,12 +63,4 @@ function createComment(comment, debug) {
   return debug ? document.createComment(comment) : document.createTextNode('')
 }
 
-export {
-  insert,
-  remove,
-  replace,
-  append,
-  parseHTML,
-  createFragment,
-  createComment,
-}
+export { insert, remove, replace, append, parseHTML, createComment }

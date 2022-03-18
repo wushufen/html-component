@@ -1,13 +1,13 @@
-import { parseHTML } from './dom.js'
 import {
   parseExp,
   parseFor,
   parseVars,
+  createUpdatePropsCode,
   attr2prop,
   detectError,
 } from './parse.js'
 
-const ID_KEY = 'id' // <el ID=ID|OLD />  <text ID=ID#>${value}</text>
+const ID_KEY = 'id' // <el ID="n#oid" />  <text ID="n-">${value}</text>
 
 /**
  * ${1}
@@ -38,26 +38,22 @@ const ID_KEY = 'id' // <el ID=ID|OLD />  <text ID=ID#>${value}</text>
  *     self.text(4, `${4}`)
  *   })
  * })
- * @param {string|Element} tpl
+ * @param {Element} node
  */
-function compile(tpl) {
+function compile(node) {
+  const html = node.outerHTML
   let i = 0
   let scriptCode = '' // <script>...</script>
   let code = '' // render
 
-  // parse
-  const container = tpl.nodeType ? tpl : parseHTML(tpl)
-
   // <script>
-  scriptCode += '// <script>\n'
-  Array(...container.getElementsByTagName('script')).forEach(
+  Array(...node.getElementsByTagName('script')).forEach(
     (e) => (scriptCode += e.innerHTML + '\n')
   )
-  scriptCode += '// </script>\n'
   var vars = parseVars(scriptCode).sort() // Com > com
 
   // loop
-  loopNodeTree(container)
+  loopNodeTree(node)
   /**
    * @param {Element|Node|Node[]} node
    */
@@ -75,13 +71,13 @@ function compile(tpl) {
 
         // <el> => <el ID>
         if (node.nodeType === 1) {
-          const oid = node.getAttribute(ID_KEY)
-          node.setAttribute(ID_KEY, !oid ? i : `${i}|${oid}`)
+          const oid = node.getAttribute(ID_KEY) || ''
+          node.setAttribute(ID_KEY, !oid ? i : `${i}${oid}`)
         }
         // ${exp} => <text ID>${exp}</text>
         else if (node.nodeType === 3) {
           const text = document.createElement('text')
-          text.setAttribute(ID_KEY, `${i}#`)
+          text.setAttribute(ID_KEY, `${i}-`)
           node.parentNode.insertBefore(text, node)
           text.appendChild(node)
         }
@@ -92,6 +88,9 @@ function compile(tpl) {
         return i
       },
     }
+    // oid
+    const oid = node.getAttribute?.('id')
+    if (oid) node.setAttribute('id', `#${oid}`)
 
     // /* <node /> */
     const nodeString = (node.nodeValue || node.cloneNode().outerHTML)
@@ -111,7 +110,7 @@ function compile(tpl) {
         // ${exp}
         const exp = parseExp(node.nodeValue)
         code += `self.text('${id}', ${exp})\n`
-        detectError(exp, node.nodeValue, tpl)
+        detectError(exp, node.nodeValue, html)
       }
       return
     }
@@ -125,7 +124,7 @@ function compile(tpl) {
       detectError(
         _for_.code.replace(/\b(var|let|const|of)\b/g, ';"$&";'),
         _for_.code,
-        tpl
+        html
       )
       node.removeAttribute('for')
     }
@@ -140,7 +139,7 @@ function compile(tpl) {
         code += `.elseif('${id}', (${_if_}), function(){\n`
         node.removeAttribute('else')
       }
-      detectError(_if_, _if_, tpl)
+      detectError(_if_, _if_, html)
       node.removeAttribute('if')
     } else if (_else_) {
       code += `.else('${id}', function(){\n`
@@ -164,7 +163,7 @@ function compile(tpl) {
           ${onCode}; self.render()
         })\n`
 
-        detectError(onCode, attrValue, tpl)
+        detectError(onCode, attrValue, html)
         node.removeAttribute(attrName)
         return
       }
@@ -179,11 +178,11 @@ function compile(tpl) {
         }
         // []
         else {
-          detectError(propName, attrName, tpl)
+          detectError(propName, attrName, html)
         }
         code += `self.prop('${id}', ${propName}, function(){return ${attrValue}})\n`
 
-        detectError(attrValue, attrValue, tpl)
+        detectError(attrValue, attrValue, html)
         node.removeAttribute(attrName)
         return
       }
@@ -192,7 +191,7 @@ function compile(tpl) {
       if (/\$?\{[^]*?\}/.test(attrValue)) {
         const exp = parseExp(attrValue)
         code += `self.attr('${id}', '${attrName}', function(){return ${exp}})\n`
-        detectError(exp, attrValue, tpl)
+        detectError(exp, attrValue, html)
       }
     })
 
@@ -201,8 +200,8 @@ function compile(tpl) {
     const _mode_ = node.getAttribute('mode')
     let _Class_ = _new_
     if (!_new_) {
-      for (const _var_ of ['this'].concat(vars)) {
-        if (RegExp(`^${node.tagName}(\\.|$)`, 'i').test(_var_)) {
+      for (const _var_ of ['this.constructor', 'self.constructor', ...vars]) {
+        if (RegExp(`^${node.tagName}$`, 'i').test(_var_)) {
           _Class_ = _var_
           break
         }
@@ -210,7 +209,7 @@ function compile(tpl) {
     }
     if (_Class_) {
       code += `self.new('${id}', typeof ${_Class_} !== 'undefined' && ${_Class_}, '${_mode_}')\n`
-      detectError(_Class_, _Class_, tpl)
+      detectError(_Class_, _Class_, html)
       node.removeAttribute('new')
       node.removeAttribute('mode')
     }
@@ -231,9 +230,9 @@ function compile(tpl) {
   }
 
   return {
-    container,
     scriptCode,
     vars,
+    updatePropsCode: createUpdatePropsCode(vars),
     code,
   }
 }
@@ -242,19 +241,20 @@ function compile(tpl) {
  * <text ID>text</text> => text
  * <el ID /> => <el />
  *
- * @param {Element} root compiledTpl
+ * @param {Element|DocumentFragment} root compiledTpl
  * @returns {Object}
  */
-function NodeMap(root) {
+function getNodeMap(root) {
   const nodeMap = {}
 
   loop(root)
   function loop(node) {
     const idx = node.getAttribute?.(ID_KEY)
+    // n  n-  n#oid
     if (idx) {
-      // <text ID>text</text> => text
-      if (/#/.test(idx)) {
-        const id = idx.replace('#', '')
+      // <text ID="n-">text</text> => text
+      if (/-$/.test(idx)) {
+        const id = idx.replace('-', '')
         const text = node.firstChild
         nodeMap[id] = text
         text['#id'] = id
@@ -262,9 +262,11 @@ function NodeMap(root) {
       }
       // <el ID /> => <el />
       else {
-        const [id, old] = idx.split('|')
-        nodeMap[id] = node
-        node['#id'] = id
+        const [id, old] = idx.split('#')
+        if (id) {
+          nodeMap[id] = node
+          node['#id'] = id
+        }
         if (old) node.setAttribute(ID_KEY, old)
         else node.removeAttribute(ID_KEY)
       }
@@ -298,12 +300,12 @@ function cloneWithId(node, forKey) {
       origin[`#<clone>${originId}${forKey}`] = cloneNode
     }
 
-    Array(...node.childNodes).forEach((child, index) =>
+    Array(...node.childNodes).forEach(function (child, index) {
       loop(child, cloneNode.childNodes[index])
-    )
+    })
   }
 
   return cloneNode
 }
 
-export { compile as default, compile, NodeMap, cloneWithId }
+export { compile as default, compile, getNodeMap, cloneWithId }

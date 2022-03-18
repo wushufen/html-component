@@ -1,20 +1,15 @@
-<!-- 中国 -->
-<script src="../src/Component.js"></script>
-
-<template name="SubComponent">
-  <script>
-    var prop = 'default'
-  </script>
-
-  <div>prop: {prop}</div>
-</template>
-
 <input oninput="list=this.value" .value="list" autofocus />
 
 <!-- TODO -->
 <!-- fixme: for(true)+if(false)+is -->
-<SubComponent for="item in list" if="item%2!=0" .prop="item"></SubComponent>
+<HelloWorld for="item in list" if="item%2!=0" .prop="item"></HelloWorld>
 
 <script>
+  var HelloWorld
   var list = 'world'
+</script>
+
+<script type="module">
+  import { HelloWorld } from '../src/Component.js'
+  window.HelloWorld = HelloWorld
 </script>

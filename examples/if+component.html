@@ -1,0 +1,11 @@
+<HelloWorld if="value"></HelloWorld>
+
+<script>
+  var HelloWorld
+  var value = true
+</script>
+
+<script type="module">
+  import { HelloWorld } from '../src/Component.js'
+  window.HelloWorld = HelloWorld
+</script>
