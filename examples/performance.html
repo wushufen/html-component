@@ -1,4 +1,4 @@
-<script src="../src/Component.js"></script>
+<script type="module" src="../src/Component.js"></script>
 
 <template name="Com">
   <span .title="title"> {title} </span>
@@ -9,8 +9,6 @@
 
 <main>
   <h1>Performance Test</h1>
-  <h2>{timeI}</h2>
-  <h2>{timeCostTotal}</h2>
 
   <dl>
     <div>
@@ -34,8 +32,20 @@
       </dd>
     </div>
     <div>
+      <dt>timeI</dt>
+      <dd>{timeI}</dd>
+    </div>
+    <div>
       <dt>timeCost</dt>
       <dd>{timeCost}ms</dd>
+    </div>
+    <div>
+      <dt>timeCostTotal</dt>
+      <dd>{timeCostTotal}ms</dd>
+    </div>
+    <div>
+      <dt>timeCostTotal/timeI</dt>
+      <dd>{timeCostTotal/timeI}ms</dd>
     </div>
   </dl>
 
@@ -44,7 +54,6 @@
   </section>
 
   <script>
-    var time = 0
     var list = [1, 2, 3, 4, 5]
     list.length = 100 //00
     var isRandom = true
@@ -60,17 +69,14 @@
       }
 
       var startDate = new Date()
-      this.render()
+      document.documentElement['#//component'].render()
       var endDate = new Date()
       var _timeCost = endDate - startDate
       timeCostTotal += _timeCost
       timeI += 1
+      document.documentElement['#//component'].render()
       // timeCost = timeCostTotal / timeI
       timeCost = _timeCost
     }, 1000)
-
-    setInterval(() => {
-      time = Date.now()
-    }, 0)
   </script>
 </main>

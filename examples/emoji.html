@@ -1,15 +1,25 @@
 <script type="module" src="../src/Component.js"></script>
 
-<script>
-  let characters = ['🥳', '🎉', '✨']
+<span
+  for="const item of list"
+  .style="{
+    transform: `translate(${item.x}vw, ${item.y}vh) scale(${item.r})`,
+  }"
+>
+  ${item.char}
+</span>
+<!-- ${1} -->
 
-  let confetti = new Array(100)
+<script>
+  let chars = ['❄️']
+
+  let list = new Array(500)
     .fill()
     .map((_, i) => {
       return {
-        character: characters[i % characters.length],
+        char: chars[i % chars.length],
         x: Math.random() * 100,
-        y: -20 - Math.random() * 100,
+        y: Math.random() * 100 - 100,
         r: 0.1 + Math.random() * 1,
       }
     })
@@ -17,13 +27,12 @@
 
   loop()
   function loop() {
-    confetti = confetti.map((emoji) => {
-      emoji.y += 0.7 * emoji.r
-      if (emoji.y > 120) emoji.y = -20
+    list = list.map((emoji) => {
+      emoji.y += 0.25 * emoji.r
+      if (emoji.y > 100) emoji.y = -8
       return emoji
     })
 
-    document.documentElement['#//component']?.render()
     requestAnimationFrame(loop)
   }
 </script>
@@ -32,16 +41,11 @@
   html,
   body {
     overflow: hidden;
+    background-color: #222;
   }
 
   span {
+    font-size: 2vw;
     position: absolute;
-    font-size: 5vw;
   }
 </style>
-
-<span
-  for="c in confetti"
-  .style="{left: c.x+'%', top: c.y+'%', transform: `scale(${c.r})`}"
-  >${c.character}</span
->

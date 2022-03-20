@@ -43,7 +43,7 @@
     ${typeof value}: ${value.length||value}
 
     <!-- new 组件 -->
-    <HelloWorld></HelloWorld>
+    <HelloWorld onx="alert(event)"></HelloWorld>
     <HelloWorld mode="wrap" .value="+new Date"></HelloWorld>
     <hello-world new="HelloWorld" mode="web" .value="+new Date"></hello-world>
     <div new="HelloWorld"></div>

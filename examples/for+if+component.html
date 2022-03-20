@@ -1,8 +1,6 @@
 <input oninput="list=this.value" .value="list" autofocus />
 
-<!-- TODO -->
-<!-- fixme: for(true)+if(false)+is -->
-<HelloWorld for="item in list" if="item%2!=0" .prop="item"></HelloWorld>
+<HelloWorld for="const item of list" if="item%2!=0" .value="item"></HelloWorld>
 
 <script>
   var HelloWorld

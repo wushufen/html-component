@@ -390,7 +390,7 @@ input.oninput = function (event) {
 
 设置组件的引用方式，组件允许多个根节点
 
-- replace: 默认将组件根节点替换到原标签位置。建议单根节点，结构清晰
+- replace: 默认将组件根节点替换到原标签位置
 - wrap: 保留原标签并将组件根节点包含在内
 - web: 使用 web component
 

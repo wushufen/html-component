@@ -64,6 +64,9 @@ class Component {
       this.render()
     }
   }
+  // TODO a. id+forL+item+n => cloneNode
+  // TODO b. forKey:  item.id || item._id
+  forL = 0
   $(id) {
     if (id.nodeType) return id // debug
 
@@ -197,12 +200,14 @@ class Component {
         cloneNode['#key'] = key
         cloneNode['#for<node>'] = node
       }
-      cloneNode['#noRemove'] = true
 
-      // ! for(true)+if(false)
-      if (cloneNode['#if(bool)'] !== false) {
-        insert(cloneNode, comment)
+      // insert: ! for(true)+if(false)
+      if (cloneNode['#if(bool)'] !== false && !cloneNode['#component']) {
+        if (!cloneNode['#for(item)']) {
+          insert(cloneNode, comment)
+        }
       }
+      cloneNode['#for.noRemove'] = true
 
       // >>>
       cb.call(this, item, key, index)
@@ -211,13 +216,20 @@ class Component {
 
     // --
     each(cloneNodes, (cloneNode) => {
-      if (!cloneNode['#noRemove']) {
-        this.remove(cloneNode)
+      if (!cloneNode['#for.noRemove']) {
+        remove(cloneNode)
+        cloneNode['#if<comment>'] && remove(cloneNode['#if<comment>'])
+        // delete cloneNode['#if<comment>']
+        cloneNode['#component']?.destory()
+        delete cloneNode['#if(bool)']
+        cloneNode['#for(item)'] = false
+
         // !delete: reuse
         // delete cloneNodes['key:' + cloneNode['#key']] // todo: for+for length--
         // delete origin[`#<clone>${cloneNode['#id']}`]
       } else {
-        delete cloneNode['#noRemove']
+        delete cloneNode['#for.noRemove']
+        cloneNode['#for(item)'] = true
       }
     })
   }
@@ -225,6 +237,7 @@ class Component {
     const node = this.$(id)
     const lastBool = '#if(bool)' in node ? node['#if(bool)'] : true
     let comment = node['#if<comment>']
+    const component = node['#component']
 
     if (!!bool !== !!lastBool) {
       node['#if(bool)'] = bool
@@ -237,6 +250,10 @@ class Component {
           comment['#//if<node>'] = node
         }
         replace(node, comment)
+        if (component) {
+          replace(component.childNodes[0], comment)
+          component.destory()
+        }
       }
     }
 
@@ -254,18 +271,6 @@ class Component {
       else(id, cb) {
         self.if(id, !bool, cb)
       },
-    }
-  }
-  // todo
-  insert(node) {}
-  // todo
-  remove(node, removeComment, destoryComponent) {
-    remove(node)
-    if (removeComment && node['#if<comment>']) {
-      remove(node['#if<comment>'])
-    }
-    if (destoryComponent && node['#component']) {
-      node['#component'].destory()
     }
   }
   new(id, Class, mode) {
@@ -307,10 +312,8 @@ class Component {
   destory() {
     this.onbeforeunload()
 
-    for (const childNode of this.childNodes) {
-      remove(childNode)
-    }
-    this.target['#component'] = null
+    each(this.childNodes, remove)
+    delete this.target['#component']
   }
   static defineSetter(name, setter) {
     Component.propSetters[name] = setter
@@ -355,14 +358,13 @@ Component.propSetters = {
   style(styles) {
     for (const name in styles) {
       const value = styles[name]
+      this.style[name] = value
+
+      // number+'px'
       if (typeof value === 'number') {
-        this.style[name] = value
-        // auto+px
         if (Number(this.style[name]) !== value) {
           this.style[name] = value + 'px'
         }
-      } else {
-        this.style[name] = value
       }
     }
   },
@@ -408,10 +410,14 @@ function loader(html, className = '') {
 
 const HelloWorld = loader(
   `
-  <div id="hello">Hello \${value}</div>
+  <hr>
+  <div>Hello \${value}</div>
+  <button onclick="x++">\${x}</button>
+  <hr>
 
   <script>
     var value = 'world'
+    var x = 1
   </script>
   `,
   'HelloWorld'
@@ -425,7 +431,7 @@ function initIndex() {
   initIndex.done = true
 
   const node = document.documentElement
-  const { code } = compile(node)
+  const { scriptCode, code } = compile(node)
 
   class Index extends Component {
     constructor() {
@@ -446,7 +452,22 @@ function initIndex() {
     }
   }
 
-  new Index()
+  const app = new Index()
+
+  // TODO
+  if (/setTimeout|setInterval|then/.test(scriptCode)) {
+    setInterval(() => {
+      app.render()
+    }, 250)
+  }
+  if (/requestAnimationFrame/.test(scriptCode)) {
+    !(function loop() {
+      requestAnimationFrame(function () {
+        app.render()
+        loop()
+      })
+    })()
+  }
 }
 if (document.readyState === 'complete') {
   initIndex()
