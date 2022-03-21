@@ -55,9 +55,13 @@ function parseFor(code) {
 }
 
 // `var x; let y /* var z */` => ['x', 'y']
+// TODO import Com from ''
+// TODO import {Com} from ''
+// TODO let [a,b] = []
+// TODO const {k1,k2} = {}
 function parseVars(code) {
   var vars = []
-  var reg = /\b(var|let|function)(\s+)([^\s=;,(]+)/g
+  var reg = /\b(var|let|const|function)(\s+)([^\s=;,(]+)/g
   var m
   while ((m = reg.exec(code))) {
     vars.push(m[3])

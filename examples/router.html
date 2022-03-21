@@ -1,0 +1,22 @@
+<script type="module" src="../src/Component.js"></script>
+
+<Index if="router('/')">Index</Index>
+<List if="router('/list')">List</List>
+<Detail if="router('/detail/:id')">Detail</Detail>
+
+<script>
+  let currentRoute = '/'
+  function router(route) {
+    const reg = RegExp(`^${route.replace(/:[^/]+/, '([^/]+)')}$`)
+    const match = reg.exec(currentRoute)
+    console.log(reg, route, currentRoute, match)
+    return match
+  }
+
+  function change() {
+    currentRoute = location.hash.replace('#', '') || '/'
+  }
+
+  change()
+  addEventListener('hashchange', change)
+</script>

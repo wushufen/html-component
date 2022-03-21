@@ -7,7 +7,7 @@ import {
   parseHTML,
   createComment,
 } from './dom.js'
-import { compile, getNodeMap, cloneWithId } from './compile.js'
+import { compile, getNodeMap, cloneWithId, cloneNodeDeep } from './compile.js'
 
 class Component {
   static debug = !false
@@ -66,8 +66,7 @@ class Component {
   }
   // TODO a. id+forL+item+n => cloneNode
   // TODO b. forKey:  item.id || item._id
-  forL = 0
-  $(id) {
+  x$(id) {
     if (id.nodeType) return id // debug
 
     let node = this.nodeMap[id]
@@ -168,18 +167,27 @@ class Component {
    * </div>
    *
    * self.for(1, list, function(item, key){  // 1
-   *   self.prop(2, 'title', item)           // 2.[key]
-   *   self.for(3, item, function(c, k){     // 3.[key]
-   *     self.prop(4, 'title', c)            // 4.[key].[k]
+   *   self.prop(2, 'title', item)           // 2.[item]
+   *   self.for(3, item, function(c, k){     // 3.[item]
+   *     self.prop(4, 'title', c)            // 4.[item].[c]
    *   })
    * })
    */
+  // TODO a. id+forL+item+n => cloneNode
+  // TODO b. forKey:  item.id || item._id
+  // TODO cloneNode = node + currentItem + currentItemN?
+  $(id) {
+    let node = this.nodeMap[id]
+    if (this.forKey) {
+      node = node[`#<clone>${id}${this.forKey}`]
+    }
+
+    return node
+  }
   for(id, list, cb) {
     // const origin = this.nodeMap[id]
     const node = this.$(id)
-    const cloneNodes = node['#cloneNodes'] || (node['#cloneNodes'] = {})
     let comment = node['#for<comment>']
-
     if (!comment) {
       comment = createComment('for', Component.debug)
       node['#for<comment>'] = comment
@@ -188,17 +196,19 @@ class Component {
     }
 
     const forKey = this.forKey
+    const cloneNodeMap =
+      node['#cloneNodes'] || (node['#cloneNodes'] = new Map())
     // ++
     each(list, (item, key, index) => {
       this.forKey = `${forKey}.${key}` // *** for + for => id.for1key.for2key
-      let cloneNode = cloneNodes['key:' + key]
+      let cloneNode = cloneNodeMap.get(key)
 
       // clone
       if (!cloneNode) {
         cloneNode = cloneWithId(node, this.forKey)
-        cloneNodes['key:' + key] = cloneNode
-        cloneNode['#key'] = key
-        cloneNode['#for<node>'] = node
+        cloneNodeMap.set(key, cloneNode)
+        // cloneNode['#key'] = key
+        // cloneNode['#for<node>'] = node
       }
 
       // insert: ! for(true)+if(false)
@@ -215,7 +225,7 @@ class Component {
     this.forKey = forKey
 
     // --
-    each(cloneNodes, (cloneNode) => {
+    each(cloneNodeMap, ([key, cloneNode]) => {
       if (!cloneNode['#for.noRemove']) {
         remove(cloneNode)
         cloneNode['#if<comment>'] && remove(cloneNode['#if<comment>'])
@@ -225,7 +235,7 @@ class Component {
         cloneNode['#for(item)'] = false
 
         // !delete: reuse
-        // delete cloneNodes['key:' + cloneNode['#key']] // todo: for+for length--
+        // delete cloneNodeMap['key:' + cloneNode['#key']] // todo: for+for length--
         // delete origin[`#<clone>${cloneNode['#id']}`]
       } else {
         delete cloneNode['#for.noRemove']
@@ -309,6 +319,7 @@ class Component {
   onbeforeunload() {
     console.log('onbeforeunload', this)
   }
+  mount(target, mode) {}
   destory() {
     this.onbeforeunload()
 
@@ -455,18 +466,26 @@ function initIndex() {
   const app = new Index()
 
   // TODO
-  if (/setTimeout|setInterval|then/.test(scriptCode)) {
+  if (/\b(setTimeout|setInterval|then)\b/.test(scriptCode)) {
     setInterval(() => {
       app.render()
     }, 250)
   }
-  if (/requestAnimationFrame/.test(scriptCode)) {
+  if (/\b(requestAnimationFrame)\b/.test(scriptCode)) {
     !(function loop() {
       requestAnimationFrame(function () {
         app.render()
         loop()
       })
     })()
+  }
+  if (/\b(location)\b/.test(scriptCode)) {
+    addEventListener('hashchange', function () {
+      app.render()
+    })
+    addEventListener('popstate', function () {
+      app.render()
+    })
   }
 }
 if (document.readyState === 'complete') {
