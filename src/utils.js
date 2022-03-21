@@ -38,4 +38,17 @@ function hasOwn(object, key) {
   return object && hasOwnProperty.call(object, key)
 }
 
-export { hasOwnProperty, forEach, each, hasOwn }
+const objIdWm = new WeakMap()
+function getObjId(obj) {
+  if (typeof obj !== 'object' || obj === null) {
+    return obj
+  } else {
+    let id = obj.id || objIdWm.get(obj)
+    if (!id && id !== 0) {
+      id = objIdWm.set(obj, Math.random())
+    }
+    return id
+  }
+}
+
+export { hasOwnProperty, forEach, each, hasOwn, getObjId }

@@ -240,6 +240,7 @@ function compile(node) {
 /**
  * <text ID>text</text> => text
  * <el ID /> => <el />
+ * node['#id'] = ID
  *
  * @param {Element|DocumentFragment} root compiledTpl
  * @returns {Object}
@@ -286,10 +287,7 @@ function getNodeMap(root) {
  * @returns {Node} cloneNode
  */
 function cloneWithId(node, forKey) {
-  const cloneNode = node.cloneNode(true)
-
-  loop(node, cloneNode)
-  function loop(node, cloneNode) {
+  return cloneNodeDeep(node, function (node, cloneNode) {
     const origin = node['#for<origin>'] || node // !! for+for
     const originId = origin['#id']
 
@@ -299,6 +297,21 @@ function cloneWithId(node, forKey) {
       // self.$(id) => origin + forKey => cloneNode
       origin[`#<clone>${originId}${forKey}`] = cloneNode
     }
+  })
+}
+
+/**
+ *
+ * @param {Node} node
+ * @param {function} cb
+ * @returns {Node} cloneNode
+ */
+function cloneNodeDeep(node, cb) {
+  const cloneNode = node.cloneNode(true)
+
+  loop(node, cloneNode)
+  function loop(node, cloneNode) {
+    cb(node, cloneNode)
 
     Array(...node.childNodes).forEach(function (child, index) {
       loop(child, cloneNode.childNodes[index])
@@ -308,4 +321,4 @@ function cloneWithId(node, forKey) {
   return cloneNode
 }
 
-export { compile as default, compile, getNodeMap, cloneWithId }
+export { compile as default, compile, getNodeMap, cloneWithId, cloneNodeDeep }
