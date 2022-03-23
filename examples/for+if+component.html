@@ -1,13 +1,46 @@
-<input oninput="list=this.value" .value="list" autofocus />
+<textarea
+  rows="20"
+  cols="100"
+  onchange="list=JSON.parse(this.value)"
+  .value="JSON.stringify(list, null, '  ')"
+  autofocus
+></textarea>
 
-<HelloWorld for="const item of list" if="item%2!=0" .value="item"></HelloWorld>
+<ul>
+  <li for="(const item of list)" if="item!='x'" onclick="remove(list, item)">
+    ${item}
+    <span
+      new="HelloWorld"
+      for="(const n of item)"
+      .value="n"
+      onclick="remove(item,n)"
+      >${n}</span
+    >
+  </li>
+</ul>
+
+<!-- <HelloWorld for="(const item of list)" if="(item%2!=0)" .value="item">
+  ${item}
+</HelloWorld> -->
 
 <script>
   var HelloWorld
-  var list = 'world'
+  var list = [1, 2, 3, 4, 5, ['a', 'b', 'c']]
+
+  function remove(list, item) {
+    list.splice(list.indexOf(item), 1)
+  }
 </script>
 
 <script type="module">
-  import { HelloWorld } from '../src/Component.js'
+  import { HelloWorld } from '../src/HelloWorld.js'
   window.HelloWorld = HelloWorld
 </script>
+
+<style>
+  * {
+    background: #222;
+    color: #666;
+    border-color: #444;
+  }
+</style>

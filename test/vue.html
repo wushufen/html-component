@@ -1,25 +1,25 @@
 <div id="app">
-  <input type="text" v-model="list">
+  <input type="text" v-model.lazy="list" />
   {{list.length}}
   <ul>
-    <li v-for="item in list">
-      <span v-for="item in list">
-        {{item}}
-      </span>
+    <li v-for="item in list" :key="item">
+      {{item}}
+      <!-- <span v-for="item in list"> {{item}} </span> -->
     </li>
   </ul>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/vue"></script>
 <script>
-  var vue = new Vue({
-    el: '#app',
-    data: {
-      list: '123',
+  Vue.createApp({
+    data() {
+      return {
+        list: '123',
+      }
     },
     methods: {
       click(e) {
         console.log(e)
-      }
-    }
-  })
+      },
+    },
+  }).mount('#app')
 </script>

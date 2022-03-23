@@ -47,7 +47,7 @@ function compile(node) {
   let code = '' // render
 
   // <script>
-  Array(...node.getElementsByTagName('script')).forEach(
+  Array.from(node.getElementsByTagName('script')).forEach(
     (e) => (scriptCode += e.innerHTML + '\n')
   )
   var vars = parseVars(scriptCode).sort() // Com > com
@@ -147,7 +147,7 @@ function compile(node) {
     }
 
     // [attr]
-    Array(...node.attributes).forEach((attribute) => {
+    Array.from(node.attributes).forEach((attribute) => {
       const attrName = attribute.nodeName
       const attrValue = attribute.nodeValue
 
@@ -215,7 +215,7 @@ function compile(node) {
     }
 
     // >>>
-    loopNodeTree([...node.childNodes])
+    loopNodeTree(Array.from(node.childNodes))
     // <<<
 
     // end if
@@ -272,32 +272,10 @@ function getNodeMap(root) {
         else node.removeAttribute(ID_KEY)
       }
     }
-    Array(...node.children).forEach(loop)
+    Array.from(node.children).forEach(loop)
   }
 
   return nodeMap
-}
-
-/**
- * <el ID> => cloneNode[ID]=`${ID}${forKey}`
- * self.$(ID) + forKey => el[`#<clone>${ID}${forKey}`] => cloneNode
- *
- * @param {Node} node
- * @param {string} forKey
- * @returns {Node} cloneNode
- */
-function cloneWithId(node, forKey) {
-  return cloneNodeDeep(node, function (node, cloneNode) {
-    const origin = node['#for<origin>'] || node // !! for+for
-    const originId = origin['#id']
-
-    if (originId) {
-      cloneNode['#for<origin>'] = origin
-      cloneNode['#id'] = `${originId}${forKey}`
-      // self.$(id) => origin + forKey => cloneNode
-      origin[`#<clone>${originId}${forKey}`] = cloneNode
-    }
-  })
 }
 
 /**
@@ -306,19 +284,29 @@ function cloneWithId(node, forKey) {
  * @param {function} cb
  * @returns {Node} cloneNode
  */
-function cloneNodeDeep(node, cb) {
+function cloneNodeTree(
+  node,
+  cb = function (node, cloneNode, root, cloneRoot) {
+    const id = node['#id']
+    if (id) {
+      cloneNode['#id'] = id // for+for node=>cloneNode=>cloneNode
+      cloneRoot[`#<clone>${id}`] = cloneNode // ID+cloneRoot=>cloneDescendant
+      cloneNode['#//cloneFrom'] = node
+    }
+  }
+) {
   const cloneNode = node.cloneNode(true)
 
   loop(node, cloneNode)
-  function loop(node, cloneNode) {
-    cb(node, cloneNode)
+  function loop(_node, _cloneNode) {
+    cb(_node, _cloneNode, node, cloneNode)
 
-    Array(...node.childNodes).forEach(function (child, index) {
-      loop(child, cloneNode.childNodes[index])
+    Array.from(_node.childNodes).forEach(function (child, index) {
+      loop(child, _cloneNode.childNodes[index])
     })
   }
 
   return cloneNode
 }
 
-export { compile as default, compile, getNodeMap, cloneWithId, cloneNodeDeep }
+export { compile as default, compile, getNodeMap, cloneNodeTree }

@@ -1,23 +1,22 @@
 import { hasOwnProperty, each } from './utils.js'
 import {
-  insert,
+  insertBefore,
+  insertAfter,
   remove,
   replace,
   append,
   parseHTML,
-  createComment,
+  Anchor,
 } from './dom.js'
-import { compile, getNodeMap, cloneWithId, cloneNodeDeep } from './compile.js'
+import { getNodeMap, cloneNodeTree } from './compile.js'
+import {} from './index.js'
+Anchor.debug = true
 
 class Component {
-  static debug = !false
-  // tpl(id)
-  static tpl = `
-    <!-- tpl -->
-  `
-  render() {
-    // code
-  }
+  // <el ID>
+  static tpl = ``
+  // code
+  render() {}
   $render() {
     const self = this
     Promise.resolve().then(function () {
@@ -31,22 +30,22 @@ class Component {
   nodeMap = null
   parentComponent = null
   childComponents = []
-  forKey = ''
   constructor({ target, mode } = {}) {
     if (target) {
       const _container = parseHTML(this.constructor.tpl)
       // id => node
       this.nodeMap = getNodeMap(_container)
-      this.childNodes = [..._container.childNodes]
-
-      // //debug
-      const firstChild =
-        _container.firstElementChild || _container.firstChild || ''
-      firstChild['#//component'] = this
+      this.childNodes = Array.from(_container.childNodes)
 
       // target
       this.target = target
       this.props = target['#props'] || {}
+      const COMPONENT_START = Anchor(Anchor.COMPONENT_START)
+      const COMPONENT_END = Anchor(Anchor.COMPONENT_END)
+      insertBefore(COMPONENT_START, target)
+      insertAfter(COMPONENT_END, target)
+      COMPONENT_START['#//<target>'] = target
+      COMPONENT_END['#//<target>'] = target
 
       // insert this.childNodes
       if (mode === 'web') {
@@ -63,22 +62,6 @@ class Component {
       // first render
       this.render()
     }
-  }
-  // TODO a. id+forL+item+n => cloneNode
-  // TODO b. forKey:  item.id || item._id
-  x$(id) {
-    if (id.nodeType) return id // debug
-
-    let node = this.nodeMap[id]
-    if (this.forKey) {
-      node = node[`#<clone>${id}${this.forKey}`]
-    }
-
-    if (!node['#//nodeValue']) {
-      node['#//nodeValue'] = node.nodeValue || node.cloneNode().outerHTML
-    }
-
-    return node
   }
   exp(...values) {
     const value = values.pop()
@@ -167,19 +150,16 @@ class Component {
    * </div>
    *
    * self.for(1, list, function(item, key){  // 1
-   *   self.prop(2, 'title', item)           // 2.[item]
-   *   self.for(3, item, function(c, k){     // 3.[item]
-   *     self.prop(4, 'title', c)            // 4.[item].[c]
+   *   self.prop(2, 'title', item)           // 1 + item => 1' => 2'
+   *   self.for(3, item, function(c, k){     //             1' => 3'
+   *     self.prop(4, 'title', c)            // 3' + c   => 3''=> 4''
    *   })
    * })
    */
-  // TODO a. id+forL+item+n => cloneNode
-  // TODO b. forKey:  item.id || item._id
-  // TODO cloneNode = node + currentItem + currentItemN?
   $(id) {
     let node = this.nodeMap[id]
-    if (this.forKey) {
-      node = node[`#<clone>${id}${this.forKey}`]
+    if (this.currentCloneNode) {
+      node = this.currentCloneNode[`#<clone>${id}`]
     }
 
     return node
@@ -187,66 +167,82 @@ class Component {
   for(id, list, cb) {
     // const origin = this.nodeMap[id]
     const node = this.$(id)
-    let comment = node['#for<comment>']
-    if (!comment) {
-      comment = createComment('for', Component.debug)
-      node['#for<comment>'] = comment
-      comment['#//for<node>'] = node
-      replace(node, comment)
+    let forStart = node[Anchor.FOR_START]
+    let forEnd = node[Anchor.FOR_END]
+    if (!forStart) {
+      forStart = Anchor(Anchor.FOR_START)
+      node[Anchor.FOR_START] = forStart
+      forStart['#//for<node>'] = node
+      insertBefore(forStart, node)
+    }
+    if (!forEnd) {
+      forEnd = Anchor(Anchor.FOR_END)
+      node[Anchor.FOR_END] = forEnd
+      forEnd['#//for<node>'] = node
+      replace(node, forEnd)
     }
 
-    const forKey = this.forKey
-    const cloneNodeMap =
-      node['#cloneNodes'] || (node['#cloneNodes'] = new Map())
+    // [[item,cloneNode], ...]
+    const cloneNodeList =
+      node['#cloneNodeList'] || (node['#cloneNodeList'] = [])
+    const currentCloneNodeList = []
+    let lastCloneNode = forStart
+
     // ++
     each(list, (item, key, index) => {
-      this.forKey = `${forKey}.${key}` // *** for + for => id.for1key.for2key
-      let cloneNode = cloneNodeMap.get(key)
+      let cloneNode = null
+      for (let length = cloneNodeList.length; length; ) {
+        const [_item, _cloneNode] = cloneNodeList[0]
+        // [1,...]
+        // [1,...]
+        if (_item === item) {
+          cloneNode = _cloneNode
+          cloneNodeList.shift()
+          break
+        } else {
+          cloneNodeList.push(cloneNodeList.shift()) // [1,...] => [..., 1]
+          length--
+          // [1,2,3]
+          // [2,3]
+          remove(_cloneNode)
 
-      // clone
-      if (!cloneNode) {
-        cloneNode = cloneWithId(node, this.forKey)
-        cloneNodeMap.set(key, cloneNode)
-        // cloneNode['#key'] = key
-        // cloneNode['#for<node>'] = node
+          // TODO
+          // [1,2,3]
+          // [0,1,2,3]
+        }
       }
+      // clone
+      cloneNode = cloneNode || cloneNodeTree(node)
 
       // insert: ! for(true)+if(false)
       if (cloneNode['#if(bool)'] !== false && !cloneNode['#component']) {
-        if (!cloneNode['#for(item)']) {
-          insert(cloneNode, comment)
-        }
+        insertAfter(cloneNode, lastCloneNode)
       }
-      cloneNode['#for.noRemove'] = true
 
       // >>>
+      this.currentCloneNode = cloneNode
       cb.call(this, item, key, index)
+      delete this.currentCloneNode
+
+      // next
+      lastCloneNode = cloneNode
+      currentCloneNodeList.push([item, cloneNode])
     })
-    this.forKey = forKey
+    node['#cloneNodeList'] = currentCloneNodeList
 
     // --
-    each(cloneNodeMap, ([key, cloneNode]) => {
-      if (!cloneNode['#for.noRemove']) {
-        remove(cloneNode)
-        cloneNode['#if<comment>'] && remove(cloneNode['#if<comment>'])
-        // delete cloneNode['#if<comment>']
-        cloneNode['#component']?.destory()
-        delete cloneNode['#if(bool)']
-        cloneNode['#for(item)'] = false
-
-        // !delete: reuse
-        // delete cloneNodeMap['key:' + cloneNode['#key']] // todo: for+for length--
-        // delete origin[`#<clone>${cloneNode['#id']}`]
-      } else {
-        delete cloneNode['#for.noRemove']
-        cloneNode['#for(item)'] = true
-      }
+    each(cloneNodeList, ([, cloneNode]) => {
+      remove(cloneNode)
+      cloneNode[Anchor.IF] && remove(cloneNode[Anchor.IF])
+      // delete cloneNode[Anchor.IF]
+      cloneNode['#component']?.destory()
+      delete cloneNode['#if(bool)']
     })
   }
   if(id, bool, cb) {
     const node = this.$(id)
     const lastBool = '#if(bool)' in node ? node['#if(bool)'] : true
-    let comment = node['#if<comment>']
+    let comment = node[Anchor.IF]
     const component = node['#component']
 
     if (!!bool !== !!lastBool) {
@@ -255,8 +251,8 @@ class Component {
         replace(comment, node)
       } else {
         if (!comment) {
-          comment = createComment('if', Component.debug)
-          node['#if<comment>'] = comment
+          comment = Anchor(Anchor.IF)
+          node[Anchor.IF] = comment
           comment['#//if<node>'] = node
         }
         replace(node, comment)
@@ -326,173 +322,58 @@ class Component {
     each(this.childNodes, remove)
     delete this.target['#component']
   }
-  static defineSetter(name, setter) {
+  /**
+   * @example
+   * Component.propSetters.show = function set(bool) {
+   *   this.style.display = bool ? '' : 'none'
+   * }
+   * ==
+   * Object.defineProperties(Element.prototype, {
+   *   show: {
+   *     set(bool) {
+   *       this.style.display = bool ? '' : 'none'
+   *     },
+   *   },
+   * })
+   */
+  static definePropSetter(name, setter) {
     Component.propSetters[name] = setter
   }
-}
-
-/**
- * @example
- * Component.propSetters.show = function set(bool) {
- *   this.style.display = bool ? '' : 'none'
- * }
- * ==
- * Object.defineProperties(Element.prototype, {
- *   show: {
- *     set(bool) {
- *       this.style.display = bool ? '' : 'none'
- *     },
- *   },
- * })
- */
-Component.propSetters = {
-  /**
-   * <el .class="{}" >
-   * @param {Object} classes
-   * @this {Element}
-   */
-  class(classes) {
-    for (const name in classes) {
-      const bool = classes[name]
-      if (bool) {
-        this.classList.add(name)
-      } else {
-        this.classList.remove(name)
-      }
-    }
-  },
-  /**
-   * <el .style="{}" >
-   * @param {Object} styles
-   * @this {Element}
-   */
-  style(styles) {
-    for (const name in styles) {
-      const value = styles[name]
-      this.style[name] = value
-
-      // number+'px'
-      if (typeof value === 'number') {
-        if (Number(this.style[name]) !== value) {
-          this.style[name] = value + 'px'
+  static propSetters = {
+    /**
+     * <el .class="{}" >
+     * @param {Object} classes
+     * @this {Element}
+     */
+    class(classes) {
+      for (const name in classes) {
+        const bool = classes[name]
+        if (bool) {
+          this.classList.add(name)
+        } else {
+          this.classList.remove(name)
         }
       }
-    }
-  },
-}
+    },
+    /**
+     * <el .style="{}" >
+     * @param {Object} styles
+     * @this {Element}
+     */
+    style(styles) {
+      for (const name in styles) {
+        const value = styles[name]
+        this.style[name] = value
 
-/**
- *
- * @param {string} html
- * @param {string} className
- * @returns {Component}
- */
-function loader(html, className = '') {
-  const _container = parseHTML(html)
-  const { scriptCode, updatePropsCode, code } = compile(_container)
-
-  // - <script>
-  Array(..._container.getElementsByTagName('script')).forEach(remove)
-
-  return Function(
-    'Component',
-    `return class ${className} extends Component {
-  static tpl = \`${_container.innerHTML.replace(/[\\`$]/g, '\\$&')}\`
-
-  render(){
-    const self = this
-
-    // <script>
-    ${scriptCode}
-    // </script>
-
-    this.updateProps = function () {
-      ${updatePropsCode}
-    }
-    this.render = function(){
-      this.updateProps()
-      ${code}
-    }
-    this.render()
-  }
-}`
-  )(Component)
-}
-
-const HelloWorld = loader(
-  `
-  <hr>
-  <div>Hello \${value}</div>
-  <button onclick="x++">\${x}</button>
-  <hr>
-
-  <script>
-    var value = 'world'
-    var x = 1
-  </script>
-  `,
-  'HelloWorld'
-)
-
-/**
- * index.html
- */
-function initIndex() {
-  if (initIndex.done) return
-  initIndex.done = true
-
-  const node = document.documentElement
-  const { scriptCode, code } = compile(node)
-
-  class Index extends Component {
-    constructor() {
-      super()
-      this.nodeMap = getNodeMap(node)
-
-      this.render = Function(`
-        var self = this
-
-        this.render = function(){
-          ${code}
+        // number+'px'
+        if (typeof value === 'number') {
+          if (Number(this.style[name]) !== value) {
+            this.style[name] = value + 'px'
+          }
         }
-        this.render()
-      `)
-
-      node['#//component'] = this
-      this.render()
-    }
-  }
-
-  const app = new Index()
-
-  // TODO
-  if (/\b(setTimeout|setInterval|then)\b/.test(scriptCode)) {
-    setInterval(() => {
-      app.render()
-    }, 250)
-  }
-  if (/\b(requestAnimationFrame)\b/.test(scriptCode)) {
-    !(function loop() {
-      requestAnimationFrame(function () {
-        app.render()
-        loop()
-      })
-    })()
-  }
-  if (/\b(location)\b/.test(scriptCode)) {
-    addEventListener('hashchange', function () {
-      app.render()
-    })
-    addEventListener('popstate', function () {
-      app.render()
-    })
+      }
+    },
   }
 }
-if (document.readyState === 'complete') {
-  initIndex()
-} else {
-  addEventListener('DOMContentLoaded', initIndex)
-  addEventListener('load', initIndex)
-}
 
-export { Component as default, Component, loader, HelloWorld }
+export { Component as default, Component }
