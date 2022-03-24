@@ -40,12 +40,10 @@ class Component {
       // target
       this.target = target
       this.props = target['#props'] || {}
-      const COMPONENT_START = Anchor(Anchor.COMPONENT_START)
-      const COMPONENT_END = Anchor(Anchor.COMPONENT_END)
+      const COMPONENT_START = Anchor(target, Anchor.COMPONENT_START)
+      const COMPONENT_END = Anchor(target, Anchor.COMPONENT_END)
       insertBefore(COMPONENT_START, target)
       insertAfter(COMPONENT_END, target)
-      COMPONENT_START['#//<target>'] = target
-      COMPONENT_END['#//<target>'] = target
 
       // insert this.childNodes
       if (mode === 'web') {
@@ -167,35 +165,32 @@ class Component {
   for(id, list, cb) {
     // const origin = this.nodeMap[id]
     const node = this.$(id)
-    let forStart = node[Anchor.FOR_START]
-    let forEnd = node[Anchor.FOR_END]
-    if (!forStart) {
-      forStart = Anchor(Anchor.FOR_START)
-      node[Anchor.FOR_START] = forStart
-      forStart['#//for<node>'] = node
-      insertBefore(forStart, node)
+    let FOR_START = node[Anchor.FOR_START]
+    let FOR_END = node[Anchor.FOR_END]
+    if (!FOR_START) {
+      FOR_START = Anchor(node, Anchor.FOR_START)
+      insertBefore(FOR_START, node)
     }
-    if (!forEnd) {
-      forEnd = Anchor(Anchor.FOR_END)
-      node[Anchor.FOR_END] = forEnd
-      forEnd['#//for<node>'] = node
-      replace(node, forEnd)
+    if (!FOR_END) {
+      FOR_END = Anchor(node, Anchor.FOR_END)
+      replace(node, FOR_END)
     }
 
     // [[item,cloneNode], ...]
     const cloneNodeList =
       node['#cloneNodeList'] || (node['#cloneNodeList'] = [])
     const currentCloneNodeList = []
-    let lastCloneNode = forStart
+    let lastCloneNode = FOR_START
 
     // ++
     each(list, (item, key, index) => {
       let cloneNode = null
+      const itemKey = item // TODO type: array, object, map
       for (let length = cloneNodeList.length; length; ) {
-        const [_item, _cloneNode] = cloneNodeList[0]
+        const [_itemKey, _cloneNode] = cloneNodeList[0]
         // [1,...]
         // [1,...]
-        if (_item === item) {
+        if (_itemKey === itemKey) {
           cloneNode = _cloneNode
           cloneNodeList.shift()
           break
@@ -226,7 +221,7 @@ class Component {
 
       // next
       lastCloneNode = cloneNode
-      currentCloneNodeList.push([item, cloneNode])
+      currentCloneNodeList.push([itemKey, cloneNode])
     })
     node['#cloneNodeList'] = currentCloneNodeList
 
@@ -242,24 +237,23 @@ class Component {
   if(id, bool, cb) {
     const node = this.$(id)
     const lastBool = '#if(bool)' in node ? node['#if(bool)'] : true
-    let comment = node[Anchor.IF]
+    let IF = node[Anchor.IF]
     const component = node['#component']
 
     if (!!bool !== !!lastBool) {
       node['#if(bool)'] = bool
+      // true
       if (bool) {
-        replace(comment, node)
-      } else {
-        if (!comment) {
-          comment = Anchor(Anchor.IF)
-          node[Anchor.IF] = comment
-          comment['#//if<node>'] = node
+        insertBefore(node, IF)
+      }
+      // false
+      else {
+        if (!IF) {
+          IF = Anchor(node, Anchor.IF)
+          insertBefore(IF, node)
         }
-        replace(node, comment)
-        if (component) {
-          replace(component.childNodes[0], comment)
-          component.destory()
-        }
+
+        remove(node)
       }
     }
 
@@ -317,9 +311,12 @@ class Component {
   }
   mount(target, mode) {}
   destory() {
+    const target = this.target
     this.onbeforeunload()
 
-    each(this.childNodes, remove)
+    remove(target)
+    remove(target[Anchor.COMPONENT_START])
+    remove(target[Anchor.COMPONENT_END])
     delete this.target['#component']
   }
   /**

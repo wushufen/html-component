@@ -1,50 +1,110 @@
 /**
  *
  * @param {Node} node
- * @param {Node} to
+ * @returns {Comment|Text}
  */
-function insertBefore(node, to) {
-  if (node.nextSibling === to) {
-    return
+function Anchor(node, type) {
+  console.log('type:', type)
+  const anchor = Anchor.debug
+    ? document.createComment(` ${type} ${node.localName || node.nodeName} `)
+    : document.createTextNode('')
+
+  node[type] = anchor
+  anchor['#//<node>'] = node
+
+  return anchor
+}
+Anchor.FOR_START = '#for_start'
+Anchor.FOR_END = '#for_end'
+Anchor.IF = '#if'
+Anchor.COMPONENT_START = '#component_start'
+Anchor.COMPONENT_END = '#component_end'
+
+/**
+ *
+ * @param {Node} node
+ * @returns {Node} node || IF || COMPONENT_START
+ */
+function getNodeFirst(node) {
+  if (node.parentNode) {
+    return node
   }
-  to.parentNode.insertBefore(node, to)
+  if (node[Anchor.IF]?.parentNode) {
+    return node[Anchor.IF]
+  }
+  if (node[Anchor.COMPONENT_START]?.parentNode) {
+    return node[Anchor.COMPONENT_START]
+  }
+  return node
 }
 
 /**
  *
  * @param {Node} node
- * @param {Node} to
+ * @returns {Node} node || IF || COMPONENT_END
  */
-function insertAfter(node, to) {
-  // TODO 枚举 Anchor
-  if (!to.parentNode) {
-    if (to[Anchor.IF]?.parentNode) {
-      to = to[Anchor.IF]
-    } else if (to['#component']?.childNodes[0]?.parentNode) {
-      to = Array.from(to['#component'].childNodes).pop()
-    }
+function getNodeLast(node) {
+  if (node.parentNode) {
+    return node
   }
+  if (node[Anchor.IF]?.parentNode) {
+    return node[Anchor.IF]
+  }
+  if (node[Anchor.COMPONENT_END]?.parentNode) {
+    return node[Anchor.COMPONENT_END]
+  }
+  return node
+}
 
-  const next = to.nextSibling
-  console.log('next:', node, next)
-  if (node === next) {
+/**
+ *
+ * @param {Node} node
+ * @param {Node} target
+ */
+function insertBefore(node, target) {
+  if (!node) return
+  const nodeLast = getNodeLast(node)
+  const targetFirst = getNodeFirst(target)
+
+  if (nodeLast.nextSibling === targetFirst) {
     return
   }
-  if (next) {
-    insertBefore(node, next)
+
+  const fragment = document.createDocumentFragment()
+  const component = node['#component']
+  if (component) {
+    fragment.appendChild(node[Anchor.COMPONENT_START])
+    component.childNodes.forEach((c) => fragment.appendChild(c)) // TODO component firstChild[if]
+    fragment.appendChild(node[Anchor.COMPONENT_END])
   } else {
-    to.parentNode.appendChild(node)
+    fragment.appendChild(node)
   }
+
+  targetFirst.parentNode.insertBefore(fragment, targetFirst)
 }
 
 /**
  *
  * @param {Node} node
- * @param {Node} to
+ * @param {Node} target
  */
-function insert(node, to) {
-  if (!node.parentNode) {
-    to.parentNode?.insertBefore(node, to)
+function insertAfter(node, target) {
+  if (!node) return
+  const nodeFirst = getNodeFirst(node)
+  const targetLast = getNodeLast(target)
+  const targetLastNext = targetLast.nextSibling
+
+  if (nodeFirst.previousSibling == targetLast) {
+    return
+  }
+
+  if (targetLastNext) {
+    insertBefore(node, targetLastNext)
+  } else {
+    const tempNext = document.createComment('temp')
+    targetLast.parentNode.appendChild(tempNext)
+    insertBefore(node, tempNext)
+    tempNext.parentNode.removeChild(tempNext)
   }
 }
 
@@ -53,7 +113,12 @@ function insert(node, to) {
  * @param {Node} node
  */
 function remove(node) {
-  node.parentNode?.removeChild(node)
+  node?.parentNode?.removeChild(node)
+  if (node?.['#component']) {
+    node['#component'].childNodes.forEach(remove)
+    remove(node[Anchor.COMPONENT_START])
+    remove(node[Anchor.COMPONENT_END])
+  }
 }
 
 /**
@@ -77,6 +142,7 @@ function replace(node, newNodes) {
  * @param {Node|Node[]|NodeList} childNodes
  */
 function append(node, childNodes) {
+  if (!childNodes) return
   childNodes = childNodes.nodeType ? [childNodes] : Array.from(childNodes)
   childNodes.forEach((child) => node.appendChild(child))
 }
@@ -101,33 +167,13 @@ function parseHTML(html, container = document.createElement('div')) {
   return container
 }
 
-/**
- *
- * @param {string} string
- * @param {boolean} debug
- * @returns {Node}
- */
-function Anchor(string) {
-  if (Anchor.debug) {
-    return document.createComment(` ${string} `)
-  } else {
-    return document.createTextNode('')
-  }
-}
-Anchor.FOR_START = '#FOR_START'
-Anchor.FOR_END = '#FOR_END'
-Anchor.IF = '#IF'
-Anchor.COMPONENT_START = '#COMPONENT_START'
-Anchor.COMPONENT_END = '#COMPONENT_END'
-
 export {
+  Anchor,
   insertBefore,
   insertAfter,
-  insert,
   remove,
   replace,
   append,
   appendTo,
   parseHTML,
-  Anchor,
 }

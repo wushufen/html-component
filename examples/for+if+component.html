@@ -1,35 +1,57 @@
 <textarea
-  rows="20"
+  rows="15"
   cols="100"
   onchange="list=JSON.parse(this.value)"
   .value="JSON.stringify(list, null, '  ')"
   autofocus
 ></textarea>
 
-<ul>
-  <li for="(const item of list)" if="item!='x'" onclick="remove(list, item)">
-    ${item}
-    <span
-      new="HelloWorld"
-      for="(const n of item)"
-      .value="n"
-      onclick="remove(item,n)"
-      >${n}</span
-    >
-  </li>
-</ul>
-
-<!-- <HelloWorld for="(const item of list)" if="(item%2!=0)" .value="item">
-  ${item}
-</HelloWorld> -->
+<dl>
+  <div>
+    <dt>if</dt>
+    <dd>
+      <button if="list.length" onclick="list.length=0">${list}</button>
+    </dd>
+  </div>
+  <div>
+    <dt>if+component</dt>
+    <dd>
+      <HelloWorld if="list.length" .value="list"></HelloWorld>
+    </dd>
+  </div>
+  <div>
+    <dt>for+if</dt>
+    <dd>
+      <ul>
+        <li for="const item of list" if="item">${item}</li>
+      </ul>
+    </dd>
+  </div>
+  <div>
+    <dt>for+if+component</dt>
+    <dd>
+      <HelloWorld for="const item of list" if="item" .value="item"
+        >${item}</HelloWorld
+      >
+    </dd>
+  </div>
+  <div>
+    <dt>for+for</dt>
+    <dd>
+      <ol>
+        <li for="const item of list">
+          <ol type="A">
+            <li for="const item of list">${item}</li>
+          </ol>
+        </li>
+      </ol>
+    </dd>
+  </div>
+</dl>
 
 <script>
   var HelloWorld
-  var list = [1, 2, 3, 4, 5, ['a', 'b', 'c']]
-
-  function remove(list, item) {
-    list.splice(list.indexOf(item), 1)
-  }
+  var list = [1, 2, 3, ['a', 'b', 'c']]
 </script>
 
 <script type="module">
@@ -42,5 +64,13 @@
     background: #222;
     color: #666;
     border-color: #444;
+    font-size: 14px;
+  }
+  dl {
+  }
+  dl > div {
+    margin: 0.5em 0;
+    padding: 0.5em;
+    border: 1px solid;
   }
 </style>
