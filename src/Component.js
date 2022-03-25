@@ -14,51 +14,43 @@ Anchor.debug = true
 
 class Component {
   // <el ID>
-  static tpl = ``
-  // code
-  render() {}
-  $render() {
-    const self = this
-    Promise.resolve().then(function () {
-      self.render()
-    })
+  static tpl = `
+  <!-- tpl[id] -->
+  `
+  // => new => create
+  // => mount => onload => render
+  // => onchange => render <=
+  // => onunload => destory
+  create() {
+    // const self = this
+
+    // <script>
+    // var value = 1
+    // </script>
+
+    // code
+    this.render = function () {
+      // self.text('1', `${value}`)
+    }
   }
 
-  props = null
+  lastProps = {}
+  props = {}
   target = null
   childNodes = null
   nodeMap = null
   parentComponent = null
   childComponents = []
   constructor({ target, mode } = {}) {
+    const _container = parseHTML(this.constructor.tpl)
+    // id => node
+    this.nodeMap = getNodeMap(_container)
+    this.childNodes = Array.from(_container.childNodes)
+
+    this.create()
+
     if (target) {
-      const _container = parseHTML(this.constructor.tpl)
-      // id => node
-      this.nodeMap = getNodeMap(_container)
-      this.childNodes = Array.from(_container.childNodes)
-
-      // target
-      this.target = target
-      this.props = target['#props'] || {}
-      const COMPONENT_START = Anchor(target, Anchor.COMPONENT_START)
-      const COMPONENT_END = Anchor(target, Anchor.COMPONENT_END)
-      insertBefore(COMPONENT_START, target)
-      insertAfter(COMPONENT_END, target)
-
-      // insert this.childNodes
-      if (mode === 'web') {
-        const shadowRoot =
-          target.shadowRoot || target.attachShadow({ mode: 'open' })
-        shadowRoot.innerHTML = ''
-        append(shadowRoot, this.childNodes)
-      } else if (mode === 'wrap') {
-        append(target, this.childNodes)
-      } else {
-        replace(target, this.childNodes)
-      }
-
-      // first render
-      this.render()
+      this.mount(target, mode)
     }
   }
   exp(...values) {
@@ -297,27 +289,86 @@ class Component {
           component.parentComponent = self
           self.childComponents.push(component)
           target['#component'] = component
+        } else {
+          // onchange
+          for (const key in component.props) {
+            if (component.props[key] !== component.lastProps[key]) {
+              const event = new Event('change')
+              event.data = component.props
+              event.props = component.props
+              event.lastProps = component.lastProps
+              component.onchange(event)
+              break
+            }
+          }
         }
-        // render
-        else {
-          // TODO props && diff
-          component.render()
-        }
+
+        component.lastProps = { ...component.props }
       }
     }
   }
-  onbeforeunload() {
-    console.log('onbeforeunload', this)
-  }
-  mount(target, mode) {}
-  destory() {
-    const target = this.target
-    this.onbeforeunload()
+  mount(target, mode) {
+    const self = this
 
+    // target
+    this.target = target
+    this.props = target['#props'] || {}
+    const COMPONENT_START = Anchor(target, Anchor.COMPONENT_START)
+    const COMPONENT_END = Anchor(target, Anchor.COMPONENT_END)
+    insertBefore(COMPONENT_START, target)
+    insertAfter(COMPONENT_END, target)
+
+    // insert this.childNodes
+    if (mode === 'web') {
+      if (target.shadowRoot) {
+        target.shadowRoot.innerHTML = ''
+      } else {
+        target.attachShadow({ mode: 'open' })
+      }
+      append(target.shadowRoot, this.childNodes)
+    } else if (mode === 'wrap') {
+      append(target, this.childNodes)
+    } else {
+      replace(target, this.childNodes)
+    }
+
+    // onload
+    const event = new Event('load')
+    event.data = this.props
+    event.props = this.props
+    target.addEventListener('load', function load(e) {
+      target.removeEventListener('load', load)
+      self.onload(e)
+      self.render() // TODO inject this.onload
+    })
+    target.dispatchEvent(event)
+  }
+  onload() {
+    this.render()
+  }
+  onchange() {
+    this.render()
+  }
+  onunload() {
+    console.log('onunload', this)
+  }
+  destory() {
+    const self = this
+    const target = this.target
+
+    // -dom
     remove(target)
     remove(target[Anchor.COMPONENT_START])
     remove(target[Anchor.COMPONENT_END])
     delete this.target['#component']
+
+    // onunload
+    const event = new Event('unload')
+    target.addEventListener('unload', function unload(e) {
+      target.removeEventListener('unload', unload)
+      self.onunload(e)
+    })
+    target.dispatchEvent(event)
   }
   /**
    * @example

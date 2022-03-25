@@ -15,22 +15,19 @@ function initIndex() {
     constructor() {
       super()
       this.nodeMap = getNodeMap(node)
-
+    }
+    create() {
       this.render = Function(`
         var self = this
 
-        this.render = function(){
-          ${code}
-        }
-        this.render()
+        ${code}
       `)
-
-      node['#//component'] = this
-      this.render()
     }
   }
 
   const app = new Index()
+  node['#//component'] = app
+  app.render()
 
   // TODO
   if (/\b(setTimeout|setInterval|then)\b/.test(scriptCode)) {

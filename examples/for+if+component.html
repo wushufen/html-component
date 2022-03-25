@@ -52,6 +52,9 @@
 <script>
   var HelloWorld
   var list = [1, 2, 3, ['a', 'b', 'c']]
+  this.onload = function ({ data: props = {} }) {
+    console.log('onload', arguments)
+  }
 </script>
 
 <script type="module">

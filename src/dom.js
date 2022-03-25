@@ -4,7 +4,6 @@
  * @returns {Comment|Text}
  */
 function Anchor(node, type) {
-  console.log('type:', type)
   const anchor = Anchor.debug
     ? document.createComment(` ${type} ${node.localName || node.nodeName} `)
     : document.createTextNode('')

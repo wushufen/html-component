@@ -10,7 +10,7 @@ import { compile } from './compile.js'
  */
 function loader(html, className = '') {
   const _container = parseHTML(html)
-  const { scriptCode, updatePropsCode, code } = compile(_container)
+  const { scriptCode, code } = compile(_container)
 
   // - <script>
   Array.from(_container.getElementsByTagName('script')).forEach(remove)
@@ -21,18 +21,14 @@ function loader(html, className = '') {
 class ${className} extends Component {
   static tpl = \`${_container.innerHTML.replace(/[\\`$]/g, '\\$&')}\`
 
-  render(){
+  create(){
     const self = this
 
     // <script>
     ${scriptCode}
     // </script>
 
-    this.updateProps = function () {
-      ${updatePropsCode}
-    }
     this.render = function(){
-      this.updateProps()
       ${code}
     }
     this.render()
