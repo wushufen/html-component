@@ -7,6 +7,8 @@ import {
   append,
   parseHTML,
   Anchor,
+  ifAnchor,
+  Fragment,
 } from './dom.js'
 import { getNodeMap, cloneNodeTree } from './compile.js'
 import {} from './index.js'
@@ -46,6 +48,7 @@ class Component {
     // id => node
     this.nodeMap = getNodeMap(_container)
     this.childNodes = Array.from(_container.childNodes)
+    this.childNodes.forEach((childNode) => (childNode['#//component'] = this))
 
     this.create()
 
@@ -165,7 +168,8 @@ class Component {
     }
     if (!FOR_END) {
       FOR_END = Anchor(node, Anchor.FOR_END)
-      replace(node, FOR_END)
+      insertAfter(FOR_END, node)
+      remove(node)
     }
 
     // [[item,cloneNode], ...]
@@ -191,7 +195,13 @@ class Component {
           length--
           // [1,2,3]
           // [2,3]
-          remove(_cloneNode)
+          if (!_cloneNode['#component']) {
+            remove(ifAnchor(_cloneNode))
+          } else {
+            _cloneNode['#component'].childNodes.forEach((_childNode) =>
+              remove(ifAnchor(_childNode))
+            )
+          }
 
           // TODO
           // [1,2,3]
@@ -202,8 +212,34 @@ class Component {
       cloneNode = cloneNode || cloneNodeTree(node)
 
       // insert: ! for(true)+if(false)
-      if (cloneNode['#if(bool)'] !== false && !cloneNode['#component']) {
-        insertAfter(cloneNode, lastCloneNode)
+      const lastCloneNodeComponent = lastCloneNode['#component']
+      const lastCloneNodeLastChild = lastCloneNodeComponent
+        ? ifAnchor(
+            lastCloneNodeComponent.childNodes[
+              lastCloneNodeComponent.childNodes.length - 1
+            ]
+          )
+        : ifAnchor(lastCloneNode)
+      if (cloneNode['#if(bool)'] !== false) {
+        if (!cloneNode['#component']) {
+          insertAfter(cloneNode, lastCloneNodeLastChild)
+        } else {
+          const cloneNodeComponent = cloneNode['#component']
+
+          if (
+            lastCloneNodeLastChild.nextSibling !==
+            ifAnchor(cloneNodeComponent.childNodes[0])
+          ) {
+            insertAfter(
+              Fragment(
+                cloneNodeComponent.childNodes.map((childNode) =>
+                  ifAnchor(childNode)
+                )
+              ),
+              lastCloneNodeLastChild
+            )
+          }
+        }
       }
 
       // >>>
@@ -219,33 +255,39 @@ class Component {
 
     // --
     each(cloneNodeList, ([, cloneNode]) => {
-      remove(cloneNode)
-      cloneNode[Anchor.IF] && remove(cloneNode[Anchor.IF])
-      // delete cloneNode[Anchor.IF]
-      cloneNode['#component']?.destory()
-      delete cloneNode['#if(bool)']
+      if (!cloneNode['#component']) {
+        remove(ifAnchor(cloneNode))
+      } else {
+        cloneNode['#component']?.destory()
+      }
     })
   }
   if(id, bool, cb) {
     const node = this.$(id)
     const lastBool = '#if(bool)' in node ? node['#if(bool)'] : true
-    let IF = node[Anchor.IF]
+    let IF = node[Anchor.IF] || (node[Anchor.IF] = Anchor(node, Anchor.IF))
     const component = node['#component']
 
     if (!!bool !== !!lastBool) {
-      node['#if(bool)'] = bool
+      node['#if(bool)'] = !!bool
       // true
       if (bool) {
-        insertBefore(node, IF)
+        if (!component) {
+          replace(node, IF)
+        } else {
+          replace(Fragment(component.childNodes.map(ifAnchor)), IF)
+        }
       }
       // false
       else {
-        if (!IF) {
-          IF = Anchor(node, Anchor.IF)
-          insertBefore(IF, node)
+        if (!component) {
+          replace(IF, node)
+        } else {
+          insertBefore(IF, ifAnchor(component.childNodes[0]))
+          component.childNodes.forEach((childNode) =>
+            remove(ifAnchor(childNode))
+          )
         }
-
-        remove(node)
       }
     }
 
@@ -313,10 +355,6 @@ class Component {
     // target
     this.target = target
     this.props = target['#props'] || {}
-    const COMPONENT_START = Anchor(target, Anchor.COMPONENT_START)
-    const COMPONENT_END = Anchor(target, Anchor.COMPONENT_END)
-    insertBefore(COMPONENT_START, target)
-    insertAfter(COMPONENT_END, target)
 
     // insert this.childNodes
     if (mode === 'web') {
@@ -325,11 +363,11 @@ class Component {
       } else {
         target.attachShadow({ mode: 'open' })
       }
-      append(target.shadowRoot, this.childNodes)
+      append(target.shadowRoot, Fragment(this.childNodes))
     } else if (mode === 'wrap') {
-      append(target, this.childNodes)
+      append(target, Fragment(this.childNodes))
     } else {
-      replace(target, this.childNodes)
+      replace(Fragment(this.childNodes), target)
     }
 
     // onload
@@ -357,10 +395,8 @@ class Component {
     const target = this.target
 
     // -dom
-    remove(target)
-    remove(target[Anchor.COMPONENT_START])
-    remove(target[Anchor.COMPONENT_END])
-    delete this.target['#component']
+    delete target['#component']
+    this.childNodes.forEach((childNode) => remove(ifAnchor(childNode)))
 
     // onunload
     const event = new Event('unload')

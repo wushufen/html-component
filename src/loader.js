@@ -31,7 +31,7 @@ class ${className} extends Component {
     this.render = function(){
       ${code}
     }
-    this.render()
+    this.render() // TODO ?? after mount
   }
 }
 )`

@@ -33,6 +33,10 @@ function each(list, cb) {
   }
 }
 
+function last(array) {
+  return array[array.length - 1]
+}
+
 // object, key => bool
 function hasOwn(object, key) {
   return object && hasOwnProperty.call(object, key)
@@ -51,4 +55,4 @@ function getObjId(obj) {
   }
 }
 
-export { hasOwnProperty, forEach, each, hasOwn, getObjId }
+export { hasOwnProperty, forEach, each, last, hasOwn, getObjId }

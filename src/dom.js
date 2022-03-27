@@ -16,43 +16,25 @@ function Anchor(node, type) {
 Anchor.FOR_START = '#for_start'
 Anchor.FOR_END = '#for_end'
 Anchor.IF = '#if'
-Anchor.COMPONENT_START = '#component_start'
-Anchor.COMPONENT_END = '#component_end'
 
 /**
  *
  * @param {Node} node
- * @returns {Node} node || IF || COMPONENT_START
+ * @returns node || IF
  */
-function getNodeFirst(node) {
-  if (node.parentNode) {
-    return node
-  }
-  if (node[Anchor.IF]?.parentNode) {
-    return node[Anchor.IF]
-  }
-  if (node[Anchor.COMPONENT_START]?.parentNode) {
-    return node[Anchor.COMPONENT_START]
-  }
-  return node
+function ifAnchor(node) {
+  return node['#if(bool)'] === false ? node[Anchor.IF] : node
 }
 
 /**
  *
- * @param {Node} node
- * @returns {Node} node || IF || COMPONENT_END
+ * @param {Node[]} nodes
+ * @returns {DocumentFragment}
  */
-function getNodeLast(node) {
-  if (node.parentNode) {
-    return node
-  }
-  if (node[Anchor.IF]?.parentNode) {
-    return node[Anchor.IF]
-  }
-  if (node[Anchor.COMPONENT_END]?.parentNode) {
-    return node[Anchor.COMPONENT_END]
-  }
-  return node
+function Fragment(nodes = []) {
+  const fragment = document.createDocumentFragment()
+  nodes.forEach((node) => append(fragment, node))
+  return fragment
 }
 
 /**
@@ -61,25 +43,10 @@ function getNodeLast(node) {
  * @param {Node} target
  */
 function insertBefore(node, target) {
-  if (!node) return
-  const nodeLast = getNodeLast(node)
-  const targetFirst = getNodeFirst(target)
-
-  if (nodeLast.nextSibling === targetFirst) {
+  if (node === target.previousSibling) {
     return
   }
-
-  const fragment = document.createDocumentFragment()
-  const component = node['#component']
-  if (component) {
-    fragment.appendChild(node[Anchor.COMPONENT_START])
-    component.childNodes.forEach((c) => fragment.appendChild(c)) // TODO component firstChild[if]
-    fragment.appendChild(node[Anchor.COMPONENT_END])
-  } else {
-    fragment.appendChild(node)
-  }
-
-  targetFirst.parentNode.insertBefore(fragment, targetFirst)
+  target.parentNode.insertBefore(node, target)
 }
 
 /**
@@ -88,68 +55,46 @@ function insertBefore(node, target) {
  * @param {Node} target
  */
 function insertAfter(node, target) {
-  if (!node) return
-  const nodeFirst = getNodeFirst(node)
-  const targetLast = getNodeLast(target)
-  const targetLastNext = targetLast.nextSibling
-
-  if (nodeFirst.previousSibling == targetLast) {
+  const next = target.nextSibling
+  if (node === next) {
     return
   }
-
-  if (targetLastNext) {
-    insertBefore(node, targetLastNext)
+  if (next) {
+    insertBefore(node, next)
   } else {
-    const tempNext = document.createComment('temp')
-    targetLast.parentNode.appendChild(tempNext)
-    insertBefore(node, tempNext)
-    tempNext.parentNode.removeChild(tempNext)
+    target.parentNode.appendChild(node)
   }
 }
-
 /**
  *
  * @param {Node} node
  */
 function remove(node) {
-  node?.parentNode?.removeChild(node)
-  if (node?.['#component']) {
-    node['#component'].childNodes.forEach(remove)
-    remove(node[Anchor.COMPONENT_START])
-    remove(node[Anchor.COMPONENT_END])
-  }
+  node.parentNode?.removeChild(node)
 }
 
 /**
  *
  * @param {Node} node
- * @param {Node|Node[]|NodeList} newNodes
+ * @param {Node} target
  */
-function replace(node, newNodes) {
-  if (newNodes.nodeType) {
-    node.parentNode?.replaceChild(newNodes, node)
-  } else {
-    const fragment = document.createDocumentFragment()
-    newNodes.forEach((newNode) => fragment.appendChild(newNode))
-    node.parentNode?.replaceChild(fragment, node)
-  }
+function replace(node, target) {
+  target.parentNode?.replaceChild(node, target)
 }
 
 /**
  *
- * @param {Element|DocumentFragment} node
- * @param {Node|Node[]|NodeList} childNodes
+ * @param {Element|DocumentFragment} parent
+ * @param {Node} node
  */
-function append(node, childNodes) {
-  if (!childNodes) return
-  childNodes = childNodes.nodeType ? [childNodes] : Array.from(childNodes)
-  childNodes.forEach((child) => node.appendChild(child))
+function append(parent, node) {
+  parent.appendChild(node)
 }
 
 /**
  *
  * @param {Node} node
- * @param {Node} parent
+ * @param {Element|DocumentFragment} parent
  */
 function appendTo(node, parent) {
   append(parent, node)
@@ -168,6 +113,8 @@ function parseHTML(html, container = document.createElement('div')) {
 
 export {
   Anchor,
+  ifAnchor,
+  Fragment,
   insertBefore,
   insertAfter,
   remove,

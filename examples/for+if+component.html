@@ -5,13 +5,12 @@
   .value="JSON.stringify(list, null, '  ')"
   autofocus
 ></textarea>
+<button if="list.length" onclick="list.length=0">list.length=0</button>
 
 <dl>
   <div>
     <dt>if</dt>
-    <dd>
-      <button if="list.length" onclick="list.length=0">${list}</button>
-    </dd>
+    <dd>${list}</dd>
   </div>
   <div>
     <dt>if+component</dt>
@@ -30,9 +29,9 @@
   <div>
     <dt>for+if+component</dt>
     <dd>
-      <HelloWorld for="const item of list" if="item" .value="item"
-        >${item}</HelloWorld
-      >
+      <HelloWorld for="const item of list" if="item" .value="item">
+        ${item}
+      </HelloWorld>
     </dd>
   </div>
   <div>
