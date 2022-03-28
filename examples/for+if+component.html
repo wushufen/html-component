@@ -15,7 +15,7 @@
   <div>
     <dt>if+component</dt>
     <dd>
-      <HelloWorld if="list.length" .value="list"></HelloWorld>
+      <HelloWorld if="list.length" .value="list">[slot]${list}</HelloWorld>
     </dd>
   </div>
   <div>
@@ -30,11 +30,11 @@
     <dt>for+if+component</dt>
     <dd>
       <HelloWorld for="const item of list" if="item" .value="item">
-        ${item}
+        [slot]${item}
       </HelloWorld>
     </dd>
   </div>
-  <div>
+  <!-- <div>
     <dt>for+for</dt>
     <dd>
       <ol>
@@ -45,14 +45,18 @@
         </li>
       </ol>
     </dd>
-  </div>
+  </div> -->
 </dl>
 
 <script>
   var HelloWorld
   var list = [1, 2, 3, ['a', 'b', 'c']]
-  this.onload = function ({ data: props = {} }) {
+  this.onload = function ({ props = {} }) {
     console.log('onload', arguments)
+  }
+
+  this.onunload = (e) => {
+    sessionStorage.onunload = 'yes'
   }
 </script>
 

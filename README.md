@@ -73,7 +73,7 @@ npm i -D HtmlComponent
                                                 input.oninput = function(event){ text=this.value }
 
 <!-- new 组件 -->
-<User .a="1" ...="{b: 2}"></User>               new User({a: 1, ...{b: 2}})
+<User .a="1" ...="{b: 2}"></User>               new User({props:{a: 1, ...{b: 2}}})
 <!-- <User></User> == <div new="User"></div> -->
 
 <!-- 数据，当前组件变量和全局变量都可以在模板中作用 -->

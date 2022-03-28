@@ -1,4 +1,4 @@
-import { hasOwnProperty, each } from './utils.js'
+import { hasOwnProperty, each, deepClone, deepSame } from './utils.js'
 import {
   insertBefore,
   insertAfter,
@@ -19,23 +19,6 @@ class Component {
   static tpl = `
   <!-- tpl[id] -->
   `
-  // => new => create
-  // => mount => onload => render
-  // => onchange => render <=
-  // => onunload => destory
-  create() {
-    // const self = this
-
-    // <script>
-    // var value = 1
-    // </script>
-
-    // code
-    this.render = function () {
-      // self.text('1', `${value}`)
-    }
-  }
-
   lastProps = {}
   props = {}
   target = null
@@ -74,9 +57,10 @@ class Component {
     const node = this.$(id)
 
     // diff?
-    if (node.nodeValue === value) return
+    if (node['#nodeValue'] === value) return
 
     node.nodeValue = value
+    node['#nodeValue'] = value
   }
   attr(id, name, value) {
     const node = this.$(id)
@@ -211,32 +195,23 @@ class Component {
       // clone
       cloneNode = cloneNode || cloneNodeTree(node)
 
-      // insert: ! for(true)+if(false)
+      // insert
+      const cloneNodeComponent = cloneNode['#component']
       const lastCloneNodeComponent = lastCloneNode['#component']
-      const lastCloneNodeLastChild = lastCloneNodeComponent
-        ? ifAnchor(
-            lastCloneNodeComponent.childNodes[
-              lastCloneNodeComponent.childNodes.length - 1
-            ]
-          )
+      const preNode = lastCloneNodeComponent
+        ? ifAnchor(lastCloneNodeComponent.childNodes.slice(-1)[0])
         : ifAnchor(lastCloneNode)
+      // ! for(true)+if(false)
       if (cloneNode['#if(bool)'] !== false) {
-        if (!cloneNode['#component']) {
-          insertAfter(cloneNode, lastCloneNodeLastChild)
+        if (!cloneNodeComponent) {
+          insertAfter(cloneNode, preNode)
         } else {
-          const cloneNodeComponent = cloneNode['#component']
-
           if (
-            lastCloneNodeLastChild.nextSibling !==
-            ifAnchor(cloneNodeComponent.childNodes[0])
+            preNode.nextSibling !== ifAnchor(cloneNodeComponent.childNodes[0])
           ) {
             insertAfter(
-              Fragment(
-                cloneNodeComponent.childNodes.map((childNode) =>
-                  ifAnchor(childNode)
-                )
-              ),
-              lastCloneNodeLastChild
+              Fragment(cloneNodeComponent.childNodes.map(ifAnchor)),
+              preNode
             )
           }
         }
@@ -325,6 +300,7 @@ class Component {
     function newOrRender(node, Class) {
       if (Class === Component || Class?.prototype instanceof Component) {
         let component = node['#component']
+
         // new
         if (!component) {
           component = new Class({ target, mode })
@@ -333,20 +309,34 @@ class Component {
           target['#component'] = component
         } else {
           // onchange
-          for (const key in component.props) {
-            if (component.props[key] !== component.lastProps[key]) {
-              const event = new Event('change')
-              event.data = component.props
-              event.props = component.props
-              event.lastProps = component.lastProps
-              component.onchange(event)
-              break
-            }
+          if (!deepSame(component.props, component.lastProps)) {
+            const event = new Event('change')
+            event.props = event.data = component.props
+            event.lastProps = component.lastProps
+
+            component.render()
+            component.onchange(event)
           }
         }
 
-        component.lastProps = { ...component.props }
+        component.lastProps = deepClone(component.props)
       }
+    }
+  }
+  // new => create (var)
+  // mount => +dom => onload => render
+  // props => onchange => render => *N
+  // destory => -dom => onunload
+  create() {
+    // const self = this
+
+    // <script>
+    // var value = 1
+    // </script>
+
+    // code
+    this.render = function () {
+      // self.text('1', `${value}`)
     }
   }
   mount(target, mode) {
@@ -377,7 +367,6 @@ class Component {
     target.addEventListener('load', function load(e) {
       target.removeEventListener('load', load)
       self.onload(e)
-      self.render() // TODO inject this.onload
     })
     target.dispatchEvent(event)
   }
@@ -388,7 +377,7 @@ class Component {
     this.render()
   }
   onunload() {
-    console.log('onunload', this)
+    // console.log('onunload', this)
   }
   destory() {
     const self = this
@@ -405,6 +394,9 @@ class Component {
       self.onunload(e)
     })
     target.dispatchEvent(event)
+
+    // -childComponents
+    this.childComponents.forEach((childComponent) => childComponent.destory())
   }
   /**
    * @example
