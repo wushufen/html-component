@@ -15,7 +15,6 @@ const HelloWorld = loader(
       console.log('HelloWorld', e.type, this.target, e.props, e.lastProps)
 
       value = e.data.value || value
-      self.render() // TODO inject
     }
     this.onchange = this.onload
     this.onunload = function () {

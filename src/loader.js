@@ -2,6 +2,12 @@ import { parseHTML, remove } from './dom.js'
 import Component from './Component.js'
 import { compile } from './compile.js'
 
+// fn(){code} => fn(){render(); code}
+function injectRender(code, render = 'self.render();') {
+  const functionReg = /\bfunction\b[^]*?\)\s*\{|=>\s*\{/g // function(){  =>{
+  return code.replace(functionReg, `$& ${render}; `)
+}
+
 /**
  *
  * @param {string} html
@@ -25,7 +31,10 @@ class ${className} extends Component {
     const self = this
 
     /* <script> ==================== */
-    ${scriptCode}
+    ${injectRender(
+      scriptCode,
+      'Promise.resolve("injected").then(()=>self.render());'
+    )}
     /* ==================== */
 
     // render
