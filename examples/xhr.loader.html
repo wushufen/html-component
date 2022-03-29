@@ -1,0 +1,89 @@
+<textarea
+  rows="15"
+  cols="100"
+  onchange="list=JSON.parse(this.value)"
+  .value="JSON.stringify(list, null, '  ')"
+  autofocus
+></textarea>
+<button onclick="list.push(Math.random()*100 | 0)">list.length++</button>
+<button .disabled="!list.length" onclick="list.length--">list.length--</button>
+
+<dl>
+  <div>
+    <dt>if</dt>
+    <dd>
+      <div if="list.length">(${list.length})${list}</div>
+    </dd>
+  </div>
+  <div>
+    <dt>if+component</dt>
+    <dd>
+      <HelloWorld if="list.length" .value="list">[slot]${list}</HelloWorld>
+    </dd>
+  </div>
+  <div>
+    <dt>for+if</dt>
+    <dd>
+      <ul>
+        <li for="const item of list" if="item">${item}</li>
+      </ul>
+    </dd>
+  </div>
+  <div>
+    <dt>for+if+component</dt>
+    <dd>
+      <HelloWorld for="const item of list" if="item" .value="item">
+        [slot]${item}
+      </HelloWorld>
+    </dd>
+  </div>
+  <div>
+    <dt>for+for</dt>
+    <dd>
+      <ol>
+        <li for="const item of list">
+          <ol type="A">
+            <li for="const [i, item] of list.entries()">
+              <button xfor="const item of list" onclick="list.splice(i,1)">
+                ${item}
+              </button>
+            </li>
+          </ol>
+        </li>
+      </ol>
+    </dd>
+  </div>
+</dl>
+
+<script>
+  var HelloWorld
+  var list = [1, 2, 3, ['a', 'b', 'c']]
+  this.onload = function ({ props = {} }) {
+    console.log('onload', arguments)
+  }
+
+  this.onunload = (e) => {
+    sessionStorage.onunload = new Date()
+  }
+</script>
+
+<script type="module">
+  import loader from '../src/xhr.loader.js'
+  window.HelloWorld = loader('./time.html')
+</script>
+
+<style>
+  * {
+    background: #222;
+    color: #666;
+    border-color: #444;
+    font-size: 14px;
+  }
+  dl {
+  }
+  dl > div {
+    margin: 0.5em 0;
+    padding: 0.5em;
+    border: 1px solid;
+  }
+</style>
