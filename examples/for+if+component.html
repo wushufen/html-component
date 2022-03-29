@@ -5,12 +5,15 @@
   .value="JSON.stringify(list, null, '  ')"
   autofocus
 ></textarea>
-<button if="list.length" onclick="list.length=0">list.length=0</button>
+<button onclick="list.push(Math.random()*100 | 0)">list.length++</button>
+<button .disabled="!list.length" onclick="list.length--">list.length--</button>
 
 <dl>
   <div>
     <dt>if</dt>
-    <dd>${list}</dd>
+    <dd>
+      <div if="list.length">(${list.length})${list}</div>
+    </dd>
   </div>
   <div>
     <dt>if+component</dt>
@@ -34,18 +37,22 @@
       </HelloWorld>
     </dd>
   </div>
-  <!-- <div>
+  <div>
     <dt>for+for</dt>
     <dd>
       <ol>
         <li for="const item of list">
           <ol type="A">
-            <li for="const item of list">${item}</li>
+            <li for="const [i, item] of list.entries()">
+              <button xfor="const item of list" onclick="list.splice(i,1)">
+                ${item}
+              </button>
+            </li>
           </ol>
         </li>
       </ol>
     </dd>
-  </div> -->
+  </div>
 </dl>
 
 <script>
@@ -56,7 +63,7 @@
   }
 
   this.onunload = (e) => {
-    sessionStorage.onunload = 'yes'
+    sessionStorage.onunload = new Date()
   }
 </script>
 

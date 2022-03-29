@@ -314,8 +314,7 @@ class Component {
             event.props = event.data = component.props
             event.lastProps = component.lastProps
 
-            component.render()
-            component.onchange(event)
+            component.onchange(event) // render
           }
         }
 
@@ -323,7 +322,7 @@ class Component {
       }
     }
   }
-  // new => create (var)
+  // new => create (var+render)
   // mount => +dom => onload => render
   // props => onchange => render => *N
   // destory => -dom => onunload
@@ -396,6 +395,10 @@ class Component {
     target.dispatchEvent(event)
 
     // -childComponents
+    this.parentComponent.childComponents.splice(
+      this.parentComponent.childComponents.indexOf(this),
+      1
+    )
     this.childComponents.forEach((childComponent) => childComponent.destory())
   }
   /**

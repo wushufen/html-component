@@ -7,7 +7,7 @@ import {
   detectError,
 } from './parse.js'
 
-const ID_KEY = 'id' // <el ID="n#oid" />  <text ID="n-">${value}</text>
+const ID_KEY = 'id' // <el ID="n#oid" />  <text ID="-n">${value}</text>
 
 /**
  * ${1}
@@ -17,14 +17,14 @@ const ID_KEY = 'id' // <el ID="n#oid" />  <text ID="n-">${value}</text>
  *   </li>
  * </ul>
  * ==>
- * <text ID=1#>${1}</text>
+ * <text ID=-1>${1}</text>
  * <ul ID=2>
  *   <li ID=3>
- *     <text ID=4#>${4}</text>
+ *     <text ID=-4>${4}</text>
  *   </li>
  * </ul>
  * ==>
- * self.text(1, `${1}`)
+ * self.text(-1, `${1}`)
  *
  * self.attr(2, 'title', `${2}`)
  * self.prop(2, 'prop', 2)
@@ -35,7 +35,7 @@ const ID_KEY = 'id' // <el ID="n#oid" />  <text ID="n-">${value}</text>
  *     self.prop(3, 'value', 3)
  *     self.new(3, MyComponent)
  *
- *     self.text(4, `${4}`)
+ *     self.text(-4, `${4}`)
  *   })
  * })
  * @param {Element} node
@@ -73,31 +73,34 @@ function compile(node) {
         if (node.nodeType === 1) {
           const oid = node.getAttribute(ID_KEY) || ''
           node.setAttribute(ID_KEY, !oid ? i : `${i}${oid}`)
+          this.toString = function () {
+            return i
+          }
         }
         // ${exp} => <text ID>${exp}</text>
         else if (node.nodeType === 3) {
           const text = document.createElement('text')
-          text.setAttribute(ID_KEY, `${i}-`)
+          text.setAttribute(ID_KEY, `-${i}`)
           node.parentNode.insertBefore(text, node)
           text.appendChild(node)
+          this.toString = function () {
+            return -i
+          }
         }
 
-        this.toString = function () {
-          return i
-        }
-        return i
+        return this.toString()
       },
     }
     // oid
-    const oid = node.getAttribute?.('id')
-    if (oid) node.setAttribute('id', `#${oid}`)
+    const oid = node.getAttribute?.(ID_KEY)
+    if (oid) node.setAttribute(ID_KEY, `#${oid}`)
 
     // /* <node /> */
     const nodeString = (node.nodeValue || node.cloneNode().outerHTML)
       .replace(/\s+/g, ' ')
       .replace(/<\/[^<]*?>$/, '')
     if (nodeString.match(/\S/)) {
-      code += `\n// ${nodeString}\n`
+      code += `//: ${nodeString}\n`
     }
 
     // skip
@@ -109,7 +112,7 @@ function compile(node) {
       if (/\$?\{[^]*?\}/.test(node.nodeValue)) {
         // ${exp}
         const exp = parseExp(node.nodeValue)
-        code += `self.text('${id}', ${exp})\n`
+        code += `self.text(${id}, ${exp})\n`
         detectError(exp, node.nodeValue, html)
       }
       return
@@ -120,7 +123,7 @@ function compile(node) {
     // for
     const _for_ = parseFor(node.getAttribute('for'))
     if (_for_) {
-      code += `self.for('${id}', (${_for_.list}), function(${_for_.item},${_for_.key},${_for_.index}){\n`
+      code += `self.for(${id}, ${_for_.list}, function(${_for_.item},${_for_.key},${_for_.index}){\n`
       detectError(
         _for_.code.replace(/\b(var|let|const|of)\b/g, ';"$&";'),
         _for_.code,
@@ -134,15 +137,15 @@ function compile(node) {
     const _else_ = node.hasAttribute('else')
     if (_if_) {
       if (!_else_) {
-        code += `self.if('${id}', (${_if_}), function(){\n`
+        code += `self.if(${id}, ${_if_}, function(){\n`
       } else {
-        code += `.elseif('${id}', (${_if_}), function(){\n`
+        code += `.elseif(${id}, ${_if_}, function(){\n`
         node.removeAttribute('else')
       }
       detectError(_if_, _if_, html)
       node.removeAttribute('if')
     } else if (_else_) {
-      code += `.else('${id}', function(){\n`
+      code += `.else(${id}, function(){\n`
       node.removeAttribute('else')
     }
 
@@ -159,7 +162,7 @@ function compile(node) {
           onType = attrName.slice(1)
           onCode = `(${attrValue}).apply(this, arguments)`
         }
-        code += `self.on('${id}', "${onType}", function(event){
+        code += `self.on(${id}, "${onType}", function(event){
           ${onCode}; self.render()
         })\n`
 
@@ -180,7 +183,7 @@ function compile(node) {
         else {
           detectError(propName, attrName, html)
         }
-        code += `self.prop('${id}', ${propName}, function(){return ${attrValue}})\n`
+        code += `self.prop(${id}, ${propName}, function(){return ${attrValue}})\n`
 
         detectError(attrValue, attrValue, html)
         node.removeAttribute(attrName)
@@ -190,14 +193,14 @@ function compile(node) {
       // attr="${}"
       if (/\$?\{[^]*?\}/.test(attrValue)) {
         const exp = parseExp(attrValue)
-        code += `self.attr('${id}', '${attrName}', function(){return ${exp}})\n`
+        code += `self.attr(${id}, '${attrName}', function(){return ${exp}})\n`
         detectError(exp, attrValue, html)
       }
     })
 
     // new
     const _new_ = node.getAttribute('new')
-    const _mode_ = node.getAttribute('mode')
+    const _mode_ = node.getAttribute('mode') || ''
     let _Class_ = _new_
     if (!_new_) {
       for (const _var_ of ['this.constructor', 'self.constructor', ...vars]) {
@@ -208,7 +211,7 @@ function compile(node) {
       }
     }
     if (_Class_) {
-      code += `self.new('${id}', typeof ${_Class_} !== 'undefined' && ${_Class_}, '${_mode_}')\n`
+      code += `self.new(${id}, typeof ${_Class_} !== 'undefined' && ${_Class_}, '${_mode_}')\n`
       detectError(_Class_, _Class_, html)
       node.removeAttribute('new')
       node.removeAttribute('mode')
@@ -251,11 +254,11 @@ function getNodeMap(root) {
   loop(root)
   function loop(node) {
     const idx = node.getAttribute?.(ID_KEY)
-    // n  n-  n#oid
+    // n  -n  n#oid
     if (idx) {
-      // <text ID="n-">text</text> => text
-      if (/-$/.test(idx)) {
-        const id = idx.replace('-', '')
+      // <text ID="-n">text</text> => text
+      if (/^-/.test(idx)) {
+        const id = idx //.replace('-', '')
         const text = node.firstChild
         nodeMap[id] = text
         text['#id'] = id

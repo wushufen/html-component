@@ -11,10 +11,10 @@ function injectRender(code, render = 'self.render();') {
 /**
  *
  * @param {string} html
- * @param {string} className
+ * @param {string} ClassName
  * @returns {Component}
  */
-function loader(html, className = '') {
+function loader(html, ClassName = '') {
   const _container = parseHTML(html)
   const { scriptCode, code } = compile(_container)
 
@@ -24,7 +24,7 @@ function loader(html, className = '') {
   return Function(
     'Component',
     `return (
-class ${className} extends Component {
+class ${ClassName} extends Component {
   static tpl = \`${_container.innerHTML.replace(/[\\`$]/g, '\\$&')}\`
 
   create(){
