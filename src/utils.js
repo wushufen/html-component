@@ -73,7 +73,6 @@ function deepClone(object) {
 
   function clone(object) {
     const type = typeOf(object)
-    let _object = object
 
     const lastClone = cache.get(object)
     if (lastClone) {
@@ -81,16 +80,16 @@ function deepClone(object) {
     }
 
     if (type === 'Object' || type === 'Array') {
-      _object = type === 'Object' ? {} : []
+      const _object = type === 'Object' ? {} : []
       cache.set(object, _object)
 
       for (const key in object) {
-        const value = object[key]
-        _object[key] = clone(value)
+        _object[key] = clone(object[key])
       }
+      return _object
     }
 
-    return _object
+    return object
   }
 
   return clone(object)
@@ -100,15 +99,23 @@ function deepClone(object) {
  *
  * @param {*} object
  * @param {*} _object
+ * @param {function?} cb same: return true
  * @returns {boolean} same?
  */
-function deepSame(object, _object) {
+function deepSame(object, _object, cb) {
   const cache = new Map()
 
   function check(object, _object) {
     const type = typeOf(object)
     const _type = typeOf(_object)
 
+    if (cb?.(object, _object)) {
+      return
+    }
+
+    if (type !== _type) {
+      return false
+    }
     if (object === _object) {
       return true
     }
@@ -116,7 +123,7 @@ function deepSame(object, _object) {
       return true
     }
 
-    if (type === _type && (type === 'Object' || type === 'Array')) {
+    if (type === 'Object' || type === 'Array') {
       if (object.length !== _object.length) {
         return false
       }
@@ -134,6 +141,13 @@ function deepSame(object, _object) {
         }
       }
       return true
+    }
+
+    // TODO Map Set
+
+    // anonymous: .prop="e=>{}"
+    if (type === 'Function') {
+      return String(object) === String(_object)
     }
 
     return object === _object
