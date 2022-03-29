@@ -27,10 +27,10 @@ class Component {
   parentComponent = null
   childComponents = []
   constructor({ target, mode } = {}) {
-    const _container = parseHTML(this.constructor.tpl)
+    const wrapper = parseHTML(this.constructor.tpl)
     // id => node
-    this.nodeMap = getNodeMap(_container)
-    this.childNodes = Array.from(_container.childNodes)
+    this.nodeMap = getNodeMap(wrapper)
+    this.childNodes = Array.from(wrapper.childNodes)
     this.childNodes.forEach((childNode) => (childNode['#//component'] = this))
 
     this.create()
@@ -110,7 +110,6 @@ class Component {
       node[name] = value
     } catch (error) {
       console.warn(error)
-      // todo
     }
   }
   on(id, name, handler) {
@@ -239,9 +238,9 @@ class Component {
   }
   if(id, bool, cb) {
     const node = this.$(id)
+    const component = node['#component']
     const lastBool = '#if(bool)' in node ? node['#if(bool)'] : true
     let IF = node[Anchor.IF] || (node[Anchor.IF] = Anchor(node, Anchor.IF))
-    const component = node['#component']
 
     if (!!bool !== !!lastBool) {
       node['#if(bool)'] = !!bool
