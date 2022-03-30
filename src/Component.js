@@ -185,6 +185,7 @@ class Component {
               remove(ifAnchor(_childNode))
             )
           }
+          _cloneNode['#move'] = true
 
           // TODO
           // [1,2,3]
@@ -193,24 +194,27 @@ class Component {
       }
       // clone
       cloneNode = cloneNode || cloneNodeTree(node)
+      cloneNode['#//item'] = item
 
       // insert
       const cloneNodeComponent = cloneNode['#component']
       const lastCloneNodeComponent = lastCloneNode['#component']
       const preNode = lastCloneNodeComponent
-        ? ifAnchor(lastCloneNodeComponent.childNodes.slice(-1)[0])
-        : ifAnchor(lastCloneNode)
+        ? lastCloneNodeComponent.childNodes.slice(-1)[0]
+        : lastCloneNode
       // ! for(true)+if(false)
-      if (cloneNode['#if(bool)'] !== false) {
+      if (cloneNode['#if(bool)'] !== false || cloneNode['#move']) {
+        delete cloneNode['#move']
         if (!cloneNodeComponent) {
-          insertAfter(cloneNode, preNode)
+          insertAfter(ifAnchor(cloneNode), ifAnchor(preNode))
         } else {
           if (
-            preNode.nextSibling !== ifAnchor(cloneNodeComponent.childNodes[0])
+            ifAnchor(preNode).nextSibling !==
+            ifAnchor(cloneNodeComponent.childNodes[0])
           ) {
             insertAfter(
               Fragment(cloneNodeComponent.childNodes.map(ifAnchor)),
-              preNode
+              ifAnchor(preNode)
             )
           }
         }
