@@ -160,9 +160,13 @@ class Component {
     let lastCloneNode = FOR_START
 
     // ++
+    const isArrayList = list instanceof Array
+    const isMapList = typeof Map !== 'undefined' && list instanceof Map
     each(list, (item, key, index) => {
       let cloneNode = null
-      const itemKey = item // TODO type: array, object, map
+      const itemKey = isArrayList ? item : isMapList ? item[0] : key
+      // const itemKey = key
+
       for (let length = cloneNodeList.length; length; ) {
         const [_itemKey, _cloneNode] = cloneNodeList[0]
         // [1,...]
@@ -171,7 +175,9 @@ class Component {
           cloneNode = _cloneNode
           cloneNodeList.shift()
           break
-        } else {
+        }
+        // deleted || moved
+        else {
           cloneNodeList.push(cloneNodeList.shift()) // [1,...] => [..., 1]
           length--
           // [1,2,3]
@@ -196,19 +202,21 @@ class Component {
       // insertAfter
       const cloneNodeComponent = cloneNode['#component']
       const lastCloneNodeComponent = lastCloneNode['#component']
-      const preNode = lastCloneNodeComponent
-        ? lastCloneNodeComponent.childNodes.slice(-1)[0]
-        : lastCloneNode
+      const preNode =
+        lastCloneNode['#if(bool)'] === false
+          ? lastCloneNode['#if']
+          : lastCloneNodeComponent
+          ? ifAnchor(lastCloneNodeComponent.childNodes.slice(-1)[0])
+          : lastCloneNode
       if (!cloneNodeComponent) {
-        insertAfter(ifAnchor(cloneNode), ifAnchor(preNode))
+        insertAfter(ifAnchor(cloneNode), preNode)
       } else {
         if (
-          ifAnchor(preNode).nextSibling !==
-          ifAnchor(cloneNodeComponent.childNodes[0])
+          preNode.nextSibling !== ifAnchor(cloneNodeComponent.childNodes[0])
         ) {
           insertAfter(
             Fragment(cloneNodeComponent.childNodes.map(ifAnchor)),
-            ifAnchor(preNode)
+            preNode
           )
         }
       }
@@ -220,12 +228,12 @@ class Component {
 
       // next
       lastCloneNode = cloneNode
-      currentCloneNodeList.push([itemKey, cloneNode])
+      currentCloneNodeList.push([itemKey, cloneNode, item])
     })
     node['#cloneNodeList'] = currentCloneNodeList
 
     // --
-    each(cloneNodeList, ([, cloneNode]) => {
+    cloneNodeList.forEach(([, cloneNode]) => {
       if (!cloneNode['#component']) {
         remove(ifAnchor(cloneNode))
       } else {
@@ -236,8 +244,9 @@ class Component {
   if(id, bool, cb) {
     const node = this.$(id)
     const component = node['#component']
-    const lastBool = '#if(bool)' in node ? node['#if(bool)'] : true
-    let IF = node[Anchor.IF] || (node[Anchor.IF] = Anchor(node, Anchor.IF))
+    const lastBool =
+      '#if(bool)' in node ? node['#if(bool)'] : (node['#if(bool)'] = true)
+    const IF = node[Anchor.IF] || (node[Anchor.IF] = Anchor(node, Anchor.IF))
 
     if (!!bool !== !!lastBool) {
       node['#if(bool)'] = !!bool

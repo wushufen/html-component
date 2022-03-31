@@ -1,7 +1,7 @@
 <textarea
   rows="15"
   cols="60"
-  oninput="try{list=JSON.parse(this.value)}catch{}"
+  oninput="try{list=eval(`(${this.value})`)}catch{}"
   .value="JSON.stringify(list, null, '  ')"
   autofocus
 ></textarea>

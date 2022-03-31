@@ -173,7 +173,7 @@ function compile(node) {
 
       // .property [property]
       if (/^\.|^\[.*\]$/.test(attrName)) {
-        let propname = attrName.replace(/^\.|^\[|\]$/g, '')
+        const propname = attrName.replace(/^\.|^\[|\]$/g, '')
         let propName = attr2prop(node, propname)
         // .
         if (/^\./.test(attrName)) {
