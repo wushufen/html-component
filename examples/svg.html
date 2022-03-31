@@ -3,7 +3,7 @@
 <svg>
   <rect
     for="(item,i) in list"
-    .style="{x: i*40, width: 10, height: item.height}"
+    .style="{x: i*40, width: 10, y: 500 - item.height, height: item.height}"
   />
 </svg>
 
@@ -18,8 +18,6 @@
     }
   }
 
-  update()
-  Promise.resolve().then(update)
   setInterval(update, 1000)
 </script>
 

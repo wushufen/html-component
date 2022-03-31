@@ -1,18 +1,28 @@
 <textarea
   rows="15"
-  cols="100"
-  onchange="list=JSON.parse(this.value)"
+  cols="60"
+  oninput="try{list=JSON.parse(this.value)}catch{}"
   .value="JSON.stringify(list, null, '  ')"
   autofocus
 ></textarea>
 <button onclick="list.push(Math.random()*100 | 0)">list.length++</button>
+<button
+  onclick="list.splice(Math.random()*list.length | 0, 0, Math.random()*1000 | 0)"
+>
+  list.splice(+)
+</button>
+<button onclick="list.splice(Math.random()*list.length | 0, 1)">
+  list.splice(-)
+</button>
 <button .disabled="!list.length" onclick="list.length--">list.length--</button>
+<input .value="String(list)" oninput="list = this.value" />
 
 <dl>
   <div>
     <dt>if</dt>
     <dd>
-      <div if="list.length">(${list.length})${list}</div>
+      (${list.length})
+      <span if="list.length">${list}</span>
     </dd>
   </div>
   <div>
@@ -25,14 +35,14 @@
     <dt>for+if</dt>
     <dd>
       <ul>
-        <li for="const item of list" if="item">${item}</li>
+        <li for="const item of list" if="item%2">${item}</li>
       </ul>
     </dd>
   </div>
   <div>
     <dt>for+if+component</dt>
     <dd>
-      <HelloWorld for="const item of list" if="item" .value="item">
+      <HelloWorld for="const item of list" if="item%2" .value="item">
         [slot]${item}
       </HelloWorld>
     </dd>
@@ -42,13 +52,14 @@
     <dd>
       <ol>
         <li for="const item of list">
-          <ol type="A">
-            <li for="const [i, item] of list.entries()">
-              <button xfor="const item of list" onclick="list.splice(i,1)">
-                ${item}
-              </button>
-            </li>
-          </ol>
+          <div xfor="const item of list">
+            <button
+              for="const item of list"
+              onclick="list.splice(list.indexOf(item),1)"
+            >
+              ${item}
+            </button>
+          </div>
         </li>
       </ol>
     </dd>

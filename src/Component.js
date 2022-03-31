@@ -147,10 +147,8 @@ class Component {
     let FOR_END = node[Anchor.FOR_END]
     if (!FOR_START) {
       FOR_START = Anchor(node, Anchor.FOR_START)
-      insertBefore(FOR_START, node)
-    }
-    if (!FOR_END) {
       FOR_END = Anchor(node, Anchor.FOR_END)
+      insertBefore(FOR_START, node)
       insertAfter(FOR_END, node)
       remove(node)
     }
@@ -185,7 +183,6 @@ class Component {
               remove(ifAnchor(_childNode))
             )
           }
-          _cloneNode['#move'] = true
 
           // TODO
           // [1,2,3]
@@ -196,27 +193,23 @@ class Component {
       cloneNode = cloneNode || cloneNodeTree(node)
       cloneNode['#//item'] = item
 
-      // insert
+      // insertAfter
       const cloneNodeComponent = cloneNode['#component']
       const lastCloneNodeComponent = lastCloneNode['#component']
       const preNode = lastCloneNodeComponent
         ? lastCloneNodeComponent.childNodes.slice(-1)[0]
         : lastCloneNode
-      // ! for(true)+if(false)
-      if (cloneNode['#if(bool)'] !== false || cloneNode['#move']) {
-        delete cloneNode['#move']
-        if (!cloneNodeComponent) {
-          insertAfter(ifAnchor(cloneNode), ifAnchor(preNode))
-        } else {
-          if (
-            ifAnchor(preNode).nextSibling !==
-            ifAnchor(cloneNodeComponent.childNodes[0])
-          ) {
-            insertAfter(
-              Fragment(cloneNodeComponent.childNodes.map(ifAnchor)),
-              ifAnchor(preNode)
-            )
-          }
+      if (!cloneNodeComponent) {
+        insertAfter(ifAnchor(cloneNode), ifAnchor(preNode))
+      } else {
+        if (
+          ifAnchor(preNode).nextSibling !==
+          ifAnchor(cloneNodeComponent.childNodes[0])
+        ) {
+          insertAfter(
+            Fragment(cloneNodeComponent.childNodes.map(ifAnchor)),
+            ifAnchor(preNode)
+          )
         }
       }
 

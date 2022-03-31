@@ -59,11 +59,8 @@ function insertAfter(node, target) {
   if (node === next) {
     return
   }
-  if (next) {
-    insertBefore(node, next)
-  } else {
-    target.parentNode.appendChild(node)
-  }
+
+  target.parentNode.insertBefore(node, next)
 }
 /**
  *
