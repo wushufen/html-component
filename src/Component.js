@@ -153,69 +153,82 @@ class Component {
     }
 
     // [[item,cloneNode], ...]
-    const cloneNodeList =
+    /** @type {array} */
+    const _cloneNodeList =
       node['#cloneNodeList'] || (node['#cloneNodeList'] = [])
-    const currentCloneNodeList = []
+    const _movedList = []
+    const cloneNodeList = []
     let lastCloneNode = FOR_START
 
     // ++
     const isArrayList = list instanceof Array
+    const isStringList = typeof list === 'string'
     const isMapList = typeof Map !== 'undefined' && list instanceof Map
     each(list, (item, key, index) => {
       let cloneNode = null
-      const itemKey = isArrayList ? item : isMapList ? item[0] : key
-      // const itemKey = key
+      const itemKey =
+        isArrayList || isStringList ? item : isMapList ? item[0] : key
+      const _index = _cloneNodeList.findIndex((_) => itemKey === _[0])
 
-      for (let length = cloneNodeList.length; length; ) {
-        const [_itemKey, _cloneNode] = cloneNodeList[0]
-        // [1,...]
-        // [1,...]
-        if (_itemKey === itemKey) {
-          cloneNode = _cloneNode
-          cloneNodeList.shift()
-          break
-        }
-        // deleted || moved
-        else {
-          cloneNodeList.push(cloneNodeList.shift()) // [1,...] => [..., 1]
-          length--
-          // [1,2,3]
-          // [2,3]
+      // =
+      if (_index === 0) {
+        cloneNode = _cloneNodeList[0][1]
+        _cloneNodeList.shift()
+      }
+      // --
+      else if (_index > 0) {
+        // [1,2,3,4,...]     ->     [...,4]  moved:[1,2]
+        // [    3,4,...]     maybe  [...,4,...,1,...]
+        for (let i = 0; i < _index; i++) {
+          const [, _cloneNode] = _cloneNodeList[i]
           if (!_cloneNode['#component']) {
             remove(ifAnchor(_cloneNode))
           } else {
+            // TODO mode
             _cloneNode['#component'].childNodes.forEach((_childNode) =>
               remove(ifAnchor(_childNode))
             )
           }
-
-          // TODO
-          // [1,2,3]
-          // [0,1,2,3]
         }
+        _movedList.push(..._cloneNodeList.splice(0, _index))
+        // =
+        cloneNode = _cloneNodeList[0][1]
+        _cloneNodeList.shift()
       }
-      // clone
-      cloneNode = cloneNode || cloneNodeTree(node)
-      cloneNode['#//item'] = item
+      // + | *
+      else {
+        const _movedIndex = _movedList.findIndex((_) => itemKey === _[0])
 
-      // insertAfter
-      const cloneNodeComponent = cloneNode['#component']
-      const lastCloneNodeComponent = lastCloneNode['#component']
-      const preNode = lastCloneNode[IF_FALSE]
-        ? lastCloneNode[Anchor.IF]
-        : lastCloneNodeComponent
-        ? ifAnchor(lastCloneNodeComponent.childNodes.slice(-1)[0])
-        : lastCloneNode
-      if (!cloneNodeComponent) {
-        insertAfter(ifAnchor(cloneNode), preNode)
-      } else {
-        if (
-          preNode.nextSibling !== ifAnchor(cloneNodeComponent.childNodes[0])
-        ) {
-          insertAfter(
-            Fragment(cloneNodeComponent.childNodes.map(ifAnchor)),
-            preNode
-          )
+        // +
+        if (_movedIndex === -1) {
+          cloneNode = cloneNodeTree(node)
+          cloneNode['#//item'] = item
+        }
+        // *
+        else {
+          cloneNode = _movedList[_movedIndex][1]
+          _movedList.splice(_movedIndex, 1)
+        }
+
+        // insertAfter
+        const cloneNodeComponent = cloneNode['#component']
+        const lastCloneNodeComponent = lastCloneNode['#component']
+        const preNode = lastCloneNode[IF_FALSE]
+          ? lastCloneNode[Anchor.IF]
+          : lastCloneNodeComponent
+          ? ifAnchor(lastCloneNodeComponent.childNodes.slice(-1)[0])
+          : lastCloneNode
+        if (!cloneNodeComponent) {
+          insertAfter(ifAnchor(cloneNode), preNode)
+        } else {
+          if (
+            preNode.nextSibling !== ifAnchor(cloneNodeComponent.childNodes[0])
+          ) {
+            insertAfter(
+              Fragment(cloneNodeComponent.childNodes.map(ifAnchor)),
+              preNode
+            )
+          }
         }
       }
 
@@ -226,12 +239,12 @@ class Component {
 
       // next
       lastCloneNode = cloneNode
-      currentCloneNodeList.push([itemKey, cloneNode, item])
+      cloneNodeList.push([itemKey, cloneNode, item])
     })
-    node['#cloneNodeList'] = currentCloneNodeList
+    node['#cloneNodeList'] = cloneNodeList
 
     // --
-    cloneNodeList.forEach(([, cloneNode]) => {
+    _cloneNodeList.concat(_movedList).forEach(([, cloneNode]) => {
       if (!cloneNode['#component']) {
         remove(ifAnchor(cloneNode))
       } else {
