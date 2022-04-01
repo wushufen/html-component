@@ -6,10 +6,9 @@ import {
   replace,
   append,
   parseHTML,
-  Anchor,
-  ifAnchor,
   Fragment,
 } from './dom.js'
+import { Anchor, ifAnchor, IF_FALSE } from './Anchor.js'
 import { getNodeMap, cloneNodeTree } from './compile.js'
 import {} from './index.js'
 Anchor.debug = true
@@ -202,12 +201,11 @@ class Component {
       // insertAfter
       const cloneNodeComponent = cloneNode['#component']
       const lastCloneNodeComponent = lastCloneNode['#component']
-      const preNode =
-        lastCloneNode['#if(bool)'] === false
-          ? lastCloneNode['#if']
-          : lastCloneNodeComponent
-          ? ifAnchor(lastCloneNodeComponent.childNodes.slice(-1)[0])
-          : lastCloneNode
+      const preNode = lastCloneNode[IF_FALSE]
+        ? lastCloneNode[Anchor.IF]
+        : lastCloneNodeComponent
+        ? ifAnchor(lastCloneNodeComponent.childNodes.slice(-1)[0])
+        : lastCloneNode
       if (!cloneNodeComponent) {
         insertAfter(ifAnchor(cloneNode), preNode)
       } else {
@@ -244,12 +242,11 @@ class Component {
   if(id, bool, cb) {
     const node = this.$(id)
     const component = node['#component']
-    const lastBool =
-      '#if(bool)' in node ? node['#if(bool)'] : (node['#if(bool)'] = true)
+    const lastBool = !node[IF_FALSE]
     const IF = node[Anchor.IF] || (node[Anchor.IF] = Anchor(node, Anchor.IF))
 
-    if (!!bool !== !!lastBool) {
-      node['#if(bool)'] = !!bool
+    if (!!bool !== lastBool) {
+      node[IF_FALSE] = !bool
       // true
       if (bool) {
         if (!component) {

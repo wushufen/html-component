@@ -5,7 +5,7 @@
  */
 function Anchor(node, type) {
   const anchor = Anchor.debug
-    ? document.createComment(` ${type} ${node.localName || node.nodeName} `)
+    ? document.createComment(` <${node.localName || node.nodeName}> ${type} `)
     : document.createTextNode('')
 
   node[type] = anchor
@@ -13,18 +13,9 @@ function Anchor(node, type) {
 
   return anchor
 }
-Anchor.FOR_START = '#for_start'
-Anchor.FOR_END = '#for_end'
-Anchor.IF = '#if'
-
-/**
- *
- * @param {Node} node
- * @returns node || IF
- */
-function ifAnchor(node) {
-  return node['#if(bool)'] === false ? node[Anchor.IF] : node
-}
+Anchor.FOR_START = '#<for_start>'
+Anchor.FOR_END = '#<for_end>'
+Anchor.IF = '#<if>'
 
 /**
  *
@@ -110,7 +101,6 @@ function parseHTML(html, container = document.createElement('div')) {
 
 export {
   Anchor,
-  ifAnchor,
   Fragment,
   insertBefore,
   insertAfter,
