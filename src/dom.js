@@ -1,24 +1,5 @@
 /**
  *
- * @param {Node} node
- * @returns {Comment|Text}
- */
-function Anchor(node, type) {
-  const anchor = Anchor.debug
-    ? document.createComment(` <${node.localName || node.nodeName}> ${type} `)
-    : document.createTextNode('')
-
-  node[type] = anchor
-  anchor['#//<node>'] = node
-
-  return anchor
-}
-Anchor.FOR_START = '#<for_start>'
-Anchor.FOR_END = '#<for_end>'
-Anchor.IF = '#<if>'
-
-/**
- *
  * @param {Node[]} nodes
  * @returns {DocumentFragment}
  */
@@ -100,7 +81,6 @@ function parseHTML(html, container = document.createElement('div')) {
 }
 
 export {
-  Anchor,
   Fragment,
   insertBefore,
   insertAfter,
