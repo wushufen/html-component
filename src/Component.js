@@ -1,16 +1,17 @@
 import { hasOwnProperty, each, deepClone, deepSame } from './utils.js'
 import {
+  Fragment,
   insertBefore,
   insertAfter,
   remove,
   replace,
   append,
   parseHTML,
-  Fragment,
 } from './dom.js'
 import { Anchor, ifAnchor, IF_FALSE } from './Anchor.js'
 import { getNodeMap, cloneNodeTree } from './compile.js'
 import {} from './index.js'
+import FLIP from './FLIP.js'
 Anchor.debug = true
 
 class Component {
@@ -18,6 +19,9 @@ class Component {
   static tpl = `
   <!-- tpl[id] -->
   `
+  static FLIP_DURATION = 0.5
+  static FLIP_count = 0
+  static FLIP_MAX = 400
   lastProps = {}
   props = {}
   target = null
@@ -42,7 +46,7 @@ class Component {
     const value = values.pop()
     if (value === undefined) return ''
 
-    if (value?.constructor === Object || value instanceof Array) {
+    if (typeof value === 'object') {
       try {
         return `\n${JSON.stringify(value, null, '  ')}\n`
       } catch (_) {
@@ -130,6 +134,7 @@ class Component {
    *     self.prop(4, 'title', c)            // 3' + c   => 3''=> 4''
    *   })
    * })
+   * @returns {Node}
    */
   $(id) {
     let node = this.nodeMap[id]
@@ -140,7 +145,6 @@ class Component {
     return node
   }
   for(id, list, cb) {
-    // const origin = this.nodeMap[id]
     const node = this.$(id)
     let FOR_START = node[Anchor.FOR_START]
     let FOR_END = node[Anchor.FOR_END]
@@ -152,103 +156,122 @@ class Component {
       remove(node)
     }
 
-    // [[item,cloneNode], ...]
-    /** @type {array} */
-    const _cloneNodeList =
-      node['#cloneNodeList'] || (node['#cloneNodeList'] = [])
-    const _movedList = []
-    const cloneNodeList = []
-    let lastCloneNode = FOR_START
+    /** @type {[*,Element][]} */
+    const oldList = node['#list'] || (node['#list'] = [])
+    /** @type {[*,Element][]} */
+    const newList = []
+    /** @type {[*,Element][]} */
+    const notUsedList = [...oldList]
+    const used = ['used']
 
-    // ++
-    const isArrayList = list instanceof Array
-    const isStringList = typeof list === 'string'
+    /** @type {Node} */
+    let preItemNode = FOR_START
+
+    // each => newList
+    const isArrayLikeList = list instanceof Array || typeof list === 'string'
     const isMapList = typeof Map !== 'undefined' && list instanceof Map
     each(list, (item, key, index) => {
-      let cloneNode = null
-      const itemKey =
-        isArrayList || isStringList ? item : isMapList ? item[0] : key
-      const _index = _cloneNodeList.findIndex((_) => itemKey === _[0])
+      let itemNode = null
+      const itemKey = isArrayLikeList ? item : isMapList ? item[0] : key
 
-      // =
-      if (_index === 0) {
-        cloneNode = _cloneNodeList[0][1]
-        _cloneNodeList.shift()
+      // find
+      const _index = notUsedList.findIndex((_) => itemKey === _[0])
+      if (_index !== -1) {
+        itemNode = notUsedList[_index][1]
+        notUsedList[_index] = used
       }
-      // --
-      else if (_index > 0) {
-        // [1,2,3,4,...]     ->     [...,4]  moved:[1,2]
-        // [    3,4,...]     maybe  [...,4,...,1,...]
-        for (let i = 0; i < _index; i++) {
-          const [, _cloneNode] = _cloneNodeList[i]
-          if (!_cloneNode['#component']) {
-            remove(ifAnchor(_cloneNode))
-          } else {
-            // TODO mode
-            _cloneNode['#component'].childNodes.forEach((_childNode) =>
-              remove(ifAnchor(_childNode))
-            )
-          }
-        }
-        _movedList.push(..._cloneNodeList.splice(0, _index))
-        // =
-        cloneNode = _cloneNodeList[0][1]
-        _cloneNodeList.shift()
-      }
-      // + | *
+      // new
       else {
-        const _movedIndex = _movedList.findIndex((_) => itemKey === _[0])
-
-        // +
-        if (_movedIndex === -1) {
-          cloneNode = cloneNodeTree(node)
-          cloneNode['#//item'] = item
-        }
-        // *
-        else {
-          cloneNode = _movedList[_movedIndex][1]
-          _movedList.splice(_movedIndex, 1)
-        }
-
-        // insertAfter
-        const cloneNodeComponent = cloneNode['#component']
-        const lastCloneNodeComponent = lastCloneNode['#component']
-        const preNode = lastCloneNode[IF_FALSE]
-          ? lastCloneNode[Anchor.IF]
-          : lastCloneNodeComponent
-          ? ifAnchor(lastCloneNodeComponent.childNodes.slice(-1)[0])
-          : lastCloneNode
-        if (!cloneNodeComponent) {
-          insertAfter(ifAnchor(cloneNode), preNode)
-        } else {
-          if (
-            preNode.nextSibling !== ifAnchor(cloneNodeComponent.childNodes[0])
-          ) {
-            insertAfter(
-              Fragment(cloneNodeComponent.childNodes.map(ifAnchor)),
-              preNode
-            )
-          }
-        }
+        itemNode = cloneNodeTree(node)
+        itemNode['#_new'] = true
+        itemNode['#//item'] = item
       }
 
-      // >>>
-      this.currentCloneNode = cloneNode
+      // != index
+      if (index !== _index) {
+        // new
+        if (_index === -1) {
+          //
+        }
+        // move
+        else {
+          // flip
+          if (Component.FLIP_count < Component.FLIP_MAX) {
+            Component.FLIP_count++
+            const flip = (itemNode['#_flip'] = new FLIP(itemNode))
+            flip.first()
+          }
+        }
+        itemNode['#_afterTo'] = preItemNode
+      }
+
+      // preItemNode
+      itemNode['#//preItemNode'] = preItemNode
+      preItemNode = itemNode
+
+      // newList
+      newList.push([itemKey, itemNode, item, key, index])
+    })
+    node['#//oldList'] = oldList
+    node['#list'] = newList
+
+    // forItemCallback
+    const forItemCallback = (itemNode, item, key, index) => {
+      this.currentCloneNode = itemNode
       cb.call(this, item, key, index)
       delete this.currentCloneNode
+    }
 
-      // next
-      lastCloneNode = cloneNode
-      cloneNodeList.push([itemKey, cloneNode, item])
-    })
-    node['#cloneNodeList'] = cloneNodeList
+    // insertAfter
+    function nextItemNode(itemNode) {
+      if (!itemNode['#_afterTo']) return
 
-    // --
-    _cloneNodeList.concat(_movedList).forEach(([, cloneNode]) => {
-      if (!cloneNode['#component']) {
-        remove(ifAnchor(cloneNode))
+      const preItemNode = itemNode['#_afterTo']
+      delete itemNode['#_afterTo']
+      const component = itemNode['#component']
+      const lastComponent = preItemNode['#component']
+      const preNode = preItemNode[IF_FALSE]
+        ? preItemNode[Anchor.IF]
+        : lastComponent
+        ? ifAnchor(lastComponent.childNodes.slice(-1)[0])
+        : preItemNode
+      if (!component) {
+        insertAfter(ifAnchor(itemNode), preNode)
       } else {
-        cloneNode['#component']?.destory()
+        if (preNode.nextSibling !== ifAnchor(component.childNodes[0])) {
+          insertAfter(Fragment(component.childNodes.map(ifAnchor)), preNode)
+        }
+      }
+    }
+
+    // sort: new | move
+    newList.forEach(([, itemNode, item, key, index]) => {
+      // forItemCallback
+      forItemCallback(itemNode, item, key, index)
+      // sort insertAfter
+      nextItemNode(itemNode)
+    })
+    // remove
+    notUsedList.forEach(([, _itemNode]) => {
+      if (!_itemNode) return
+      if (!_itemNode['#component']) {
+        remove(ifAnchor(_itemNode))
+      } else {
+        _itemNode['#component']?.destory()
+      }
+    })
+
+    // flip play
+    newList.forEach(([, itemNode]) => {
+      const flip = itemNode['#_flip']
+      if (flip) {
+        flip.last()
+        flip.invert()
+        flip.play(Component.FLIP_DURATION)
+        delete itemNode['#_flip']
+        requestAnimationFrame(() => {
+          Component.FLIP_count--
+        })
       }
     })
   }

@@ -1,21 +1,24 @@
-<textarea
-  rows="15"
-  cols="60"
-  oninput="try{list=eval(`(${this.value})`)}catch{}"
-  .value="JSON.stringify(list, null, '  ')"
-  autofocus
-></textarea>
-<button onclick="list.push(Math.random()*100 | 0)">list.length++</button>
-<button
-  onclick="list.splice(Math.random()*list.length | 0, 0, Math.random()*1000 | 0)"
->
-  list.splice(+)
-</button>
-<button onclick="list.splice(Math.random()*list.length | 0, 1)">
-  list.splice(-)
-</button>
-<button .disabled="!list.length" onclick="list.length--">list.length--</button>
-<input .value="String(list)" oninput="list = this.value" />
+<aside>
+  <textarea
+    rows="15"
+    cols="60"
+    oninput="try{list=eval(`(${this.value})`)}catch{}"
+    .value="JSON.stringify(list, null, '  ')"
+    autofocus
+  ></textarea>
+  <hr />
+  <button onclick="bool=!bool">${bool}</button>
+  <button
+    onclick="list.splice(Math.random()*list.length | 0, 0, Math.random()*1000 | 0)"
+  >
+    list.splice(+)
+  </button>
+  <button onclick="list.splice(Math.random()*list.length | 0, 1)">
+    list.splice(-)
+  </button>
+  <button onclick="list.sort(_=>Math.random()-0.5)">shuffle</button>
+  <input .value="list.join(',')" oninput="list = this.value.split(',')" />
+</aside>
 
 <dl>
   <div>
@@ -26,25 +29,11 @@
     </dd>
   </div>
   <div>
-    <dt>if+component</dt>
-    <dd>
-      <HelloWorld if="list.length" .value="list">[slot]${list}</HelloWorld>
-    </dd>
-  </div>
-  <div>
     <dt>for+if</dt>
     <dd>
-      <ul>
-        <li for="const item of list" if="item%2">${item}</li>
-      </ul>
-    </dd>
-  </div>
-  <div>
-    <dt>for+if+component</dt>
-    <dd>
-      <HelloWorld for="const item of list" if="item%2" .value="item">
-        [slot]${item}
-      </HelloWorld>
+      <div>
+        <button for="const item of list" if="bool || item%2">${item}</button>
+      </div>
     </dd>
   </div>
   <div>
@@ -64,11 +53,27 @@
       </ol>
     </dd>
   </div>
+  <div>
+    <dt>if+component</dt>
+    <dd>
+      <HelloWorld if="list.length" .value="list">[slot]${list}</HelloWorld>
+    </dd>
+  </div>
+  <div>
+    <dt>for+if+component</dt>
+    <dd>
+      <HelloWorld for="const item of list" if="bool || item%2" .value="item">
+        [slot]${item}
+      </HelloWorld>
+    </dd>
+  </div>
 </dl>
-
 <script>
   var HelloWorld
-  var list = [1, 2, 3, ['a', 'b', 'c']]
+
+  let bool = true
+  let list = [1, 2, 3, ['a', 'b', 'c']]
+
   this.onload = function ({ props = {} }) {
     console.log('onload', arguments)
   }
@@ -85,16 +90,30 @@
 
 <style>
   * {
+    margin: 0;
     background: #222;
     color: #666;
     border-color: #444;
     font-size: 14px;
+    box-sizing: border-box;
+    transform-origin: 0 0;
+  }
+  body {
+    display: flex;
+    flex-direction: row-reverse;
+  }
+  body > * {
+    flex: none;
+    width: 50%;
+    padding: 1em;
   }
   dl {
   }
   dl > div {
-    margin: 0.5em 0;
     padding: 0.5em;
+    margin-bottom: -1px;
     border: 1px solid;
+    overflow: auto;
+    max-height: 500px;
   }
 </style>
