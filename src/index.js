@@ -22,8 +22,8 @@ function initIndex() {
     }
     create() {
       this.render = Function(`
-        console.timeEnd()
-        console.time()
+        //console.timeEnd()
+        //console.time()
         var self = this
 
         ${code}

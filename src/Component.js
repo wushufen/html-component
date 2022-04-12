@@ -170,9 +170,16 @@ class Component {
     // each => newList
     const isArrayLikeList = list instanceof Array || typeof list === 'string'
     const isMapList = typeof Map !== 'undefined' && list instanceof Map
+    const isIteratorList = list && list.next
     each(list, (item, key, index) => {
       let itemNode = null
-      const itemKey = isArrayLikeList ? item : isMapList ? item[0] : key
+      const itemKey = isArrayLikeList
+        ? item
+        : isMapList
+        ? item[0]
+        : isIteratorList && 1 in item
+        ? item[1]
+        : key
 
       // find
       const _index = notUsedList.findIndex((_) => itemKey === _[0])
