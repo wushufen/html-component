@@ -1,7 +1,7 @@
 {
-  "name": "htmlcomponent",
-  "version": "1.0.0",
-  "description": "一个语法简单但是功能强大的 `mvvm` 框架，它赋予了 `html` 自动更新视图和组件化的能力。",
+  "name": "@wushufen/html-component",
+  "version": "0.0.0",
+  "description": "An HTML enhancement framework",
   "type": "module",
   "main": "src/index.js",
   "directories": {
@@ -13,14 +13,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wusfen/HtmlComponent.git"
+    "url": "git+https://github.com/wusfen/html-component.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/wusfen/HtmlComponent/issues"
+    "url": "https://github.com/wusfen/html-component/issues"
   },
-  "homepage": "https://github.com/wusfen/HtmlComponent#readme",
+  "homepage": "https://github.com/wusfen/html-component#readme",
   "devDependencies": {
     "eslint": "^8.11.0"
   }
