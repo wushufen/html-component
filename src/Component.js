@@ -458,29 +458,37 @@ class Component {
   }
   onload() {}
   onchange() {}
+  onbeforeunload() {}
   onunload() {}
   destory() {
     const self = this
     const target = this.target
 
+    // onbeforeunload
+    const beforeUnloadEvent = new Event('beforeunload')
+    target.addEventListener('beforeunload', function beforeunload(e) {
+      target.removeEventListener('beforeunload', beforeunload)
+      self.onbeforeunload(e)
+    })
+    target.dispatchEvent(beforeUnloadEvent)
+
     // -dom
     delete target['#component']
     this.childNodes.forEach((childNode) => remove(ifAnchor(childNode)))
 
+    // -component
+    const siblingComponents = this.parentComponent?.childComponents || []
+    siblingComponents.splice(siblingComponents.indexOf(this), 1)
+    this.childComponents.forEach((childComponent) => childComponent.destory())
+    this.parentComponent = null
+
     // onunload
-    const event = new Event('unload')
+    const unloadEvent = new Event('unload')
     target.addEventListener('unload', function unload(e) {
       target.removeEventListener('unload', unload)
       self.onunload(e)
     })
-    target.dispatchEvent(event)
-
-    // -childComponents
-    this.parentComponent?.childComponents.splice(
-      this.parentComponent.childComponents.indexOf(this),
-      1
-    )
-    this.childComponents.forEach((childComponent) => childComponent.destory())
+    target.dispatchEvent(unloadEvent)
   }
   /**
    * @example
