@@ -7,7 +7,8 @@ import {
   detectError,
 } from './parse.js'
 
-const ID_KEY = 'id' // <el ID="n#oid" />  <text ID="-n">${value}</text>
+const ID_KEY = 'id' // <el ID=oid>  =>  <el ID=id#oid />
+const TEXT_ID_KEY = '\u200CID\u200D\u200E ' // ${text} => ID ${text}
 
 /**
  * ${1}
@@ -17,14 +18,14 @@ const ID_KEY = 'id' // <el ID="n#oid" />  <text ID="-n">${value}</text>
  *   </li>
  * </ul>
  * ==>
- * <text ID=-1>${1}</text>
+ * 1 ${1}
  * <ul ID=2>
  *   <li ID=3>
- *     <text ID=-4>${4}</text>
+ *     4 ${4}
  *   </li>
  * </ul>
  * ==>
- * self.text(-1, `${1}`)
+ * self.text(1, `${1}`)
  *
  * self.attr(2, 'title', `${2}`)
  * self.prop(2, 'prop', 2)
@@ -35,7 +36,7 @@ const ID_KEY = 'id' // <el ID="n#oid" />  <text ID="-n">${value}</text>
  *     self.prop(3, 'value', 3)
  *     self.new(3, MyComponent)
  *
- *     self.text(-4, `${4}`)
+ *     self.text(4, `${4}`)
  *   })
  * })
  * @param {Element} node
@@ -73,21 +74,13 @@ function compile(node) {
         if (node.nodeType === 1) {
           const oid = node.getAttribute(ID_KEY) || ''
           node.setAttribute(ID_KEY, !oid ? i : `${i}${oid}`)
-          this.toString = function () {
-            return i
-          }
         }
-        // ${exp} => <text ID>${exp}</text>
+        // ${exp} => ID ${exp}
         else if (node.nodeType === 3) {
-          const text = document.createElement('text')
-          text.setAttribute(ID_KEY, `-${i}`)
-          node.parentNode.insertBefore(text, node)
-          text.appendChild(node)
-          this.toString = function () {
-            return -i
-          }
+          node.nodeValue = `${TEXT_ID_KEY.replace('ID', i)}${node.nodeValue}`
         }
 
+        this.toString = () => i
         return this.toString()
       },
     }
@@ -95,12 +88,12 @@ function compile(node) {
     const oid = node.getAttribute?.(ID_KEY)
     if (oid) node.setAttribute(ID_KEY, `#${oid}`)
 
-    // /* <node /> */
+    //$ <el>
     const nodeString = (node.nodeValue || node.cloneNode().outerHTML)
       .replace(/\s+/g, ' ')
       .replace(/<\/[^<]*?>$/, '')
     if (nodeString.match(/\S/)) {
-      code += `//: ${nodeString}\n`
+      code += `//$ ${nodeString}\n`
     }
 
     // skip
@@ -254,28 +247,27 @@ function getNodeMap(root) {
   loop(root)
   function loop(node) {
     const idx = node.getAttribute?.(ID_KEY)
-    // n  -n  n#oid
+    // <el ID=id#oid>
     if (idx) {
-      // <text ID="-n">text</text> => text
-      if (/^-/.test(idx)) {
-        const id = idx //.replace('-', '')
-        const text = node.firstChild
-        nodeMap[id] = text
-        text['#id'] = id
-        node.parentNode.replaceChild(text, node)
+      const [id, old] = idx.split('#')
+      if (id) {
+        nodeMap[id] = node
+        node['#id'] = id
       }
-      // <el ID /> => <el />
-      else {
-        const [id, old] = idx.split('#')
-        if (id) {
-          nodeMap[id] = node
-          node['#id'] = id
-        }
-        if (old) node.setAttribute(ID_KEY, old)
-        else node.removeAttribute(ID_KEY)
+      if (old) node.setAttribute(ID_KEY, old)
+      else node.removeAttribute(ID_KEY)
+    }
+    // ID ${text}
+    else {
+      const reg = RegExp('^' + TEXT_ID_KEY.replace('ID', '(\\d+)'))
+      const m = reg.exec(node.nodeValue)
+      if (m) {
+        const id = m[1]
+        nodeMap[id] = node
+        node['#id'] = id
       }
     }
-    Array.from(node.children).forEach(loop)
+    Array.from(node.childNodes).forEach(loop)
   }
 
   return nodeMap
