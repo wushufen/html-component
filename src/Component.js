@@ -10,7 +10,7 @@ import {
 } from './dom.js'
 import { Anchor, ifAnchor, IF_FALSE } from './Anchor.js'
 import { getNodeMap, cloneNodeTree } from './compile.js'
-import {} from './index.js'
+// import {} from './index.js'
 import FLIP from './FLIP.js'
 Anchor.debug = true
 
@@ -383,6 +383,30 @@ class Component {
       // self.text('1', `${value}`)
     }
   }
+  render() {
+    // compile code
+  }
+  renderCheck() {
+    // lock: render=>render
+    if (this.renderLock) {
+      console.warn('render circular!', this)
+      return
+    }
+    const lastTime = this.renderLastTime || 0
+    const delay = 1000 / 60 - 6
+
+    // throttle
+    clearTimeout(this.renderTimer)
+    if (new Date() - lastTime < delay) {
+      this.renderTimer = setTimeout(() => {
+        this.render()
+      }, delay)
+      return true
+    }
+
+    this.renderLastTime = new Date()
+    this.renderLock = true
+  }
   mount(target, mode) {
     const self = this
 
@@ -399,6 +423,7 @@ class Component {
       }
       append(target.shadowRoot, Fragment(this.childNodes))
     } else if (mode === 'wrap') {
+      target.innerHTML = ''
       append(target, Fragment(this.childNodes))
     } else {
       replace(Fragment(this.childNodes), target)
@@ -440,7 +465,7 @@ class Component {
     target.dispatchEvent(event)
 
     // -childComponents
-    this.parentComponent.childComponents.splice(
+    this.parentComponent?.childComponents.splice(
       this.parentComponent.childComponents.indexOf(this),
       1
     )

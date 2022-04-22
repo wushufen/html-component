@@ -35,6 +35,17 @@
         min-height: auto;
         box-shadow: 0px 0px 10px 5px #000;
       }
+      output {
+        position: fixed;
+        z-index: 9;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #fff;
+        color: #f00;
+        padding: 0 1em;
+        line-height: 1.5;
+      }
       @media screen and (max-width: 768px) {
         * {
           font-size: 12.5px;
@@ -70,132 +81,174 @@
         }
       }
     </style>
+    <script>
+      $ = function () {
+        return document.querySelector(...arguments)
+      }
+    </script>
   </head>
   <body>
     <main>
       <textarea></textarea>
       <iframe></iframe>
+      <template id="srcdoc">
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
+            />
+            <style>
+              @media screen and (pointer: fine) and (max-resolution: 1dppx) {
+                ::-webkit-scrollbar {
+                  max-width: 8px;
+                  max-height: 8px;
+                }
+                ::-webkit-scrollbar-corner {
+                  background: transparent;
+                }
+                ::-webkit-scrollbar-thumb {
+                  border: 1px solid transparent;
+                  border-radius: 9px;
+                  background: rgba(128, 128, 128, 0.5);
+                  background-clip: content-box;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <script>
+              addEventListener(
+                'error',
+                (e) => {
+                  parent.postMessage(['error', e.message], '*')
+                },
+                true
+              )
+            </script>
+            <script type="module">
+              import loader from './src/loader.js'
+              window.loader = loader
+            </script>
+            <script>
+              let app
+              onmessage = function (e) {
+                const { data: code } = e
+
+                function load() {
+                  if (!window.loader) {
+                    setTimeout(load, 10)
+                    return
+                  }
+                  console.clear()
+                  parent.postMessage(['error', ''], '*')
+
+                  const App = loader(code)
+                  const _app = new App()
+                  app?.destory()
+                  _app.mount(document.body, 'web')
+                  app = _app
+                  console.log('app:', app)
+                }
+                load()
+              }
+              parent.postMessage('ready', '*')
+            </script>
+          </body>
+        </html>
+      </template>
+      <script>
+        $('iframe').srcdoc = $('#srcdoc').innerHTML
+      </script>
     </main>
-  </body>
+    <output id="output">
+      <script>
+        addEventListener('message', (e) => {
+          if (e.data[0] === 'error') {
+            $('output').innerHTML = e.data[1]
+          }
+        })
+      </script>
+    </output>
 
-  <!--  -->
+    <!--  -->
 
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/lib/codemirror.css"
-  />
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/theme/monokai.css"
-  />
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/lib/codemirror.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/htmlmixed/htmlmixed.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/xml/xml.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/javascript/javascript.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/css/css.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/lib/codemirror.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/theme/monokai.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/lib/codemirror.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/htmlmixed/htmlmixed.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/xml/xml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/javascript/javascript.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/css/css.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/hint/javascript-hint.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/hint/xml-hint.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/hint/javascript-hint.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/hint/xml-hint.js"></script>
 
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/fold/foldgutter.css"
-  />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/fold/foldgutter.css"
+    />
 
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/fold/foldcode.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/fold/foldgutter.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/fold/xml-fold.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/fold/foldcode.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/fold/foldgutter.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/fold/xml-fold.js"></script>
 
-  <script>
-    const iframe = document.querySelector('iframe')
-    const textarea = document.querySelector('textarea')
-    const url = new URL(location)
+    <script>
+      const iframe = document.querySelector('iframe')
+      const textarea = document.querySelector('textarea')
+      const url = new URL(location)
 
-    const editor = CodeMirror.fromTextArea(textarea, {
-      mode: 'text/html',
-      theme: 'monokai',
-      lineNumbers: true,
-      lineWrapping: !true,
-      foldGutter: true,
-      gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-    })
-
-    // input code
-    editor.on('change', () => {
-      const code = editor.getValue()
-
-      // inject script
-      const scriptSrc = `${new URL('.', url)}src/index.js`
-
-      // update view
-      const srcdoc = `
-<html style="display:none">
-<head>
-  <meta charset="utf-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
-  />
-  <style>
-    @media screen and (pointer: fine) and (max-resolution: 1dppx) {
-      ::-webkit-scrollbar {
-        max-width: 8px;
-        max-height: 8px;
-      }
-      ::-webkit-scrollbar-corner {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        border: 1px solid transparent;
-        border-radius: 9px;
-        background: rgba(128, 128, 128, 0.5);
-        background-clip: content-box;
-      }
-    }
-  </style>
-
-  <script type="module">
-    import {} from "${scriptSrc}"
-    document.querySelector('html').style.display = ''
-  <\/script>
-
-  <script>
-  console.clear()
-  addEventListener('error', e=>{
-    // e.preventDefault()
-    // console.error(e)
-  }, true)
-  <\/script>
-<\/head>
-
-<body>
-  ${code}
-<\/body>
-
-<\/html>
-`
-
-      const src = `data:text/html,${encodeURIComponent(srcdoc)}`
-      // iframe.srcdoc = srcdoc
-      // iframe.src = src // !!history
-      iframe.contentWindow.location.replace(src)
-
-      // store
-      // localStorage.code = value
-      url.searchParams.set('code', code)
-      history.replaceState(null, null, url)
-    })
-
-    // init code
-    editor.setValue(
-      url.searchParams.get('code') ||
+      // init code
+      textarea.value =
+        url.searchParams.get('code') ||
         `
-<button onclick="alert(value)">hello</button>
+<button onclick="alert(value)">hello \${value}</button>
 
 <script>
   let value = 'world'
 <\/script>
 `
-    )
-  </script>
+      addEventListener('message', function readyHandler(e) {
+        if (e.data === 'ready') {
+          iframe.contentWindow.postMessage(textarea.value, '*')
+          removeEventListener('message', readyHandler)
+        }
+      })
+
+      const editor = CodeMirror.fromTextArea(textarea, {
+        mode: 'text/html',
+        theme: 'monokai',
+        lineNumbers: true,
+        lineWrapping: !true,
+        foldGutter: true,
+        gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+      })
+
+      // input code
+      editor.on('change', () => {
+        const code = editor.getValue()
+
+        iframe.contentWindow.postMessage(code, '*')
+
+        // store
+        // localStorage.code = value
+        url.searchParams.set('code', code)
+        history.replaceState(null, null, url)
+      })
+
+      // ! ctrl + s
+      addEventListener('keydown', (e) => {
+        if (e.key === 's' && e.ctrlKey) {
+          e.preventDefault()
+        }
+      })
+    </script>
+  </body>
 </html>

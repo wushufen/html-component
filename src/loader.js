@@ -25,45 +25,27 @@ function loader(html, ClassName = '') {
     'Component',
     `return (
 class ${ClassName} extends Component {
-  static tpl = \`${_container.innerHTML.replace(/[\\`$]/g, '\\$&')}\`
+  static tpl =
+\`${_container.innerHTML.replace(/[\\`$]/g, '\\$&')}\`
 
   create(){
     const self = this
 
-    /* <script> ==================== */
     ${injectRender(
       scriptCode,
       'Promise.resolve("injected").then(()=>self.render());'
     )}
-    /* ==================== */
 
-    // render
+    ;
     this.render = function(){
-      // lock: render=>render
-      if(this.render.lock) {
-        console.warn('render circular!', self, self.node)
-        return
-      }
-      // throttle
-      if (new Date - this.render.lastTime < this.render.delay) {
-          clearTimeout(this.render.timer)
-          this.render.timer = setTimeout(function () {
-              self.render()
-          }, this.render.delay)
-          return
-      }
-      this.render.lastTime = new Date
-      this.render.lock = true
+      if(this.renderCheck()) return
+      console.debug('render', this.target, {this:this})
 
-      /* dom ==================== */
-      ${code}
-      /* ==================== */
-      
+      \n${code}
+
       // -lock
-      this.render.lock = false
+      this.renderLock = false
     }
-    this.render.lastTime = 0
-    this.render.delay = 1000 / 60 - 6
   }
 }
 )`
