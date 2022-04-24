@@ -10,7 +10,13 @@ import {
 } from './dom.js'
 import { Anchor, ifAnchor, IF_FALSE } from './Anchor.js'
 import { getNodeMap, cloneNodeTree } from './compile.js'
-// import {} from './index.js'
+import {
+  setTimeout,
+  requestAnimationFrame,
+  hijackFnBefore,
+  hijackFnAfter,
+  hijackFn,
+} from './hijack.js'
 import FLIP from './FLIP.js'
 Anchor.debug = true
 
@@ -22,6 +28,7 @@ class Component {
   static FLIP_DURATION = 0.5
   static FLIP_count = 0
   static FLIP_MAX = 400
+  mounted = false
   lastProps = {}
   props = {}
   target = null
@@ -31,13 +38,15 @@ class Component {
   childComponents = []
   constructor({ target, mode } = {}) {
     const wrapper = parseHTML(this.constructor.tpl)
+    this.tempWrapper = wrapper
     // id => node
     this.nodeMap = getNodeMap(wrapper)
     this.childNodes = Array.from(wrapper.childNodes)
     this.childNodes.forEach((childNode) => (childNode['#//component'] = this))
 
+    hijackFnBefore(this, this.create)
     this.create()
-
+    hijackFnAfter(this, this.create)
     if (target) {
       this.mount(target, mode)
     }
@@ -116,8 +125,9 @@ class Component {
     }
   }
   on(id, name, handler) {
+    const self = this
     this.prop(id, name, function () {
-      return handler
+      return hijackFn(self, handler)
     })
   }
   /**
@@ -387,6 +397,8 @@ class Component {
     // compile code
   }
   renderCheck() {
+    if (!this.mounted) return true
+
     // lock: render=>render
     if (this.renderLock) {
       console.warn('render circular!', this)
@@ -414,20 +426,24 @@ class Component {
     this.target = target
     this.props = target['#props'] || {}
 
-    // insert this.childNodes
+    // insert childNodes
+    const childNodes = [...this.tempWrapper.childNodes]
     if (mode === 'web') {
       if (target.shadowRoot) {
         target.shadowRoot.innerHTML = ''
       } else {
         target.attachShadow({ mode: 'open' })
       }
-      append(target.shadowRoot, Fragment(this.childNodes))
+      append(target.shadowRoot, Fragment(childNodes))
     } else if (mode === 'wrap') {
       target.innerHTML = ''
-      append(target, Fragment(this.childNodes))
+      append(target, Fragment(childNodes))
     } else {
-      replace(Fragment(this.childNodes), target)
+      replace(Fragment(childNodes), target)
     }
+
+    // mounted
+    this.mounted = true
 
     // onload
     const event = new Event('load')
@@ -436,18 +452,13 @@ class Component {
     target.addEventListener('load', function load(e) {
       target.removeEventListener('load', load)
       self.onload(e)
+      self.render()
     })
     target.dispatchEvent(event)
   }
-  onload() {
-    this.render()
-  }
-  onchange() {
-    this.render()
-  }
-  onunload() {
-    // console.log('onunload', this)
-  }
+  onload() {}
+  onchange() {}
+  onunload() {}
   destory() {
     const self = this
     const target = this.target

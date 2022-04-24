@@ -99,6 +99,7 @@ function compile(node) {
     // skip
     if (node.nodeType !== 1 && node.nodeType !== 3) return
     if (/^(skip|script|style|template)$/i.test(node.tagName)) return
+    if (node.hasAttribute?.('skip')) return
 
     // text: ${}
     if (node.nodeType === 3) {
@@ -156,7 +157,7 @@ function compile(node) {
           onCode = `(${attrValue}).apply(this, arguments)`
         }
         code += `self.on(${id}, "${onType}", function(event){
-          ${onCode}; self.render()
+          ${onCode}
         })\n`
 
         detectError(onCode, attrValue, html)

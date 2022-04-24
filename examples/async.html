@@ -1,0 +1,134 @@
+<button onclick="array.push('[onclick]')">[onclick]</button>
+
+<pre .ref="pre=this">${array}</pre>
+
+<script>
+  let i = 0
+  const delay = 250
+  const array = []
+  let pre
+
+  function test(label, fun) {
+    setTimeout(() => {
+      fun(label)
+    }, i++ * delay)
+    setTimeout.__native.call(
+      window,
+      () => {
+        console.assert(pre.innerHTML.includes(label), label)
+      },
+      i * delay + 90
+    )
+  }
+
+  test('setTimeout', function (label) {
+    setTimeout(() => {
+      setTimeout(() => {
+        array.push(label)
+      })
+    })
+  })
+
+  test('Promise.resolve().then', function (label) {
+    Promise.resolve().then(() => {
+      array.push(label)
+    })
+  })
+
+  test('queueMicrotask', function (label) {
+    queueMicrotask(() => {
+      array.push(label)
+    })
+  })
+
+  test('then().then', function (label) {
+    Promise.resolve()
+      .then(() => {})
+      .then(() => {
+        array.push(label)
+      })
+  })
+
+  test('setTimeout:Promise.finally', function (label) {
+    new Promise((rs) => {
+      setTimeout(() => {
+        rs()
+      })
+    }).finally(() => {
+      array.push(label)
+    })
+  })
+
+  test('fetch:then', function (label) {
+    fetch('.').then(() => {
+      array.push(label)
+    })
+  })
+
+  test('xhr.onload', function (label) {
+    var xhr = new XMLHttpRequest()
+    xhr.open('get', '.', true)
+    xhr.onload = function () {
+      array.push(label)
+    }
+    xhr.send()
+  })
+
+  test('xhr.addEventListener:loadend', function (label) {
+    var xhr = new XMLHttpRequest()
+    xhr.open('get', '.', true)
+    xhr.addEventListener('loadend', () => {
+      array.push(label)
+    })
+    xhr.send()
+  })
+
+  test('createElement:img.onerror', function (label) {
+    const img = document.createElement('img') // new Image
+    img.onerror = (e) => {
+      array.push(label)
+    }
+    img.src = '.'
+  })
+
+  test('new Image().onerror', function (label) {
+    const img = new Image()
+    img.onerror = (e) => {
+      array.push(label)
+    }
+    img.src = '.'
+  })
+
+  test('addEventListener:click', function (label) {
+    let h
+    addEventListener(
+      'click',
+      (h = () => {
+        array.push(label)
+        removeEventListener('click', h)
+      })
+    )
+    setTimeout.__native.call(window, () => {
+      window.dispatchEvent(new Event('click'))
+    })
+  })
+
+  test('querySelector:onmouseleave', function (label) {
+    document.querySelector('html').onmouseleave = function () {
+      array.push(label)
+    }
+    setTimeout.__native.call(window, () => {
+      document.querySelector('html').dispatchEvent(new Event('mouseleave'))
+    })
+  })
+
+  test('🐞 document.ondblclick', function (label) {
+    // TODO
+    document.ondblclick = (e) => {
+      array.push(label)
+    }
+    setTimeout.__native.call(window, () => {
+      document.dispatchEvent(new Event('dblclick'))
+    })
+  })
+</script>

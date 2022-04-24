@@ -2,12 +2,6 @@ import { parseHTML, remove } from './dom.js'
 import Component from './Component.js'
 import { compile } from './compile.js'
 
-// fn(){code} => fn(){render(); code}
-function injectRender(code, render = 'self.render();') {
-  const functionReg = /\bfunction\b[^]*?\)\s*\{|=>\s*\{/g // function(){  =>{
-  return code.replace(functionReg, `$& ${render}; `)
-}
-
 /**
  *
  * @param {string} html
@@ -25,21 +19,16 @@ function loader(html, ClassName = '') {
     'Component',
     `return (
 class ${ClassName} extends Component {
-  static tpl =
-\`${_container.innerHTML.replace(/[\\`$]/g, '\\$&')}\`
+  static tpl = \n\`${_container.innerHTML.replace(/[\\`$]/g, '\\$&')}\`
 
   create(){
     const self = this
 
-    ${injectRender(
-      scriptCode,
-      'Promise.resolve("injected").then(()=>self.render());'
-    )}
+    \n${scriptCode};
 
-    ;
     this.render = function(){
+      // console.warn('render', {this:this})
       if(this.renderCheck()) return
-      console.debug('render', this.target, {this:this})
 
       \n${code}
 

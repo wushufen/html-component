@@ -1,4 +1,5 @@
 import { onSelf, addClass, removeClass, computeStyle } from './dom.js'
+import { requestAnimationFrame } from './hijack.js'
 /**
  * @see
  * https://aerotwist.com/blog/flip-your-animations/

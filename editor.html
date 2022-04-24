@@ -44,7 +44,7 @@
         background-color: #fff;
         color: #f00;
         padding: 0 1em;
-        line-height: 1.5;
+        line-height: 2;
       }
       @media screen and (max-width: 768px) {
         * {
@@ -147,7 +147,7 @@
                   const App = loader(code)
                   const _app = new App()
                   app?.destory()
-                  _app.mount(document.body, 'web')
+                  _app.mount(document.body, 'wrap')
                   app = _app
                   console.log('app:', app)
                 }
@@ -158,9 +158,6 @@
           </body>
         </html>
       </template>
-      <script>
-        $('iframe').srcdoc = $('#srcdoc').innerHTML
-      </script>
     </main>
     <output id="output">
       <script>
@@ -205,6 +202,9 @@
       const textarea = document.querySelector('textarea')
       const url = new URL(location)
 
+      // srcdoc
+      $('iframe').srcdoc = $('#srcdoc').innerHTML
+
       // init code
       textarea.value =
         url.searchParams.get('code') ||
@@ -245,7 +245,7 @@
 
       // ! ctrl + s
       addEventListener('keydown', (e) => {
-        if (e.key === 's' && e.ctrlKey) {
+        if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
           e.preventDefault()
         }
       })
