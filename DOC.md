@@ -2,11 +2,11 @@ DOC
 
 ---
 
-## ${ } 插值
+## ${ }
 
-与 js \``${}`\` 模板字符串语法一致
-
-文本节点和属性节点都可以，任何变量或表达式你都可以插入
+Is consistent with js \``${}`\` template string syntax.
+Both text nodes and attribute nodes work.
+You can insert any variable or expression。
 
 ```html
 <script>
@@ -22,82 +22,78 @@ DOC
 <div title="Hello ${value} !">Hello ${computed.value} !</div>
 ```
 
-相当于以下 js
+Equivalent to the following JS
 
 ```javascript
 div.setAttribute('title', `Hello ${value} !`)
 div.innerText = `Hello ${computed.value} !`
 ```
 
-_`object`、`array` 会尝试转为 `json` ，`undefined` 不会被输出_
-
-_`$` 可以省略，即 `{value}`_
+_`object`, `array` Will try to convert to `json`. `undefined` Will not be output_
 
 ---
 
-## .prop 属性
+## .prop
 
-`prop` 的意思指 `dom property`
+`prop` means `dom property`
 
-与 js `obj.key`、`obj[keyVar]` 语法一致
+Same syntax as js `obj.key`、`obj[keyVar]`
 
-以下相当于 js `div.title = text`
+The following is equivalent to js `div.title = text`
 
 ```html
 <div .title="text">...</div>
 ```
 
-输出富文本
+Output rich text
 
-以下相当于 js `div.innerHTML = html`
+The following is equivalent to js `div.innerHTML = html`
 
-_实际上浏览器会自动转为小写 `.innerhtml` ，但只要是 `js dom property` 本框架会自动映射_
+_In fact, the browser will automatically convert to lowercase `.innerhtml`, but the framework will automatically map any `js dom property`_
 
 ```html
 <div .innerHTML="html"></div>
 ```
 
-`this` 代表当前节点
-
-你可以访问当前节点的其它 property
+`this` represents the current node, You can access other properties of the current node
 
 ```html
 <div .title="this.tagName">...</div>
 ```
 
-将当前节点赋值给一个变量
+Assigns the current node to a variable
 
-_`.ref` 可以是任意的 `.prop`，只是为了获取当前节点_
+_`.ref` can be any `.prop`, just to get the current node_
 
 ```html
 <canvas .ref="el = this"></canvas>
 ```
 
-以下相当于 js `div[propVar] = value`
+The following is equivalent to js `div[propVar] = value`
 
-_由于 html 限制，这种方式只支持全小写的变量名、不允许有空格。可以用下面的 `...` 方式代替_
+_Due to HTML limitations, this way only supports variable names that are lowercase and do not allow spaces. But you can use the following way `...` to replace_
 
 ```html
 <div [propVar]="value">...</div>
 ```
 
-批量设置属性
+Batch Setting Properties
 
-以下相当于 js `Object.assign(div, object)`
+The following is equivalent to js `Object.assign(div, object)`
 
 ```html
 <div ...="object"></div>
 ```
 
-以下相当于 js `Object.assign(div, { [property]: value })`
+The following is equivalent to js `Object.assign(div, { [property]: value })`
 
 ```html
 <div ...="{ [property]: value }"></div>
 ```
 
-自定义 `setter`
+Custom `prop` `setter`
 
-比如
+for example
 
 ```javascript
 Component.defineSetter('asset', function (pass) {
@@ -114,7 +110,7 @@ Component.defineSetter('asset', function (pass) {
 
 `.class`
 
-已内置 `setter` 按 `bool` 值增删 `css类`
+Built-in `setter` add or remove `css classes` by `bool`
 
 ```html
 <div class="some" .class="{active: bool}" />
@@ -122,7 +118,7 @@ Component.defineSetter('asset', function (pass) {
 
 `.style`
 
-已内置 `setter`，自动按需 `+'px'`
+Built-in `setter` automatically `+'px'` on demand
 
 ```html
 <div style="height:10px" .style="{width: 10}" />
@@ -130,9 +126,9 @@ Component.defineSetter('asset', function (pass) {
 
 ---
 
-## if 条件
+## if
 
-与 js `if`、 `else if`、 `else` 语法一致
+Same syntax as js `if`, `else if`, `else`
 
 ```html
 <div if="(bool)"></div>
@@ -150,13 +146,13 @@ Component.defineSetter('asset', function (pass) {
 <div else></div>
 ```
 
-_括号可省略_
+_The parentheses can be omitted_
 
 ---
 
-## for 循环
+## for
 
-与 js `for..in`、 `for..of` 语法一致
+Same syntax as js `for..in`, `for..of`
 
 ```html
 <ul>
@@ -176,27 +172,27 @@ _括号可省略_
 </ul>
 ```
 
-_括号可省略_
+_The parentheses can be omitted_
 
-_如果你习惯这种写法 `(item, key?, index?) in list` 也可以_
+_If you're used to writing `(item, key?, index?) in list` that's fine_
 
-_跟 label 标签的 for 属性同名，但是它们的语法不同，所以并不冲突_
+_It has the same name as the `for` attribute of the `label` tag, but the syntax is different, so they do not conflict_
 
-_如果同一节点 `for` + `if` 同时存在，`for` 先于 `if` 运行，跟书写顺序无关。如果要过滤数据，建议在 js 层处理_
+_If the same node `for` + `if` exists at the same time, `for` runs before `if`, regardless of the writing order. If you want to filter data, it is recommended to do so in the JS layer_
 
 ---
 
-## on 事件
+## on
 
-与原生 `DOM0` 语法一致，`this` 指向的是当前节点，并且有一个名为 `event` 的事件变量，它接受的是要执行的代码
+Consistent with the native `DOM0` syntax, `this` refers to the current node and has an event variable named `event`, which accepts the code to execute
 
 ```html
 <button onclick="console.log(this, event)">button</button>
 ```
 
-`.prop` 语法一样可以注册事件，它接受的是函数
+The `.prop` syntax can also register events, which accept a function
 
-以下相当于 js `button.onclick = console.count`
+The following is equivalent to js `button.onclick = console.count`
 
 ```html
 <button .onclick="console.count">button</button>
@@ -204,15 +200,15 @@ _如果同一节点 `for` + `if` 同时存在，`for` 先于 `if` 运行，跟�
 
 ---
 
-## .prop + on 双向绑定
+## .prop + on (two-way-biding)
 
-`.value` + `oninput` 实现双向绑定
+`.value` + `oninput`
 
 ```html
 <input .value="text" oninput="text=this.value" />
 ```
 
-相当于以下 js
+Equivalent to the following js
 
 ```javascript
 // Model -> View
@@ -224,13 +220,13 @@ input.oninput = function (event) {
 }
 ```
 
-输入 `Number` 类型
+Input `Number` type
 
 ```html
 <input .value="number" oninput="number=Number(this.value)||0" />
 ```
 
-`contenteditable` + `.innerText` + `oninput` 任何元素都可以实现双向绑定
+`contenteditable` + `.innerText` + `oninput` Any element can be two-way-biding
 
 ```html
 <div
@@ -242,9 +238,9 @@ input.oninput = function (event) {
 
 ---
 
-## 组件
+## Component
 
-一个 `html` 就是一个组件，每一个组件实例都有独立的作用域
+An `html` is a component, and each component instance has its own scope
 
 ```html
 <!-- MyComponent.html -->
@@ -256,7 +252,7 @@ input.oninput = function (event) {
 <div .onclick="log">${value}</div>
 ```
 
-通过 `.prop` 语法给子组件的内部变量赋值。你可以传任何值，包括函数，这样它们就有了双向通信的能力
+Assigns values to internal variables of child components using the `.prop` syntax. You can pass any value, including functions, so that they have two-way communication
 
 ```html
 <!-- App.html -->
@@ -271,7 +267,7 @@ input.oninput = function (event) {
 </main>
 ```
 
-`this.constructor` 是当前组件的类（构造函数），可以实现递归，注意要有终止条件，避免死循环
+`this.constructor` is the class (constructor) of the current component, which can perform recursion, taking care to have termination conditions to avoid endless loops
 
 ```html
 <script>
@@ -284,20 +280,20 @@ input.oninput = function (event) {
 </main>
 ```
 
-`mode` 组件模式
+`mode` component mode
 
-设置组件的引用方式。_组件允许多个根节点_
+ets how the component is referenced. _One component allow multiple root nodes_
 
-- replace: 默认将组件根节点替换到原标签位置
-- wrap: 保留原标签并将组件根节点包含在内
-- web: 使用 web component
+- replace: By default, the component root node is replaced with the original label location
+- wrap: Keep the original label and include the component root node
+- web: Use the web component
 
 ```html
 <User mode="wrap"></User>
 <div new="User" mode="web"></div>
 ```
 
-设置默认模式
+Setting the Default mode
 
 ```javascript
 Component.defaultMode = 'replace'
