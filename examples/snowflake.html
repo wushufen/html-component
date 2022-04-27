@@ -1,0 +1,89 @@
+<span
+  for="const item of list"
+  .style="{transform: `translate(${item.x}vw, ${item.y}vh) scale(${item.r})`}"
+>
+  ❄️
+</span>
+
+<form>
+  <fieldset>
+    <label>speed</label>
+    <input
+      type="range"
+      min="-10"
+      max="10"
+      step="0.01"
+      .value="speed"
+      oninput="speed=this.value"
+    />
+    <var>${speed}</var>
+  </fieldset>
+  <fieldset>
+    <label>count</label>
+    <input
+      type="range"
+      min="0"
+      max="1000"
+      .value="count"
+      oninput="count=this.value"
+    />
+    <var>${count}</var>
+  </fieldset>
+</form>
+
+<pre hidden>${list}</pre>
+
+<script>
+  let speed = 0.25
+  let list = []
+  let count = 100
+
+  function run() {
+    list.length = count
+    for (let i = 0; i < list.length; i++) {
+      let item =
+        list[i] ||
+        (list[i] = {
+          x: Math.random() * 100,
+          y: Math.random() * 100 - 100,
+          r: 0.1 + Math.random() * 1,
+        })
+
+      item.y += speed * item.r
+      if (item.y > 110) item.y = -100
+      if (item.y < -100) item.y = 110
+    }
+
+    requestAnimationFrame(run)
+  }
+
+  run()
+</script>
+
+<style>
+  html,
+  body {
+    overflow: hidden;
+    background-color: #eee;
+  }
+
+  span {
+    font-size: 2vw;
+    position: absolute;
+    pointer-events: none;
+  }
+
+  form {
+  }
+  form > fieldset {
+    display: flex;
+    border: none;
+  }
+  form > fieldset > * {
+    flex: none;
+    min-width: 6ex;
+  }
+  form > fieldset > input {
+    flex: 1;
+  }
+</style>

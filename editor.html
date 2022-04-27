@@ -134,28 +134,37 @@
             </script>
             <script>
               let app
-              onmessage = function (e) {
-                const { data: code } = e
-
-                function load() {
-                  if (!window.loader) {
-                    setTimeout(load, 10)
-                    return
-                  }
-                  console.clear()
-                  parent.postMessage(['error', ''], '*')
-                  app?.destory()
-
-                  const App = loader(code)
-                  const _app = new App()
-                  _app.mount(document.body, 'wrap')
-
-                  app = _app
-                  console.log('app:', app)
+              function createApp(code) {
+                if (!window.loader) {
+                  setTimeout((_) => createApp(code), 10)
+                  return
                 }
-                load()
+
+                console.clear()
+                parent.postMessage(['error', ''], '*')
+                app?.destory()
+
+                const App = loader(code)
+                const _app = new App()
+                _app.mount(document.body, 'wrap')
+
+                app = _app
+                console.log('app:', app)
               }
-              parent.postMessage('ready', '*')
+
+              onmessage = function (e) {
+                const [type, value] = e.data || []
+
+                parent.postMessage(['re', e.data], '*')
+                switch (type) {
+                  case 'code':
+                    createApp(value)
+                    break
+
+                  default:
+                    break
+                }
+              }
             </script>
           </body>
         </html>
@@ -207,24 +216,9 @@
       // srcdoc
       $('iframe').srcdoc = $('#srcdoc').innerHTML
 
-      // init code
-      textarea.value =
-        url.searchParams.get('code') ||
-        `
-<button onclick="alert(value)">hello \${value}</button>
-
-<script>
-  let value = 'world'
-<\/script>
-`
-      addEventListener('message', function readyHandler(e) {
-        if (e.data === 'ready') {
-          iframe.contentWindow.postMessage(textarea.value, '*')
-          removeEventListener('message', readyHandler)
-        }
-      })
-
+      // editor
       const editor = CodeMirror.fromTextArea(textarea, {
+        autofocus: true,
         mode: 'text/html',
         theme: 'monokai',
         lineNumbers: true,
@@ -233,16 +227,68 @@
         gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
       })
 
+      // default code
+      let defaultCode = `
+<button onclick="alert(value)">hello \${value}</button>
+
+<script>
+  let value = 'world'
+<\/script>
+`
+      let lineSeparator = '\n'
+
+      // init code
+      const codeParam = url.searchParams.get('code')
+      const urlParam = url.searchParams.get('url')
+      if (codeParam) {
+        setTimeout(() => {
+          defaultCode = codeParam
+          editor.setValue(codeParam)
+          editor.clearHistory()
+        })
+      } else if (urlParam) {
+        fetch(urlParam)
+          .then((res) => res.text())
+          .then((text) => {
+            defaultCode = text
+            lineSeparator = text.match(/\r?\n/)?.[0]
+            editor.setValue(text)
+            editor.clearHistory()
+          })
+      } else {
+        setTimeout(() => {
+          editor.setValue(defaultCode)
+          editor.clearHistory()
+        })
+      }
+
+      // send
+      function send(type, value) {
+        let success = false
+        addEventListener('message', function f(e) {
+          success = true
+          removeEventListener('message', f)
+        })
+        iframe.contentWindow.postMessage([type, value], '*')
+        setTimeout(() => {
+          if (!success) {
+            send(type, value)
+          }
+        }, 300)
+      }
+
       // input code
       editor.on('change', () => {
-        const code = editor.getValue()
-
-        iframe.contentWindow.postMessage(code, '*')
+        const code = editor.getValue(lineSeparator)
+        send('code', code)
 
         // store
         // localStorage.code = value
-        url.searchParams.set('code', code)
-        history.replaceState(null, null, url)
+        if (code !== defaultCode) {
+          // url.searchParams.delete('url')
+          url.searchParams.set('code', code)
+          history.replaceState(null, null, url.toString().replace(/%2F/g, '/'))
+        }
       })
 
       // ! ctrl + s
@@ -251,6 +297,21 @@
           e.preventDefault()
         }
       })
+
+      // check browser
+      let ok
+      addEventListener('message', function f(e) {
+        ok = true
+        removeEventListener('message', f)
+      })
+      setTimeout(() => {
+        send('check')
+        setTimeout(() => {
+          if (!ok) {
+            alert('当前浏览器不支持\n请更换浏览器\nIOS微信请用外部浏览器打开')
+          }
+        }, 100)
+      }, 100)
     </script>
   </body>
 </html>
