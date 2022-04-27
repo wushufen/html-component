@@ -118,6 +118,7 @@
             </style>
           </head>
           <body>
+            loading...
             <script>
               addEventListener(
                 'error',
@@ -143,11 +144,12 @@
                   }
                   console.clear()
                   parent.postMessage(['error', ''], '*')
+                  app?.destory()
 
                   const App = loader(code)
                   const _app = new App()
-                  app?.destory()
                   _app.mount(document.body, 'wrap')
+
                   app = _app
                   console.log('app:', app)
                 }

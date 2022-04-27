@@ -13,9 +13,10 @@ import { getNodeMap, cloneNodeTree } from './compile.js'
 import {
   setTimeout,
   requestAnimationFrame,
+  hijackFn,
   hijackFnBefore,
   hijackFnAfter,
-  hijackFn,
+  hijackDestroy,
 } from './hijack.js'
 import FLIP from './FLIP.js'
 Anchor.debug = true
@@ -45,7 +46,13 @@ class Component {
     this.childNodes.forEach((childNode) => (childNode['#//component'] = this))
 
     hijackFnBefore(this, this.create)
-    this.create()
+    try {
+      this.create()
+    } catch (e) {
+      setTimeout(() => {
+        this.onerror(e)
+      })
+    }
     hijackFnAfter(this, this.create)
     if (target) {
       this.mount(target, mode)
@@ -460,7 +467,11 @@ class Component {
   onchange() {}
   onbeforeunload() {}
   onunload() {}
+  onerror(e) {
+    throw e
+  }
   destory() {
+    console.log('destory:', this)
     const self = this
     const target = this.target
 
@@ -489,6 +500,9 @@ class Component {
       self.onunload(e)
     })
     target.dispatchEvent(unloadEvent)
+
+    // cancel
+    hijackDestroy(this)
   }
   /**
    * @example
