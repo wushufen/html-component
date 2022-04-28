@@ -12,6 +12,8 @@
 - 模板语法与 `js` 一致，没有记忆负担
 - 简单易上手，掌握只需 `3` 分钟
 
+<a href="https://wushufen.github.io/test/performance/performance.html">性能测试</a>
+
 ---
 
 ## 体验

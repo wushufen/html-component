@@ -1,0 +1,83 @@
+<section>
+  <h2>html-component</h2>
+  <div id="app"></div>
+  <script>
+    var length = 100
+    var framework = 'hc'
+
+    addEventListener('message', function (e) {
+      const { type, value } = e.data || {}
+      if (type === 'set') {
+        Object.assign(window, value)
+      }
+    })
+    function set(value) {
+      parent.postMessage(
+        {
+          type: 'set',
+          value,
+        },
+        '*'
+      )
+      postMessage(
+        {
+          type: 'set',
+          value,
+        },
+        '*'
+      )
+    }
+  </script>
+  <template id="tpl">
+    <h3>list.length: ${list.length}</h3>
+    <h3>render: ${renderCost}ms</h3>
+    <div>
+      <span for="const item of list"> ${item?.value} </span>
+    </div>
+    <script>
+      const list = []
+      let lastTime = 0
+      let renderCost = 0
+
+      function run() {
+        if (framework === 'hc') {
+          list.length = length
+
+          for (let i = 0; i < list.length; i++) {
+            list[i] = list[i] || { id: i, value: i }
+            list[i].value = Math.random()
+          }
+
+          if (lastTime) {
+            renderCost = new Date() - lastTime
+            set({
+              framework: 'vue',
+            })
+          }
+          lastTime = new Date()
+        } else {
+          lastTime = 0
+        }
+
+        requestAnimationFrame(run.bind(this))
+      }
+      run.call(this)
+    </script>
+  </template>
+  <script>
+    /**
+     * @returns {Element}
+     */
+    function $(s) {
+      return document.querySelector(s)
+    }
+  </script>
+  <script type="module">
+    import loader from '../../src/loader.js'
+    window.loader = loader
+    const App = loader($('#tpl').innerHTML)
+    const app = new App()
+    console.log('app:', app)
+    app.mount($('#app'))
+  </script>
+</section>

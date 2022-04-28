@@ -1,0 +1,81 @@
+<section>
+  <h2>vue</h2>
+  <div id="vue">
+    <h3>list.length: {{list.length}}</h3>
+    <h3>render: {{renderCost}}ms</h3>
+    <div>
+      <span v-for="item of list">{{item?.value}}&#x200B;</span>
+    </div>
+  </div>
+  <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.2.33/vue.global.min.js"></script>
+  <script>
+    var length = 100
+    var framework = 'hc'
+
+    addEventListener('message', function (e) {
+      const { type, value } = e.data || {}
+      if (type === 'set') {
+        Object.assign(window, value)
+      }
+    })
+    function set(value) {
+      parent.postMessage(
+        {
+          type: 'set',
+          value,
+        },
+        '*'
+      )
+      postMessage(
+        {
+          type: 'set',
+          value,
+        },
+        '*'
+      )
+    }
+  </script>
+  <script>
+    const vue = Vue.createApp({
+      data() {
+        return {
+          list: [],
+          lastTime: 0,
+          renderCost: 0,
+        }
+      },
+      methods: {
+        click(e) {
+          console.log(e)
+        },
+      },
+      mounted() {
+        const list = this.list
+
+        function run() {
+          if (framework === 'vue') {
+            list.length = length
+
+            for (let i = 0; i < list.length; i++) {
+              list[i] = list[i] || { id: i, value: i }
+              list[i].value = Math.random()
+            }
+
+            if (this.lastTime) {
+              this.renderCost = new Date() - this.lastTime
+              set({
+                framework: 'hc',
+              })
+            }
+            this.lastTime = new Date()
+          } else {
+            this.lastTime = 0
+          }
+
+          requestAnimationFrame(run.bind(this))
+        }
+        run.call(this)
+      },
+    }).mount('#vue')
+  </script>
+</section>

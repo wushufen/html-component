@@ -12,6 +12,8 @@ Feature:
 - **Template syntax is the same as `js`**, no memory burden
 - **Easy to learn**, only takes `3` minutes to master
 
+<a href="https://wushufen.github.io/test/performance/performance.html">Performance Test</a>
+
 ---
 
 ## TRY

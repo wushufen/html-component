@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="cn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      main {
+        display: flex;
+      }
+      main > iframe {
+        width: 50%;
+        height: 80vh;
+      }
+    </style>
+    <script>
+      function $(s) {
+        return document.querySelector(s)
+      }
+      function $$(s) {
+        return document.querySelectorAll(s)
+      }
+    </script>
+  </head>
+  <body>
+    <header>
+      <dl>
+        <div>
+          <dt>list.length</dt>
+          <dd>
+            <input
+              id="setLength"
+              type="range"
+              max="10000"
+              oninput="setLength(this.value)"
+            />
+            <span id="length"></span>
+          </dd>
+        </div>
+      </dl>
+    </header>
+    <main>
+      <iframe src="./hc.html"></iframe>
+      <iframe src="./vue.html"></iframe>
+    </main>
+    <script>
+      var length = 100
+      var framework = 'hc'
+
+      addEventListener('message', function (e) {
+        const { type, value } = e.data || {}
+        if (type === 'set') {
+          Object.assign(window, value)
+
+          $$('iframe').forEach((iframe) => {
+            iframe.contentWindow.postMessage({ type: 'set', value }, '*')
+          })
+        }
+      })
+      function set(value) {
+        postMessage(
+          {
+            type: 'set',
+            value,
+          },
+          '*'
+        )
+      }
+
+      function setLength(value) {
+        length = value
+        $('#setLength').value = length
+        $('#length').innerText = length
+        set({ length: value })
+      }
+      setLength(length)
+    </script>
+  </body>
+</html>

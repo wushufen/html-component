@@ -8,9 +8,8 @@
         <input
           type="range"
           .max="max"
-          oninput="list.length=this.value"
           .value="list.length"
-          autofocus
+          oninput="list.length=this.value"
         />
         ${list.length}
       </dd>
@@ -20,29 +19,42 @@
       <dd>
         <input
           type="checkbox"
-          onchange="isRandom=this.checked"
           .checked="isRandom"
+          onchange="isRandom=this.checked"
         />
       </dd>
     </div>
   </dl>
 
-  ${new Date}
+  ${+date}
   <section>
-    <span for="const item of list"> ${item} </span>
+    <span for="const item of list"> ${item?.value} </span>
   </section>
-
-  <script>
-    const list = [1, 2, 3, 4, 5]
-    let isRandom = false
-    let max = 2000
-    list.length = 100 //0
-
-    setInterval(() => {
-      list.fill(1)
-      if (isRandom) {
-        list.forEach((e, i) => (list[i] = Math.random()))
-      }
-    })
-  </script>
 </main>
+
+<script>
+  let bool = false
+  const list = []
+  let isRandom = false
+  let max = 10000
+  let date = new Date()
+  list.length = 100 //0
+
+  function run() {
+    bool = !bool
+    date = new Date()
+
+    bool ? console.time('render') : console.timeEnd('render')
+
+    for (let i = 0; i < list.length; i++) {
+      list[i] = list[i] || { id: i, value: i }
+      if (isRandom) {
+        list[i].value = Math.random()
+      }
+    }
+
+    requestAnimationFrame(run)
+  }
+
+  run()
+</script>

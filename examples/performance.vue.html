@@ -1,0 +1,69 @@
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+
+<main id="app">
+  <h1>Performance Test Vue</h1>
+
+  <dl>
+    <div>
+      <dt>list.length</dt>
+      <dd>
+        <input type="range" .max="max" v-model="list.length" />
+        {{list.length}}
+      </dd>
+    </div>
+    <div>
+      <dt>isRandom</dt>
+      <dd>
+        <input type="checkbox" v-model="isRandom" />
+      </dd>
+    </div>
+  </dl>
+
+  {{+date}}
+  <section>
+    <span v-for="item of list">{{item?.value}}&#x200B;</span>
+  </section>
+</main>
+
+<script>
+  const app = Vue.createApp({
+    data() {
+      return {
+        bool: false,
+        list: [],
+        max: 10000,
+        isRandom: false,
+        date: new Date(),
+        console: console,
+      }
+    },
+    methods: {
+      click(e) {
+        console.log(e)
+      },
+    },
+    mounted() {
+      const list = this.list
+      list.length = 100
+
+      function run() {
+        this.bool = !this.bool
+        this.date = new Date()
+
+        const bool = this.bool
+        const isRandom = this.isRandom
+        bool ? console.time('render') : console.timeEnd('render')
+
+        for (let i = 0; i < list.length; i++) {
+          list[i] = list[i] || { id: i, value: i }
+          if (isRandom) {
+            list[i].value = Math.random()
+          }
+        }
+
+        requestAnimationFrame(run.bind(this))
+      }
+      run.call(this)
+    },
+  }).mount('#app')
+</script>
