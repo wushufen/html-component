@@ -158,9 +158,9 @@
               }
 
               onmessage = function (e) {
-                const [type, value] = e.data || []
+                const { type, value, id } = e.data || {}
 
-                parent.postMessage(['re', e.data], '*')
+                parent.postMessage({ type, value, id, re: true }, '*')
                 switch (type) {
                   case 'code':
                     createApp(value)
@@ -188,29 +188,29 @@
     <!--  -->
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/lib/codemirror.css"
+      href="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/codemirror.css"
     />
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/theme/monokai.css"
+      href="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/theme/monokai.css"
     />
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/lib/codemirror.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/htmlmixed/htmlmixed.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/xml/xml.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/javascript/javascript.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/css/css.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/mode/xml/xml.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/mode/css/css.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/hint/javascript-hint.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/hint/xml-hint.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/addon/hint/javascript-hint.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/addon/hint/xml-hint.js"></script>
 
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/fold/foldgutter.css"
+      href="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/addon/fold/foldgutter.css"
     />
 
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/fold/foldcode.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/fold/foldgutter.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/fold/xml-fold.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/addon/fold/foldcode.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/addon/fold/foldgutter.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/codemirror/5.65.2/addon/fold/xml-fold.js"></script>
 
     <script>
       const iframe = document.querySelector('iframe')
@@ -268,17 +268,41 @@
 
       // send
       function send(type, value) {
-        let success = false
-        addEventListener('message', function f(e) {
-          success = true
-          removeEventListener('message', f)
-        })
-        iframe.contentWindow.postMessage([type, value], '*')
-        setTimeout(() => {
-          if (!success) {
-            send(type, value)
+        return new Promise((rs, rj) => {
+          let success = false
+          let timeout = false
+          let id = Math.random()
+
+          addEventListener('message', function f(e) {
+            const {
+              type: _type,
+              value: _value,
+              id: _id,
+              re: _re,
+            } = e.data || {}
+
+            if (_re && _id === id) {
+              success = true
+              rs(e.data)
+              removeEventListener('message', f)
+            }
+          })
+          _send(type, value)
+
+          function _send(type, value) {
+            iframe.contentWindow.postMessage({ type, value, id }, '*')
+            setTimeout(() => {
+              if (!success && !timeout) {
+                _send(type, value)
+              }
+            }, 100)
           }
-        }, 300)
+
+          setTimeout(() => {
+            timeout = true
+            rj('timeout')
+          }, 3000)
+        })
       }
 
       // input code
@@ -303,19 +327,9 @@
       })
 
       // check browser
-      let ok
-      addEventListener('message', function f(e) {
-        ok = true
-        removeEventListener('message', f)
+      send('check').catch(() => {
+        alert('当前浏览器不支持\n请更换浏览器\nIOS微信请用外部浏览器打开')
       })
-      setTimeout(() => {
-        send('check')
-        setTimeout(() => {
-          if (!ok) {
-            alert('当前浏览器不支持\n请更换浏览器\nIOS微信请用外部浏览器打开')
-          }
-        }, 100)
-      }, 100)
     </script>
   </body>
 </html>
