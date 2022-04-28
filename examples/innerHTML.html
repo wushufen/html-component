@@ -1,17 +1,16 @@
-<script type="module" src="../src/Component.js"></script>
+<code>${html}</code>
+
+<output .innerHTML="html"></output>
 
 <script>
-  var text = '<button>button</button>'
+  let html = '<button>button</button>'
 </script>
 
-<div>
-  <pre>text: {text}</pre>
-
-  <pre title="text: {text}" .innerHTML="text"></pre>
-
-  <button onclick="alert(text)">alert(text)</button>
-
-  <ul>
-    <li for="c in text" if="c==='o'">{c}</li>
-  </ul>
-</div>
+<style>
+  code {
+    background: #000;
+    color: #0ff;
+    padding: 0.25em;
+    border-radius: 0.25em;
+  }
+</style>

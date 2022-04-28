@@ -1,12 +1,3 @@
-<script type="module" src="../src/Component.js"></script>
-
-<template name="Com">
-  <span .title="title"> {title} </span>
-  <script>
-    var title = 'value2'
-  </script>
-</template>
-
 <main>
   <h1>Performance Test</h1>
 
@@ -15,10 +6,13 @@
       <dt>list.length</dt>
       <dd>
         <input
+          type="range"
+          .max="max"
           oninput="list.length=this.value"
           .value="list.length"
           autofocus
         />
+        ${list.length}
       </dd>
     </div>
     <div>
@@ -31,52 +25,24 @@
         />
       </dd>
     </div>
-    <div>
-      <dt>timeI</dt>
-      <dd>{timeI}</dd>
-    </div>
-    <div>
-      <dt>timeCost</dt>
-      <dd>{timeCost}ms</dd>
-    </div>
-    <div>
-      <dt>timeCostTotal</dt>
-      <dd>{timeCostTotal}ms</dd>
-    </div>
-    <div>
-      <dt>timeCostTotal/timeI</dt>
-      <dd>{timeCostTotal/timeI}ms</dd>
-    </div>
   </dl>
 
+  ${new Date}
   <section>
-    <span for="var item of list" is="Com" .title="item"> {item} </span>
+    <span for="const item of list"> ${item} </span>
   </section>
 
   <script>
-    var list = [1, 2, 3, 4, 5]
-    list.length = 100 //00
-    var isRandom = true
-    var timeCost = 0
-    var timeCostTotal = 0
-    var timeI = 0
+    const list = [1, 2, 3, 4, 5]
+    let isRandom = false
+    let max = 2000
+    list.length = 100 //0
 
     setInterval(() => {
-      // list.length = Math.random().toString().slice(-4)
       list.fill(1)
       if (isRandom) {
-        list.forEach((e, i) => (list[i] = Math.random().toString().slice(-1)))
+        list.forEach((e, i) => (list[i] = Math.random()))
       }
-
-      var startDate = new Date()
-      document.documentElement['#//component'].render()
-      var endDate = new Date()
-      var _timeCost = endDate - startDate
-      timeCostTotal += _timeCost
-      timeI += 1
-      document.documentElement['#//component'].render()
-      // timeCost = timeCostTotal / timeI
-      timeCost = _timeCost
-    }, 1000)
+    })
   </script>
 </main>

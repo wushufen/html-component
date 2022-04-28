@@ -1,0 +1,89 @@
+<script>
+  let value = 'hello world'
+  const array = [1, 2, 3]
+</script>
+
+<form>
+  <input .value="value" oninput="value=this.value" />
+
+  <input
+    type="number"
+    .value="Number(value)||0"
+    oninput="value=Number(this.value)||0"
+  />
+
+  <input
+    type="range"
+    max="5"
+    .value="value"
+    oninput="value=Number(this.value)||0"
+  />
+
+  <textarea .value="value" oninput="value=this.value"></textarea>
+
+  <div
+    contenteditable="true"
+    .innerText="value||'contenteditable'"
+    oninput="value=this.innerText"
+  ></div>
+
+  <select oninput="value = this.value">
+    <option>--</option>
+    <option
+      for="const item of array"
+      .value="item"
+      .selected="this.value == value"
+    >
+      {item}
+    </option>
+  </select>
+
+  <fieldset>
+    <label>
+      <input
+        type="radio"
+        .value="1 * 1"
+        .checked="this.value == value"
+        onclick="value=this.value"
+      />
+      string
+    </label>
+    <label>
+      <input
+        type="radio"
+        .yourprop="array"
+        .checked="this.yourprop===value"
+        onclick="value=this.yourprop"
+      />
+      any
+    </label>
+  </fieldset>
+
+  <label>
+    <input type="checkbox" .checked="value" onclick="value = !value" />
+    checkbox
+  </label>
+
+  <output> ${JSON.stringify(value)} </output>
+</form>
+
+<style>
+  form > * {
+    box-sizing: border-box;
+    display: block;
+    width: 300px;
+    padding: 0.25em 0.5em;
+    border: 1px solid #bbb;
+    border-radius: 0.25em;
+    margin: 0.5em auto;
+    font-size: 14px;
+  }
+
+  output {
+    background: #000;
+    color: #0ff;
+    padding: 0.25em;
+    border: 0;
+    border-radius: 0.25em;
+  }
+</style>

@@ -1,22 +1,20 @@
-<script type="module" src="../src/Component.js"></script>
+<output>{list}</output>
+
+<ul>
+  <li for="(item,i) in list" if="(item%2==0)">{item}</li>
+</ul>
 
 <script>
   var list = []
 
   function random() {
-    list.length = Math.random().toString().slice(-2)
+    list.length = Math.random().toString().slice(-1)
     list
       .fill(1)
       .forEach((e, i) => (list[i] = Math.random().toString().slice(-1)))
   }
 
-  // setInterval(() => {
-  //   random()
-  //   document.documentElement['#//component']?.render()
-  // }, 100)
+  setInterval(() => {
+    random()
+  }, 500)
 </script>
-
-<output>{list}</output>
-<ul>
-  <li for="(item,i) in list" if="(item%2==0)">{item}</li>
-</ul>
