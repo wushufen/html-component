@@ -37,6 +37,8 @@
       }
       output {
         position: fixed;
+        max-height: 25vh;
+        overflow: auto;
         z-index: 9;
         bottom: 0;
         left: 0;
@@ -44,7 +46,10 @@
         background-color: #fff;
         color: #f00;
         padding: 0 1em;
-        line-height: 2;
+      }
+      output:not(:empty) {
+        padding-top: 0.25em;
+        padding-bottom: 0.25em;
       }
       @media screen and (max-width: 768px) {
         * {
@@ -174,14 +179,13 @@
       <script>
         addEventListener('message', (e) => {
           if (e.data[0] === 'error') {
-            $('output').innerHTML = e.data[1]
+            $('output').innerText = e.data[1]
           }
         })
       </script>
     </output>
 
     <!--  -->
-
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/lib/codemirror.css"

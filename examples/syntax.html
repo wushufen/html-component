@@ -1,0 +1,44 @@
+<!-- ${ } -->
+<div>text: Hello ${text}</div>
+<div attr="Hello ${'world'}">div.setAttribute</div>
+
+<!-- .prop -->
+<div .prop="1 * 1">div.prop</div>
+<div [prop]="1 + 1">div[prop]</div>
+<div ...="{prop: 1, [prop]: 2}">...{ <span>obj</span> }</div>
+
+<!-- if -->
+<div if="(array[0] % 2)">if</div>
+<div else if="(array[1] % 2)">else if</div>
+<div else>else</div>
+
+<!-- for -->
+<ol>
+  <li for="(const item of array)">for...of: ${item}</li>
+</ol>
+<ul>
+  <li for="(var key in object)">for...in: ${key}: ${object[key]}</li>
+</ul>
+
+<!-- on -->
+<button onclick="change(event)">dom0: onclick</button>
+<button .onclick="change">.prop: .onclick</button>
+
+<!-- .prop + on -->
+<input .value="text" oninput="text=this.value" />
+
+<!-- script -->
+<script>
+  let text = 'world'
+  const prop = 'title'
+  const object = { a: 1, b: 2 }
+  const array = [1, 2, 3, 4, 5]
+
+  function change() {
+    text = text.slice(1) + text[0]
+    object.key = 'value'
+    array.length -= 1
+    array.push((Math.random() * 10) | 0)
+    array.sort((a, b) => Math.random() - 0.5)
+  }
+</script>

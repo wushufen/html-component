@@ -9,6 +9,7 @@ import {
 
 const ID_KEY = 'id' // <el ID=oid>  =>  <el ID=id#oid />
 const TEXT_ID_KEY = '\u200CID\u200D\u200E ' // ${text} => ID ${text}
+const TEXT_ID_KEY_REG = RegExp('^' + TEXT_ID_KEY.replace('ID', '(\\d+)'))
 
 /**
  * ${1}
@@ -107,7 +108,7 @@ function compile(node) {
         // ${exp}
         const exp = parseExp(node.nodeValue)
         code += `self.text(${id}, ${exp})\n`
-        detectError(exp, node.nodeValue, html)
+        detectError(exp, node.nodeValue.replace(TEXT_ID_KEY_REG, ''), html)
       }
       return
     }
@@ -260,8 +261,7 @@ function getNodeMap(root) {
     }
     // ID ${text}
     else {
-      const reg = RegExp('^' + TEXT_ID_KEY.replace('ID', '(\\d+)'))
-      const m = reg.exec(node.nodeValue)
+      const m = TEXT_ID_KEY_REG.exec(node.nodeValue)
       if (m) {
         const id = m[1]
         nodeMap[id] = node

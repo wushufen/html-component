@@ -128,11 +128,13 @@ ${line}
 ${tpl}
      `)
 
-      // throw tplError
-      console.dir(error)
-      console.error(tplError)
+      throw tplError
+      // console.error(tplError)
+      // setTimeout(() => {
+      //   throw tplError
+      // })
 
-      return true
+      // return true
     }
   }
 }

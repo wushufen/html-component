@@ -1,9 +1,12 @@
-<script type="module" src="../src/Component.js"></script>
-
 <svg>
   <rect
     for="(item,i) in list"
-    .style="{x: i*40, width: 10, y: 500 - item.height, height: item.height}"
+    .style="{
+      width: 10,
+      height: item.height,
+      x: i*40,
+      y: 300 - item.height,
+    }"
   />
 </svg>
 
@@ -22,14 +25,11 @@
 </script>
 
 <style>
-  html {
-    background-color: #222;
-  }
   svg {
     overflow: visible;
   }
   rect {
-    fill: rgba(0, 170, 255, 0.322);
-    transition: 1.3s;
+    fill: rgba(0, 125, 255, 0.5);
+    transition: 1s;
   }
 </style>

@@ -1,0 +1,60 @@
+<button onclick="add()">+</button>
+<button onclick="del()">-</button>
+<button onclick="list.sort((a, b) => a - b)">sort</button>
+<button .onclick="shuffle">shuffle</button>
+
+<ol>
+  <li for="const item of list" onclick="del(item)">${item}</li>
+</ol>
+
+<script>
+  const list = [1, 3, 5, 7, 9, 2, 4, 6, 8, 10]
+
+  function add() {
+    list.splice(random(), 0, Math.max(...list, 0) + 1)
+  }
+
+  function del(item) {
+    list.splice(item ? list.indexOf(item) : random(), 1)
+  }
+
+  function shuffle() {
+    list.sort((_) => Math.random() - 0.5)
+  }
+
+  function random(max = list.length) {
+    return (Math.random() * max) | 0
+  }
+</script>
+
+<style>
+  * {
+    border-color: #ddd;
+    user-select: none;
+    border-radius: 5px;
+  }
+
+  button {
+    min-width: 2em;
+    height: 2em;
+    border-radius: 9em;
+    border: solid 1px #bbb;
+  }
+
+  button:active {
+    transform: scale(0.9);
+  }
+
+  ul,
+  ol {
+    max-width: 375px;
+    padding: 0 3ex;
+  }
+
+  li {
+    position: relative;
+    margin-bottom: -1px;
+    border: solid 1px #bbb;
+    padding: 0.25em 0.5em;
+  }
+</style>

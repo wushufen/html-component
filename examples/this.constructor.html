@@ -1,0 +1,11 @@
+<script>
+  this.constructor.count = this.constructor.count || 10
+  this.constructor.count--
+</script>
+
+<ul>
+  <li>
+    <strong>${this.constructor.count}</strong>
+    <ul if="this.constructor.count" new="this.constructor" />
+  </li>
+</ul>
